@@ -78,6 +78,8 @@ jobs:
 
       - name: تجهيز Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: تثبيت الحزم وبناء الويب للتطبيق
         env:
