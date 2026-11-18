@@ -10,7 +10,6 @@ import { LocationModal } from './components/LocationModal';
 import { NotificationsScreen } from './components/NotificationsScreen';
 import { OfflineIndicator } from './components/PWAInstallBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
-import { SmartPlannerModal } from './components/SmartPlannerModal';
 import { TechnicianPortalScreen } from './components/TechnicianPortalScreen';
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
@@ -183,7 +182,9 @@ export default function App() {
 
   // Navigation & Modal State
   const [customerTab, setCustomerTab] = useState<CustomerTab>('home');
-  const [requestsInitialTab, setRequestsInitialTab] = useState<'open' | 'active' | 'history' | 'recurring'>('open');
+  const [requestsInitialTab, setRequestsInitialTab] = useState<
+    'open' | 'active' | 'history' | 'recurring'
+  >('open');
   const [techTab, setTechTab] = useState<TechnicianTab>('open_requests');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [catalogSearchQuery, setCatalogSearchQuery] = useState<string>('');
@@ -216,7 +217,6 @@ export default function App() {
   );
   const [initialLoyaltyVoucher, setInitialLoyaltyVoucher] =
     useState<LoyaltyRedemption | null>(null);
-  const [isSmartPlannerOpen, setIsSmartPlannerOpen] = useState(false);
 
   useEffect(() => {
     const isDark = theme === 'dark';
@@ -379,7 +379,9 @@ export default function App() {
         return false;
       }
       const accepted = quotes.find(
-        (q) => q.id === r.acceptedQuoteId || (q.requestId === r.id && q.status === 'accepted')
+        (q) =>
+          q.id === r.acceptedQuoteId ||
+          (q.requestId === r.id && q.status === 'accepted')
       );
       return accepted?.technicianId === activeTechnician.id;
     }).length;
@@ -560,14 +562,15 @@ export default function App() {
         ({ technician, distanceKm, matchType }, idx) => {
           const proximityLabel =
             matchType === 'exact_area'
-              ? 'داخل منطقتك مباشرة'
+              ? 'بمنطقتك'
               : matchType === 'exact_center'
-                ? `ضمن مركزك (${routing.nearestCenterName})`
-                : `الأقرب لنطاقك (على بُعد ~${distanceKm} كم)`;
+                ? `مركز ${routing.nearestCenterName}`
+                : `~${distanceKm} كم`;
 
+          const urgentTag = newReq.urgency === 'urgent' ? '🚨 طارئ · ' : '';
           const freqTag =
             isAutoRecurring && newReq.recurrenceFrequency
-              ? ` · دوري ${getRecurrenceLabel(newReq.recurrenceFrequency)}`
+              ? ` · ${getRecurrenceLabel(newReq.recurrenceFrequency)}`
               : '';
 
           return {
@@ -575,8 +578,8 @@ export default function App() {
             recipientRole: 'technician',
             recipientTechId: technician.id,
             type: 'new_request',
-            title: `طلب خدمة جديد (${proximityLabel}${freqTag}): ${newReq.serviceTitle}`,
-            body: `طلب العميل ${newReq.customerName} خدمة في ${newReq.district}. راجع التفاصيل وأرسل عرض سعرك الآن.`,
+            title: `${urgentTag}${newReq.serviceTitle} (${proximityLabel}${freqTag})`,
+            body: `العميل ${newReq.customerName} في ${newReq.district}. رد الآن بعرضك.`,
             requestId: newReq.id,
             createdAt: 'الآن',
             isRead: false,
@@ -689,7 +692,7 @@ export default function App() {
         recurrenceScheduleId: schedule.id,
         recurrenceFrequency: schedule.frequency,
         recurrenceCycleNumber: nextCycleNumber,
-        createdAt: cycleReason === 'auto' ? 'تلقائي الآن' : 'الآن (دورة مجدولة)',
+        createdAt: cycleReason === 'auto' ? 'تلقائي الآن' : 'الآن',
       };
 
       const { enrichedRequest, techAlerts, routing } = buildRequestDispatch(
@@ -701,8 +704,8 @@ export default function App() {
         id: `notif-rec-${Date.now()}-${schedule.id}`,
         recipientRole: 'customer',
         type: 'recurring_generated',
-        title: `تم إنشاء طلبك المتكرر تلقائياً (#${refCode})`,
-        body: `دورة #${nextCycleNumber} (${getRecurrenceLabel(schedule.frequency)}) لخدمة «${schedule.serviceTitle}» — تم تنبيه ${routing.targets.length} فني/شركة مختصة في نطاقك.`,
+        title: `طلب متكرر جديد (#${refCode})`,
+        body: `«${schedule.serviceTitle}» — تم تنبيه ${routing.targets.length} فنيين.`,
         requestId: reqId,
         createdAt: 'الآن',
         isRead: false,
@@ -729,7 +732,6 @@ export default function App() {
     [buildRequestDispatch]
   );
 
-  // Automatic check on app load and every 60s for due recurring schedules
   useEffect(() => {
     const checkDueSchedules = () => {
       const todayISO = getTodayISO();
@@ -862,8 +864,8 @@ export default function App() {
       id: `notif-q-${Date.now()}`,
       recipientRole: 'customer',
       type: 'new_quote',
-      title: `عرض سعر جديد على طلبك (#${targetReq.referenceCode})`,
-      body: `قدّم ${activeTechnician.name} عرضاً بقيمة ${formatEGP(priceEGP)}. اضغط لمراجعة العرض والموافقة.`,
+      title: `عرض سعر جديد (#${targetReq.referenceCode})`,
+      body: `${activeTechnician.name}: ${formatEGP(priceEGP)} · اضغط للمراجعة أو التواصل.`,
       requestId,
       createdAt: 'الآن',
       isRead: false,
@@ -902,7 +904,7 @@ export default function App() {
       type: 'new_message',
       title:
         senderRole === 'customer'
-          ? `رسالة جديدة من العميل (#${targetReq.referenceCode})`
+          ? `رسالة من العميل (#${targetReq.referenceCode})`
           : `رسالة من ${technicianName} (#${targetReq.referenceCode})`,
       body: clean,
       requestId,
@@ -953,8 +955,8 @@ export default function App() {
       recipientRole: 'technician',
       recipientTechId: chosenQuote.technicianId,
       type: 'quote_accepted',
-      title: `وافق العميل على عرضك (#${targetReq.referenceCode})`,
-      body: `وافق ${targetReq.customerName} على عرضك بقيمة ${formatEGP(chosenQuote.priceEGP)} (${paymentLabel}). رقم العميل (${targetReq.customerPhone}) متاح الآن للاتصال أو واتساب.`,
+      title: `تمت الموافقة على عرضك (#${targetReq.referenceCode})`,
+      body: `${targetReq.customerName} وافق بـ ${formatEGP(chosenQuote.priceEGP)} (${paymentLabel}) · ${targetReq.customerPhone}`,
       requestId,
       createdAt: 'الآن',
       isRead: false,
@@ -981,9 +983,7 @@ export default function App() {
               ...r,
               status: nextStatus,
               enRouteStartedAt:
-                nextStatus === 'en_route'
-                  ? Date.now()
-                  : r.enRouteStartedAt,
+                nextStatus === 'en_route' ? Date.now() : r.enRouteStartedAt,
               completedAtTimestamp:
                 nextStatus === 'completed'
                   ? r.completedAtTimestamp || Date.now()
@@ -1007,8 +1007,8 @@ export default function App() {
         id: `notif-route-${Date.now()}`,
         recipientRole: 'customer',
         type: 'tech_en_route',
-        title: `الفني ${activeTechnician.name} في الطريق إليك الآن (#${targetReq.referenceCode})`,
-        body: `تحرك الفني نحو موقعك في ${targetReq.district} لتنفيذ خدمة «${targetReq.serviceTitle}». يمكنك متابعة مساره اللحظي الآن.`,
+        title: `الفني في الطريق (#${targetReq.referenceCode})`,
+        body: `${activeTechnician.name} متجه إليك في ${targetReq.district}.`,
         requestId,
         createdAt: 'الآن',
         isRead: false,
@@ -1030,10 +1030,10 @@ export default function App() {
         id: `notif-done-${Date.now()}`,
         recipientRole: 'customer',
         type: 'job_completed',
-        title: `أنهى ${activeTechnician.name} الخدمة (#${targetReq.referenceCode})`,
+        title: `اكتملت الخدمة (#${targetReq.referenceCode})`,
         body: targetReq.isWarrantyClaim
-          ? 'تم إنهاء فحص الضمان بنجاح.'
-          : `أُضيفت +${KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة لرصيدك! قيّم الفني لتحصل على +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة إضافية.`,
+          ? 'تم إنهاء فحص الضمان.'
+          : `قيّم ${activeTechnician.name} واكسب +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة.`,
         requestId,
         createdAt: 'الآن',
         isRead: false,
@@ -1078,7 +1078,7 @@ export default function App() {
         area: targetReq.district,
         serviceTitle: targetReq.serviceTitle,
         rating,
-        review: review || 'تقييم إيجابي للخدمة المكتملة.',
+        review: review || 'خدمة ممتازة.',
         dateLabel: 'الآن',
         priceEGP: acceptedQuote.priceEGP,
       };
@@ -1163,7 +1163,6 @@ export default function App() {
     setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
   };
 
-  // Separate Entry / Login Screen when not logged in
   if (!session) {
     return (
       <>
@@ -1229,6 +1228,7 @@ export default function App() {
           <>
             {customerTab === 'home' && (
               <HomeScreen
+                user={user}
                 district={district}
                 locations={allLocations}
                 technicians={technicians}
@@ -1261,7 +1261,6 @@ export default function App() {
                   setCustomerTab('categories');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
                 onDispatchEmergency={handleSubmitRequest}
               />
             )}
@@ -1373,24 +1372,16 @@ export default function App() {
         )}
       </main>
 
-      {/* Clean Desktop Footer */}
-      <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto transition-colors">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-4">
-            <BrandWordmark size="sm" />
-            <span>
-              خدمات الدقهلية والمنصورة الجديدة
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              onClick={handleSwitchAccount}
-              className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
-            >
-              تبديل الحساب ({session.role === 'customer' ? 'عميل' : 'فني / شركة'})
-            </button>
-          </div>
+      <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <BrandWordmark size="sm" />
+          <button
+            type="button"
+            onClick={handleSwitchAccount}
+            className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
+          >
+            تبديل الحساب ({session.role === 'customer' ? 'عميل' : 'فني'})
+          </button>
         </div>
       </footer>
 
@@ -1459,15 +1450,6 @@ export default function App() {
         quotes={quotes}
         requests={requests}
         onClose={() => setViewingTechStatsId(null)}
-      />
-
-      <SmartPlannerModal
-        isOpen={isSmartPlannerOpen}
-        district={district}
-        user={user}
-        onClose={() => setIsSmartPlannerOpen(false)}
-        onRequestService={handleOpenRequestModal}
-        onRequestBundle={handleRequestBundle}
       />
 
       <OfflineIndicator />
