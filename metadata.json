@@ -1,0 +1,6 @@
+{
+  "name": "خدمات — منصة حجز الخدمات المنزلية في مصر",
+  "description": "تطبيق خدمات لحجز الخدمات المنزلية والفنية المعتمدة في مصر بأسعار شفافة بالجنيه المصري وضمان 30 يوماً.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
