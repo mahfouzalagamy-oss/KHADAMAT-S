@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   Bell,
-  Bot,
   Building2,
   CheckCircle2,
   Heart,
@@ -60,7 +59,6 @@ interface HomeScreenProps {
   onRequestWarrantyCheck?: (request: ServiceRequest, quote?: ServiceQuote) => void;
   onViewTechnicianStats: (technicianId: string) => void;
   onOpenAllServices: (initialQuery?: string) => void;
-  onOpenSmartPlanner: () => void;
   onDispatchEmergency: (req: ServiceRequest) => void;
   onAcceptQuote?: (requestId: string, quoteId: string) => void;
 }
@@ -91,7 +89,6 @@ export function HomeScreen({
   onOpenRequests,
   onViewTechnicianStats,
   onOpenAllServices,
-  onOpenSmartPlanner,
   onDispatchEmergency,
   onAcceptQuote,
 }: HomeScreenProps) {
@@ -381,8 +378,8 @@ export function HomeScreen({
               </div>
             </div>
 
-            {/* Compact 4-Tile Quick Actions (Includes «عروض وباقات» tile + «خدمة طوارئ») */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            {/* Compact 3-Tile Quick Actions («عروض وباقات» + «خدمة طوارئ» + «كل الخدمات») */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setIsBundlesOpen(true)}
@@ -405,15 +402,6 @@ export function HomeScreen({
                 onOpenRequests={onOpenRequests}
                 compactTile
               />
-
-              <button
-                type="button"
-                onClick={onOpenSmartPlanner}
-                className="min-h-[54px] px-3 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 hover:border-[#FF5A00] text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <Bot className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                <span>مخطط الصيانة</span>
-              </button>
 
               <button
                 type="button"

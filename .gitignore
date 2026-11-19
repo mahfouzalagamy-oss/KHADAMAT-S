@@ -8,6 +8,5 @@ coverage/
 *.log
 .env*
 !.env.example
-
 .aistudio/
 server.js
