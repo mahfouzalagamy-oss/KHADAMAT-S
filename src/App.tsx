@@ -11,6 +11,7 @@ import { NotificationsScreen } from './components/NotificationsScreen';
 import { OfflineIndicator } from './components/PWAInstallBanner';
 import { PushNotificationBanner } from './components/PushNotificationBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
+import { SmartPlannerModal } from './components/SmartPlannerModal';
 import { TechnicianPortalScreen } from './components/TechnicianPortalScreen';
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
@@ -230,6 +231,7 @@ export default function App() {
   );
   const [initialLoyaltyVoucher, setInitialLoyaltyVoucher] =
     useState<LoyaltyRedemption | null>(null);
+  const [isSmartPlannerOpen, setIsSmartPlannerOpen] = useState(false);
   const [pushPrefs, setPushPrefs] = useState<PushPreferences>(() => ({
     ...DEFAULT_PUSH_PREFERENCES,
     ...loadStored<Partial<PushPreferences>>(STORAGE_KEYS.pushPrefs, {}),
@@ -1657,6 +1659,7 @@ export default function App() {
                   setCustomerTab('categories');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
+                onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
                 onDispatchEmergency={handleSubmitRequest}
                 onAcceptQuote={handleAcceptQuote}
               />
@@ -1884,6 +1887,15 @@ export default function App() {
         quotes={quotes}
         requests={requests}
         onClose={() => setViewingTechStatsId(null)}
+      />
+
+      <SmartPlannerModal
+        isOpen={isSmartPlannerOpen}
+        district={district}
+        user={user}
+        onClose={() => setIsSmartPlannerOpen(false)}
+        onRequestService={handleOpenRequestModal}
+        onRequestBundle={handleRequestBundle}
       />
 
       <OfflineIndicator />
