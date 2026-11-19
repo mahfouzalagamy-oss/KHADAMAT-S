@@ -95,6 +95,8 @@ interface CustomerRequestsScreenProps {
   onRequestWarrantyCheck?: (request: ServiceRequest, quote?: ServiceQuote) => void;
   technicians?: Technician[];
   initialTab?: RequestsTab;
+  focusRequestId?: string | null;
+  onFocusConsumed?: () => void;
   isDark?: boolean;
 }
 
@@ -134,6 +136,8 @@ export function CustomerRequestsScreen({
   onRequestWarrantyCheck,
   technicians = [],
   initialTab,
+  focusRequestId,
+  onFocusConsumed,
   isDark = false,
 }: CustomerRequestsScreenProps) {
   const [tab, setTab] = useState<RequestsTab>(initialTab || 'open');
@@ -169,6 +173,32 @@ export function CustomerRequestsScreen({
   );
   const [completedOrderSummary, setCompletedOrderSummary] =
     useState<CompletedOrderSummaryData | null>(null);
+
+  const [flashRequestId, setFlashRequestId] = useState<string | null>(null);
+
+  // الانتقال المباشر إلى طلب معيّن (من الرئيسية أو من التنبيهات)
+  useEffect(() => {
+    if (!focusRequestId) return;
+    const target = requests.find((r) => r.id === focusRequestId);
+    if (target) {
+      setTab(
+        target.status === 'open_for_quotes'
+          ? 'open'
+          : target.status === 'completed' || target.status === 'cancelled'
+          ? 'history'
+          : 'active'
+      );
+      setFlashRequestId(focusRequestId);
+      window.setTimeout(() => {
+        document
+          .getElementById(`req-${focusRequestId}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+      window.setTimeout(() => setFlashRequestId(null), 3200);
+    }
+    onFocusConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRequestId]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -502,7 +532,12 @@ export function CustomerRequestsScreen({
             return (
               <article
                 key={req.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-5"
+                id={`req-${req.id}`}
+                className={`bg-white dark:bg-slate-900 border rounded-2xl p-5 md:p-6 space-y-5 transition-shadow ${
+                  flashRequestId === req.id
+                    ? 'border-[#FF5A00] ring-2 ring-orange-300 dark:ring-orange-700'
+                    : 'border-slate-200 dark:border-slate-800'
+                }`}
               >
                 {/* Request Header */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -515,14 +550,6 @@ export function CustomerRequestsScreen({
                       <span>{req.categoryName}</span>
                       <span aria-hidden="true">·</span>
                       <span>{req.createdAt}</span>
-                      {req.urgency === 'urgent' && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-bold text-amber-700 dark:text-amber-400">
-                            طلب طوارئ سريع
-                          </span>
-                        </>
-                      )}
                       {(req.promoCode || (req.loyaltyDiscountEGP && req.loyaltyDiscountEGP > 0)) && (
                         <>
                           <span aria-hidden="true">·</span>

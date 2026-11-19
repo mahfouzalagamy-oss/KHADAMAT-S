@@ -97,6 +97,17 @@ function loadStored<T>(key: string, fallback: T): T {
   }
 }
 
+import type { ServiceRequestStatus } from './types/khadamat';
+
+type RequestsTabId = 'open' | 'active' | 'history';
+
+/** أي تبويب في «طلباتي» يعرض الطلب حسب حالته الفعلية */
+function getRequestsTabForStatus(status: ServiceRequestStatus): RequestsTabId {
+  if (status === 'open_for_quotes') return 'open';
+  if (status === 'completed' || status === 'cancelled') return 'history';
+  return 'active';
+}
+
 export default function App() {
   const [session, setSession] = useState<AccountSession | null>(() =>
     loadStored<AccountSession | null>(STORAGE_KEYS.session, null)
@@ -217,6 +228,7 @@ export default function App() {
   const [initialLoyaltyVoucher, setInitialLoyaltyVoucher] =
     useState<LoyaltyRedemption | null>(null);
   const [isSmartPlannerOpen, setIsSmartPlannerOpen] = useState(false);
+  const [focusRequestId, setFocusRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     const isDark = theme === 'dark';
@@ -1017,6 +1029,21 @@ export default function App() {
       return;
     }
 
+    if (nextStatus === 'in_progress' && targetReq && activeTechnician) {
+      const startedAlert: AppNotification = {
+        id: `notif-start-${Date.now()}`,
+        recipientRole: 'customer',
+        type: 'job_started',
+        title: `بدأ ${activeTechnician.name} تنفيذ الخدمة (#${targetReq.referenceCode})`,
+        body: `الفني وصل وبدأ العمل على «${targetReq.serviceTitle}». يمكنك متابعة الحالة من طلباتك.`,
+        requestId,
+        createdAt: 'الآن',
+        isRead: false,
+      };
+      setNotifications((prev) => [startedAlert, ...prev]);
+      return;
+    }
+
     if (nextStatus === 'completed' && targetReq && activeTechnician) {
       setTechnicians((prev) =>
         prev.map((t) =>
@@ -1109,9 +1136,39 @@ export default function App() {
   };
 
   const handleCancelRequest = (requestId: string) => {
+    const targetReq = requests.find((r) => r.id === requestId);
+    if (!targetReq) return;
+
     setRequests((prev) =>
       prev.map((r) => (r.id === requestId ? { ...r, status: 'cancelled' } : r))
     );
+
+    const relatedQuotes = quotes.filter(
+      (q) => q.requestId === requestId && q.status !== 'rejected'
+    );
+    setQuotes((prev) =>
+      prev.map((q) =>
+        q.requestId === requestId && q.status !== 'rejected'
+          ? { ...q, status: 'rejected' }
+          : q
+      )
+    );
+
+    const techIds = Array.from(new Set(relatedQuotes.map((q) => q.technicianId)));
+    if (techIds.length > 0) {
+      const alerts: AppNotification[] = techIds.map((techId, idx) => ({
+        id: `notif-cancel-${Date.now()}-${idx}-${techId}`,
+        recipientRole: 'technician',
+        recipientTechId: techId,
+        type: 'request_cancelled',
+        title: `ألغى العميل الطلب (#${targetReq.referenceCode})`,
+        body: `تم إلغاء طلب «${targetReq.serviceTitle}» في ${targetReq.district}. لم يعد متاحاً لتقديم عروض أو تنفيذ.`,
+        requestId,
+        createdAt: 'الآن',
+        isRead: false,
+      }));
+      setNotifications((prev) => [...alerts, ...prev]);
+    }
   };
 
   const handleMarkAllNotificationsRead = () => {
@@ -1137,18 +1194,34 @@ export default function App() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
     );
+    const targetReq = requests.find((r) => r.id === notif.requestId);
+
     if (session?.role === 'customer') {
-      setRequestsInitialTab(
-        notif.type === 'tech_en_route' || notif.type === 'job_completed'
-          ? notif.type === 'job_completed'
-            ? 'history'
-            : 'active'
-          : 'open'
-      );
+      if (targetReq) {
+        setRequestsInitialTab(getRequestsTabForStatus(targetReq.status));
+        setFocusRequestId(targetReq.id);
+      } else {
+        setRequestsInitialTab('open');
+        setFocusRequestId(null);
+      }
       setCustomerTab('requests');
     } else if (session?.role === 'technician') {
-      setTechTab(notif.type === 'quote_accepted' ? 'accepted_jobs' : 'open_requests');
+      const isMyAcceptedJob =
+        !!targetReq &&
+        ['quote_accepted', 'en_route', 'in_progress'].includes(targetReq.status) &&
+        quotes.some(
+          (q) =>
+            q.requestId === targetReq.id &&
+            q.status === 'accepted' &&
+            q.technicianId === session.technicianId
+        );
+      setTechTab(
+        notif.type === 'quote_accepted' || isMyAcceptedJob
+          ? 'accepted_jobs'
+          : 'open_requests'
+      );
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAddAddress = (addr: Omit<SavedAddress, 'id'>) => {
@@ -1230,16 +1303,10 @@ export default function App() {
             {customerTab === 'home' && (
               <HomeScreen
                 district={district}
-                locations={allLocations}
                 technicians={technicians}
-                reviews={reviews}
                 quotes={quotes}
                 requests={requests}
-                isDark={theme === 'dark'}
-                favoriteServiceIds={favoriteServiceIds}
-                onToggleFavoriteService={handleToggleFavoriteService}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
-                onSelectDistrict={handleDistrictChange}
                 onSelectCategory={(catId) => {
                   setSelectedCategoryId(catId);
                   setCatalogSearchQuery('');
@@ -1247,14 +1314,12 @@ export default function App() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onRequestService={handleOpenRequestModal}
-                onRequestBundle={handleRequestBundle}
-                onRequestWarrantyCheck={handleRequestWarrantyCheck}
-                onOpenRequests={(targetTab = 'open') => {
+                onOpenRequests={(targetTab = 'open', requestId) => {
                   setRequestsInitialTab(targetTab);
+                  setFocusRequestId(requestId ?? null);
                   setCustomerTab('requests');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                onViewTechnicianStats={(techId) => setViewingTechStatsId(techId)}
                 onOpenAllServices={(initialQuery = '') => {
                   setSelectedCategoryId('all');
                   setCatalogSearchQuery(initialQuery);
@@ -1262,7 +1327,6 @@ export default function App() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
-                onDispatchEmergency={handleSubmitRequest}
               />
             )}
 
@@ -1294,6 +1358,8 @@ export default function App() {
                 recurringSchedules={recurringSchedules}
                 technicians={technicians}
                 initialTab={requestsInitialTab}
+                focusRequestId={focusRequestId}
+                onFocusConsumed={() => setFocusRequestId(null)}
                 isDark={theme === 'dark'}
                 onAcceptQuote={handleAcceptQuote}
                 onCancelRequest={handleCancelRequest}
@@ -1446,7 +1512,12 @@ export default function App() {
           setInitialLoyaltyVoucher(null);
         }}
         onSubmitRequest={handleSubmitRequest}
-        onGoToRequests={() => setCustomerTab('requests')}
+        onGoToRequests={() => {
+          setRequestsInitialTab('open');
+          setFocusRequestId(requests[0]?.status === 'open_for_quotes' ? requests[0].id : null);
+          setCustomerTab('requests');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <TechnicianReviewsModal

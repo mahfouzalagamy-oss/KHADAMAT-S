@@ -43,7 +43,6 @@ import {
   PaymentMethod,
   PromoCode,
   RecurrenceFrequency,
-  RequestUrgency,
   SavedAddress,
   SeasonalBundle,
   ServiceItem,
@@ -230,7 +229,7 @@ export function RequestServiceModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: detailedDescription.trim() }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ success: false, error: 'خدمة التحليل الذكي غير متاحة حالياً. تأكد من تشغيل الخادم وضبط GEMINI_API_KEY.' }));
       if (data.success && data.analysis) {
         setAiFaultAnalysis(data.analysis);
       } else {
@@ -245,9 +244,6 @@ export function RequestServiceModal({
 
   const [preferredDate, setPreferredDate] = useState<string>(DATE_OPTIONS[0]);
   const [preferredTime, setPreferredTime] = useState<string>(TIME_WINDOWS[2]);
-  const [urgency, setUrgency] = useState<RequestUrgency>(
-    warrantyClaimTarget ? 'urgent' : 'normal'
-  );
 
   const defaultAddr = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
   const [addressText, setAddressText] = useState<string>(
@@ -533,7 +529,6 @@ export function RequestServiceModal({
       addressText: addressText.trim(),
       preferredDate,
       preferredTime,
-      urgency,
       customerName: user.name,
       customerPhone: customerPhone.trim(),
       status: 'open_for_quotes',
@@ -1372,39 +1367,6 @@ export function RequestServiceModal({
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
-
-            {/* Urgency Selection */}
-            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                أولوية تنفيذ الطلب
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setUrgency('normal')}
-                  aria-pressed={urgency === 'normal'}
-                  className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                    urgency === 'normal'
-                      ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  عادي حسب الموعد
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUrgency('urgent')}
-                  aria-pressed={urgency === 'urgent'}
-                  className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                    urgency === 'urgent'
-                      ? 'bg-amber-600 text-white border-amber-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                >
-                  طوارئ سريعة اليوم
-                </button>
               </div>
             </div>
 

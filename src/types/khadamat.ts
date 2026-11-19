@@ -22,7 +22,6 @@ export type PaymentMethod = 'cash' | 'wallet';
 
 export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly';
 export type RecurringScheduleStatus = 'active' | 'paused' | 'cancelled';
-export type RequestUrgency = 'normal' | 'urgent';
 
 export interface LocationEntry {
   id: string;
@@ -179,7 +178,6 @@ export interface ServiceRequest {
   addressText: string;
   preferredDate: string;
   preferredTime: string;
-  urgency?: RequestUrgency;
   customerName: string;
   customerPhone: string;
   status: ServiceRequestStatus;
@@ -243,7 +241,9 @@ export interface AppNotification {
     | 'tech_en_route'
     | 'job_completed'
     | 'recurring_generated'
-    | 'new_message';
+    | 'new_message'
+    | 'job_started'
+    | 'request_cancelled';
   title: string;
   body: string;
   requestId: string;
@@ -299,17 +299,6 @@ export interface LoyaltyRedemption {
   usedRequestRef?: string;
 }
 
-export interface EmergencyScenario {
-  id: string;
-  title: string;
-  subtitle: string;
-  categoryId: string;
-  serviceId: string;
-  responseEtaLabel: string;
-  safetyTips: string[];
-  prefillDescription: string;
-  iconKey: ServiceCategory['iconKey'];
-}
 
 export type PlannerHomeType = 'apartment' | 'villa' | 'office';
 export type PlannerSeasonFocus = 'summer' | 'winter' | 'year_round';

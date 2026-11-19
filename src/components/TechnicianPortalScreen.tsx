@@ -762,12 +762,6 @@ export function TechnicianPortalScreen({
                         <span>{req.categoryName}</span>
                         <span>·</span>
                         <span>{req.createdAt}</span>
-                        {req.urgency === 'urgent' && (
-                          <>
-                            <span>·</span>
-                            <span className="font-bold text-amber-700 dark:text-amber-400">طلب طوارئ</span>
-                          </>
-                        )}
                         {req.recurrenceFrequency && (
                           <>
                             <span>·</span>
