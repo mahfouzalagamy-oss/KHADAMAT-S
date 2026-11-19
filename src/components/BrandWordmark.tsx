@@ -17,39 +17,45 @@ export function BrandWordmark({
 
   const iconBoxSize =
     size === 'sm'
-      ? 'w-7 h-7 rounded-[10px]'
+      ? 'w-9 h-9 rounded-[11px]'
       : size === 'lg'
-      ? 'w-12 h-12 rounded-[16px]'
-      : 'w-9 h-9 rounded-[12px]';
+        ? 'w-14 h-14 rounded-[18px]'
+        : 'w-11 h-11 rounded-[14px]';
 
   const wordmarkTextSize =
     size === 'sm'
-      ? 'text-[19px]'
+      ? 'text-[24px]'
       : size === 'lg'
-      ? 'text-[34px] sm:text-[40px]'
-      : 'text-[25px]';
+        ? 'text-[40px] sm:text-[46px]'
+        : 'text-[30px]';
 
   const swoopClass =
-    size === 'sm' ? 'w-12 h-2' : size === 'lg' ? 'w-24 sm:w-28 h-3' : 'w-16 h-2.5';
+    size === 'sm'
+      ? 'w-[66px] h-2'
+      : size === 'lg'
+        ? 'w-[116px] sm:w-[132px] h-3.5'
+        : 'w-[84px] h-2.5';
 
+  const lockupGap = size === 'lg' ? 'gap-3.5' : 'gap-2.5';
   const isInverted = variant === 'inverted';
+  const markStroke = isInverted ? '#ea580c' : '#ffffff';
 
   return (
     <span
-      className="inline-flex items-center gap-2.5 select-none group"
+      className={`inline-flex items-center ${lockupGap} select-none group`}
       aria-label="خدمات"
     >
-      {/* Global-grade geometric emblem: Continuous Home-Shield-Smile loop + precision spark */}
+      {/* Signature Home + Precision Maintenance Emblem */}
       <span
         className={`${iconBoxSize} relative flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 group-hover:scale-[1.04] ${
           isInverted
-            ? 'bg-white shadow-md shadow-black/15 ring-1 ring-white/80'
-            : 'shadow-sm shadow-[#ea580c]/30 ring-1 ring-[#ea580c]/20'
+            ? 'bg-white shadow-md shadow-black/15 ring-1 ring-white/85'
+            : 'shadow-md shadow-[#ea580c]/25 ring-1 ring-[#ea580c]/25'
         }`}
         aria-hidden="true"
       >
         <svg
-          viewBox="0 0 40 40"
+          viewBox="0 0 48 48"
           fill="none"
           className="w-full h-full"
           xmlns="http://www.w3.org/2000/svg"
@@ -59,73 +65,70 @@ export function BrandWordmark({
               id={gradId}
               x1="4"
               y1="2"
-              x2="36"
-              y2="38"
+              x2="44"
+              y2="46"
               gradientUnits="userSpaceOnUse"
             >
-              <stop offset="0%" stopColor="#ff7426" />
-              <stop offset="52%" stopColor="#ea580c" />
+              <stop offset="0%" stopColor="#ff7b2e" />
+              <stop offset="52%" stopColor="#ff5a00" />
               <stop offset="100%" stopColor="#c2410c" />
             </linearGradient>
           </defs>
 
           {!isInverted && (
             <>
-              <rect width="40" height="40" fill={`url(#${gradId})`} />
-              {/* Subtle top architectural sheen */}
+              <rect width="48" height="48" fill={`url(#${gradId})`} />
               <path
-                d="M0 0H40V16C30 10 14 9 0 15V0Z"
+                d="M0 0H48V18C35 11 16 10 0 17V0Z"
                 fill="#ffffff"
-                fillOpacity="0.1"
+                fillOpacity="0.14"
               />
             </>
           )}
 
-          <g>
-            {/* Continuous Home Gable + Shield + Warm Smile Loop */}
-            <path
-              d="M9.5 18.2L20 9.2L30.5 18.2V23.4C30.5 28 25.8 31.4 20 31.4C15.1 31.4 11.1 28.9 9.9 25.2"
-              stroke={isInverted ? '#ea580c' : '#ffffff'}
-              strokeWidth="3.35"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Dynamic open-loop motion dot */}
-            <circle
-              cx="9.6"
-              cy="21.7"
-              r="1.75"
-              fill={isInverted ? '#ea580c' : '#ffffff'}
-            />
-            {/* Precision 4-point craft & quality spark */}
-            <path
-              d="M20 15.1L21.75 18.75L25.4 20.5L21.75 22.25L20 25.9L18.25 22.25L14.6 20.5L18.25 18.75L20 15.1Z"
-              fill={isInverted ? '#ea580c' : '#ffffff'}
-            />
-          </g>
+          {/* Crisp Home Roof & Shield Frame */}
+          <path
+            d="M11 21.8L24 10.8L37 21.8V31.5C37 34.8 34.4 37.2 31.2 37.2H16.8C13.6 37.2 11 34.8 11 31.5V21.8Z"
+            stroke={markStroke}
+            strokeWidth="3.35"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Integrated Maintenance Wrench Silhouette */}
+          <path
+            d="M27.3 19.6C25.5 18.8 23.3 19.2 22 20.6C21 21.7 20.6 23.2 21 24.6L16.8 28.8C16.2 29.4 16.2 30.4 16.8 31C17.4 31.6 18.4 31.6 19 31L23.2 26.8C24.6 27.2 26.1 26.8 27.2 25.8C28.6 24.5 29 22.3 28.2 20.5L26 22.7L24.5 21.2L27.3 19.6Z"
+            fill={markStroke}
+          />
+
+          {/* Smart Response Spark */}
+          <path
+            d="M32.5 12.2L33.5 14.3L35.6 15.3L33.5 16.3L32.5 18.4L31.5 16.3L29.4 15.3L31.5 14.3L32.5 12.2Z"
+            fill={markStroke}
+          />
         </svg>
       </span>
 
-      {/* Bespoke Arabic Geometric Wordmark Lockup */}
+      {/* Bold Balanced Arabic Display Wordmark */}
       <span className="inline-flex flex-col items-start leading-none">
         <span className="relative inline-flex flex-col items-stretch">
           <span
-            className={`font-display font-extrabold tracking-tight leading-none ${wordmarkTextSize} ${
+            className={`font-display font-extrabold tracking-tight leading-[1.06] ${wordmarkTextSize} ${
               isInverted
                 ? 'text-white drop-shadow-sm'
                 : 'text-[#ea580c] dark:text-[#fb923c]'
             }`}
             style={{
-              letterSpacing: '-0.025em',
+              letterSpacing: '-0.02em',
               fontFeatureSettings: '"liga" 1, "calt" 1',
             }}
           >
             خدمات
           </span>
 
-          {/* Tapered Talabat-inspired dynamic smile curve */}
+          {/* Balanced Kinetic Swoop Accent */}
           <svg
-            viewBox="0 0 116 12"
+            viewBox="0 0 120 12"
             fill="none"
             className={`${swoopClass} mt-0.5`}
             aria-hidden="true"
@@ -133,7 +136,7 @@ export function BrandWordmark({
             <defs>
               <linearGradient
                 id={swoopGradId}
-                x1="112"
+                x1="114"
                 y1="4"
                 x2="4"
                 y2="4"
@@ -141,7 +144,7 @@ export function BrandWordmark({
               >
                 <stop
                   offset="0%"
-                  stopColor={isInverted ? '#ffffff' : '#ea580c'}
+                  stopColor={isInverted ? '#ffffff' : '#ff5a00'}
                 />
                 <stop
                   offset="100%"
@@ -150,16 +153,16 @@ export function BrandWordmark({
               </linearGradient>
             </defs>
             <path
-              d="M5 3.8C36 10.2 78 9.8 111 2.8"
+              d="M5 3.6C37 10.2 82 9.8 113.5 2.7"
               stroke={`url(#${swoopGradId})`}
-              strokeWidth="2.9"
+              strokeWidth="3.1"
               strokeLinecap="round"
             />
             <circle
-              cx="111.5"
-              cy="2.8"
-              r="2.1"
-              fill={isInverted ? '#ffffff' : '#ea580c'}
+              cx="114.5"
+              cy="2.7"
+              r="2.2"
+              fill={isInverted ? '#ffffff' : '#ff5a00'}
             />
           </svg>
         </span>
@@ -172,7 +175,7 @@ export function BrandWordmark({
                 : 'text-slate-600 dark:text-slate-300'
             }`}
           >
-            <span>صيانة أسرع · الدقهلية</span>
+            <span>صيانة المنزل الذكية · الدقهلية</span>
           </span>
         )}
       </span>

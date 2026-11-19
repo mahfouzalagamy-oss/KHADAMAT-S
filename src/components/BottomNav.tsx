@@ -38,7 +38,7 @@ export function BottomNav({
     badge?: number;
   }[] = [
     { id: 'home', label: 'الرئيسية', icon: Home },
-    { id: 'categories', label: 'الأقسام', icon: LayoutGrid },
+    { id: 'categories', label: 'الخدمات', icon: LayoutGrid },
     {
       id: 'requests',
       label: 'طلباتي',

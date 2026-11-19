@@ -19,7 +19,7 @@ import {
   formatEGP,
   getPaymentMethodLabel,
 } from '../data/khadamatData';
-import { ServiceQuote, ServiceRequest } from '../types/khadamat';
+import { RatingBreakdown, ServiceQuote, ServiceRequest } from '../types/khadamat';
 import { DigitalWarrantyCard } from './DigitalWarrantyCard';
 
 interface CelebrationEmblemProps {
@@ -82,6 +82,7 @@ export interface CompletedOrderSummaryData {
   request: ServiceRequest;
   quote?: ServiceQuote;
   rating: number;
+  ratingBreakdown?: RatingBreakdown;
   review: string;
   savingsPercent: number;
   savingsAmountEGP: number;
@@ -100,7 +101,8 @@ export function OrderCompletionModal({
 }: OrderCompletionModalProps) {
   if (!summary) return null;
 
-  const { request, quote, rating, review, savingsPercent, savingsAmountEGP } = summary;
+  const { request, quote, rating, ratingBreakdown, review, savingsPercent, savingsAmountEGP } = summary;
+  const activeBreakdown = ratingBreakdown || request.ratingBreakdown;
 
   return (
     <div
@@ -144,26 +146,48 @@ export function OrderCompletionModal({
               </p>
             </div>
 
-            {/* Animated Submitted Rating Stars */}
-            <div
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/70"
-              aria-label={`تقييمك المسجل ${rating} من 5 نجوم`}
-            >
-              {[1, 2, 3, 4, 5].map((starIdx) => (
-                <Star
-                  key={starIdx}
-                  className={`w-4 h-4 transition-transform ${
-                    starIdx <= rating
-                      ? 'fill-amber-500 text-amber-500 animate-celebration-badge'
-                      : 'text-slate-300 dark:text-slate-600'
-                  }`}
-                  style={{ animationDelay: `${120 + starIdx * 55}ms` }}
-                />
-              ))}
-              <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1.5 tabular-nums">
-                {rating}/5 تقييمك للفني
-              </span>
-            </div>
+            {activeBreakdown ? (
+              <div className="grid grid-cols-3 gap-2 max-w-md mx-auto bg-amber-50/70 dark:bg-amber-950/35 border border-amber-200/80 dark:border-amber-800/70 rounded-xl p-2.5 text-center tabular-nums">
+                <div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-400">الالتزام بالموعد</div>
+                  <div className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                    {activeBreakdown.punctuality}/5
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-400">نظافة العمل</div>
+                  <div className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                    {activeBreakdown.cleanliness}/5
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-400">الاحترافية</div>
+                  <div className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                    {activeBreakdown.professionalism}/5
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/70"
+                aria-label={`تقييمك المسجل ${rating} من 5 نجوم`}
+              >
+                {[1, 2, 3, 4, 5].map((starIdx) => (
+                  <Star
+                    key={starIdx}
+                    className={`w-4 h-4 transition-transform ${
+                      starIdx <= rating
+                        ? 'fill-amber-500 text-amber-500 animate-celebration-badge'
+                        : 'text-slate-300 dark:text-slate-600'
+                    }`}
+                    style={{ animationDelay: `${120 + starIdx * 55}ms` }}
+                  />
+                ))}
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1.5 tabular-nums">
+                  {rating}/5 تقييمك للفني
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Quick Service Summary Card */}

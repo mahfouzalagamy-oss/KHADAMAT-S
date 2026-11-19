@@ -127229,6 +127229,7 @@ var require_websocket_server2 = __commonJS({
 
 // server.ts
 var import_express = __toESM(require_express2(), 1);
+import { createServer as createHttpServer } from "http";
 
 // node_modules/vite/dist/node/index.js
 init_node2();
@@ -152133,6 +152134,7 @@ function getApiKeyFromEnv() {
 // server.ts
 async function startServer2() {
   const app = (0, import_express.default)();
+  const httpServer = createHttpServer(app);
   app.use(import_express.default.json());
   const ai = new GoogleGenAI2({
     apiKey: process.env.GEMINI_API_KEY,
@@ -152196,12 +152198,15 @@ async function startServer2() {
     }
   });
   const vite = await createServer$2({
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      ws: { server: httpServer }
+    },
     appType: "spa"
   });
   app.use(vite.middlewares);
   const port = Number(process.env.PORT) || 3e3;
-  app.listen(port, "0.0.0.0", () => {
+  httpServer.listen(port, "0.0.0.0", () => {
     console.log(`Server running on port ${port}`);
   });
 }

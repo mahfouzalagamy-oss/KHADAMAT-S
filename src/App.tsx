@@ -9,7 +9,9 @@ import { HomeScreen } from './components/HomeScreen';
 import { LocationModal } from './components/LocationModal';
 import { NotificationsScreen } from './components/NotificationsScreen';
 import { OfflineIndicator } from './components/PWAInstallBanner';
+import { PushNotificationBanner } from './components/PushNotificationBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
+import { SmartPlannerModal } from './components/SmartPlannerModal';
 import { TechnicianPortalScreen } from './components/TechnicianPortalScreen';
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
@@ -17,6 +19,7 @@ import { TopBar } from './components/TopBar';
 import {
   DEFAULT_DAKAHLIA_DISTRICT,
   EGYPT_LOCATIONS,
+  ProximityRoutingResult,
   createCustomLocationEntry,
   findNearestMatchingTechnicians,
   getLocationMeta,
@@ -37,6 +40,7 @@ import {
   VERIFIED_TECHNICIANS,
   addRecurrenceIntervalISO,
   computeCustomerPointsSummary,
+  computeServiceMarketStats,
   computeTechnicianStats,
   formatEGP,
   getPaymentMethodLabel,
@@ -52,6 +56,8 @@ import {
   LoyaltyRedemption,
   LoyaltyRewardTier,
   PaymentMethod,
+  PushPreferences,
+  RatingBreakdown,
   RecurrenceFrequency,
   RecurringSchedule,
   RegisteredCustomer,
@@ -67,6 +73,15 @@ import {
   UserProfile,
   UserRole,
 } from './types/khadamat';
+import {
+  BrowserPushPermissionState,
+  DEFAULT_PUSH_PREFERENCES,
+  getBrowserPushPermission,
+  playSmartNotificationChime,
+  requestBrowserPushPermission,
+  shouldTriggerPushForType,
+  triggerNativeBrowserPush,
+} from './utils/pushNotifications';
 
 const STORAGE_KEYS = {
   session: 'khadamat_v2_session',
@@ -84,6 +99,7 @@ const STORAGE_KEYS = {
   theme: 'khadamat_v2_theme',
   favoriteServiceIds: 'khadamat_v2_favorite_services',
   loyaltyRedemptions: 'khadamat_v2_loyalty_redemptions',
+  pushPrefs: 'khadamat_v2_push_prefs',
 };
 
 function loadStored<T>(key: string, fallback: T): T {
@@ -182,9 +198,7 @@ export default function App() {
 
   // Navigation & Modal State
   const [customerTab, setCustomerTab] = useState<CustomerTab>('home');
-  const [requestsInitialTab, setRequestsInitialTab] = useState<
-    'open' | 'active' | 'history' | 'recurring'
-  >('open');
+  const [requestsInitialTab, setRequestsInitialTab] = useState<'open' | 'active' | 'history' | 'recurring'>('open');
   const [techTab, setTechTab] = useState<TechnicianTab>('open_requests');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [catalogSearchQuery, setCatalogSearchQuery] = useState<string>('');
@@ -217,6 +231,42 @@ export default function App() {
   );
   const [initialLoyaltyVoucher, setInitialLoyaltyVoucher] =
     useState<LoyaltyRedemption | null>(null);
+  const [isSmartPlannerOpen, setIsSmartPlannerOpen] = useState(false);
+  const [pushPrefs, setPushPrefs] = useState<PushPreferences>(() => ({
+    ...DEFAULT_PUSH_PREFERENCES,
+    ...loadStored<Partial<PushPreferences>>(STORAGE_KEYS.pushPrefs, {}),
+  }));
+  const [browserPermission, setBrowserPermission] =
+    useState<BrowserPushPermissionState>(() => getBrowserPushPermission());
+  const [activePushToasts, setActivePushToasts] = useState<AppNotification[]>([]);
+  const queuedPushIdsRef = useRef<Set<string>>(
+    new Set(notifications.map((n) => n.id))
+  );
+  const requestsRef = useRef<ServiceRequest[]>(requests);
+  const quotesRef = useRef<ServiceQuote[]>(quotes);
+  const quoteSimulationTimersRef = useRef<number[]>([]);
+  const [mapsQuotaExceeded, setMapsQuotaExceeded] = useState(false);
+
+  useEffect(() => {
+    const handleQuotaExceeded = () => setMapsQuotaExceeded(true);
+    window.addEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+    return () => window.removeEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+  }, []);
+
+  useEffect(() => {
+    requestsRef.current = requests;
+  }, [requests]);
+
+  useEffect(() => {
+    quotesRef.current = quotes;
+  }, [quotes]);
+
+  useEffect(() => {
+    return () => {
+      quoteSimulationTimersRef.current.forEach((tid) => window.clearTimeout(tid));
+      quoteSimulationTimersRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     const isDark = theme === 'dark';
@@ -328,6 +378,155 @@ export default function App() {
     } catch {}
   }, [loyaltyRedemptions]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.pushPrefs, JSON.stringify(pushPrefs));
+    } catch {}
+  }, [pushPrefs]);
+
+  const handleDismissPushToast = useCallback((id: string) => {
+    setActivePushToasts((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const deliverCustomerPush = useCallback(
+    (alert: AppNotification, forceShow = false) => {
+      if (alert.recipientRole !== 'customer') return;
+      if (!forceShow && !shouldTriggerPushForType(alert.type, pushPrefs)) return;
+
+      queuedPushIdsRef.current.add(alert.id);
+
+      if (session?.role === 'customer' && (forceShow || pushPrefs.inAppBannerEnabled)) {
+        setActivePushToasts((prev) => {
+          if (prev.some((p) => p.id === alert.id)) return prev;
+          return [alert, ...prev].slice(0, 3);
+        });
+        if (pushPrefs.soundEnabled) {
+          playSmartNotificationChime(alert.type);
+        }
+        try {
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate([110, 45, 110]);
+          }
+        } catch {}
+      }
+
+      if (pushPrefs.browserPushEnabled) {
+        void triggerNativeBrowserPush(alert, () => {
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === alert.id ? { ...n, isRead: true } : n))
+          );
+          setRequestsInitialTab(
+            alert.type === 'quote_accepted' ||
+              alert.type === 'tech_en_route' ||
+              alert.type === 'job_in_progress'
+              ? 'active'
+              : alert.type === 'job_completed'
+                ? 'history'
+                : alert.type === 'recurring_generated'
+                  ? 'recurring'
+                  : 'open'
+          );
+          setCustomerTab('requests');
+        });
+      }
+    },
+    [pushPrefs, session?.role]
+  );
+
+  useEffect(() => {
+    if (session?.role !== 'customer' || !pushPrefs.inAppBannerEnabled) return;
+    const pendingForCustomer = notifications.filter(
+      (n) =>
+        n.recipientRole === 'customer' &&
+        !n.isRead &&
+        !queuedPushIdsRef.current.has(n.id) &&
+        shouldTriggerPushForType(n.type, pushPrefs)
+    );
+    if (pendingForCustomer.length === 0) return;
+
+    pendingForCustomer.forEach((n) => queuedPushIdsRef.current.add(n.id));
+    setActivePushToasts((prev) => {
+      const merged = [...pendingForCustomer, ...prev];
+      const unique = merged.filter(
+        (item, idx, arr) => arr.findIndex((x) => x.id === item.id) === idx
+      );
+      return unique.slice(0, 3);
+    });
+    if (pushPrefs.soundEnabled) {
+      playSmartNotificationChime(pendingForCustomer[0].type);
+    }
+  }, [session?.role, notifications, pushPrefs]);
+
+  const handleRequestBrowserPermission = useCallback(async () => {
+    const result = await requestBrowserPushPermission();
+    setBrowserPermission(result);
+    if (result === 'granted') {
+      const sample: AppNotification = {
+        id: `notif-perm-${Date.now()}`,
+        recipientRole: 'customer',
+        type: 'quote_accepted',
+        title: 'تم تفعيل إشعارات البوش الفورية بنجاح',
+        body: 'ستصلك تنبيهات ملونة عند قبول العرض وتحرك الفني إليك وإنهاء الخدمة.',
+        requestId: requests[0]?.id || 'req-101',
+        createdAt: 'الآن',
+        isRead: false,
+      };
+      void triggerNativeBrowserPush(sample);
+    }
+  }, [requests]);
+
+  const handleSimulateCustomerPush = useCallback(
+    (statusType: 'quote_accepted' | 'tech_en_route' | 'job_completed') => {
+      const targetReq =
+        requests.find((r) => r.status !== 'cancelled') || requests[0];
+      const refCode = targetReq?.referenceCode || 'KH-90412';
+      const serviceTitle = targetReq?.serviceTitle || 'صيانة تكييف سبليت';
+      const reqId = targetReq?.id || 'req-101';
+      const matchedQuote = quotes.find(
+        (q) =>
+          q.id === targetReq?.acceptedQuoteId ||
+          q.requestId === reqId
+      );
+      const techName =
+        matchedQuote?.technicianName ||
+        technicians[0]?.name ||
+        'م. أحمد محمود';
+
+      const payloadMap: Record<
+        'quote_accepted' | 'tech_en_route' | 'job_completed',
+        { title: string; body: string }
+      > = {
+        quote_accepted: {
+          title: `الفني ${techName} قبل العرض (#${refCode})`,
+          body: `تم تأكيد تنفيذ «${serviceTitle}» وجاري التجهيز للموعد في ${targetReq?.district || district}.`,
+        },
+        tech_en_route: {
+          title: `الفني ${techName} في الطريق إليك الآن (#${refCode})`,
+          body: `تحرك الفني نحو موقعك في ${targetReq?.district || district} — اضغط لمتابعة المسار لحظياً.`,
+        },
+        job_completed: {
+          title: `تم إنهاء الخدمة بنجاح (#${refCode})`,
+          body: `أنهى ${techName} خدمة «${serviceTitle}»! قيّم الالتزام والنظافة والاحترافية واحصل على نقاط مكافأة.`,
+        },
+      };
+
+      const alert: AppNotification = {
+        id: `notif-push-${statusType}-${Date.now()}`,
+        recipientRole: 'customer',
+        type: statusType,
+        title: payloadMap[statusType].title,
+        body: payloadMap[statusType].body,
+        requestId: reqId,
+        createdAt: 'الآن',
+        isRead: false,
+      };
+
+      setNotifications((prev) => [alert, ...prev]);
+      deliverCustomerPush(alert, true);
+    },
+    [requests, quotes, technicians, district, deliverCustomerPush]
+  );
+
   const handleToggleFavoriteService = useCallback((serviceId: string) => {
     setFavoriteServiceIds((prev) =>
       prev.includes(serviceId)
@@ -379,9 +578,7 @@ export default function App() {
         return false;
       }
       const accepted = quotes.find(
-        (q) =>
-          q.id === r.acceptedQuoteId ||
-          (q.requestId === r.id && q.status === 'accepted')
+        (q) => q.id === r.acceptedQuoteId || (q.requestId === r.id && q.status === 'accepted')
       );
       return accepted?.technicianId === activeTechnician.id;
     }).length;
@@ -452,10 +649,10 @@ export default function App() {
   };
 
   const getRoutingPreview = useCallback(
-    (catId: string): RoutingPreview => {
+    (catId: string, districtOverride?: string): RoutingPreview => {
       const routing = findNearestMatchingTechnicians(
         catId,
-        district,
+        districtOverride || district,
         technicians,
         allLocations
       );
@@ -562,15 +759,14 @@ export default function App() {
         ({ technician, distanceKm, matchType }, idx) => {
           const proximityLabel =
             matchType === 'exact_area'
-              ? 'بمنطقتك'
+              ? 'داخل منطقتك مباشرة'
               : matchType === 'exact_center'
-                ? `مركز ${routing.nearestCenterName}`
-                : `~${distanceKm} كم`;
+                ? `ضمن مركزك (${routing.nearestCenterName})`
+                : `الأقرب لنطاقك (على بُعد ~${distanceKm} كم)`;
 
-          const urgentTag = newReq.urgency === 'urgent' ? '🚨 طارئ · ' : '';
           const freqTag =
             isAutoRecurring && newReq.recurrenceFrequency
-              ? ` · ${getRecurrenceLabel(newReq.recurrenceFrequency)}`
+              ? ` · دوري ${getRecurrenceLabel(newReq.recurrenceFrequency)}`
               : '';
 
           return {
@@ -578,8 +774,8 @@ export default function App() {
             recipientRole: 'technician',
             recipientTechId: technician.id,
             type: 'new_request',
-            title: `${urgentTag}${newReq.serviceTitle} (${proximityLabel}${freqTag})`,
-            body: `العميل ${newReq.customerName} في ${newReq.district}. رد الآن بعرضك.`,
+            title: `طلب خدمة جديد (${proximityLabel}${freqTag}): ${newReq.serviceTitle}`,
+            body: `طلب العميل ${newReq.customerName} خدمة في ${newReq.district}. راجع التفاصيل وأرسل عرض سعرك الآن.`,
             requestId: newReq.id,
             createdAt: 'الآن',
             isRead: false,
@@ -590,6 +786,133 @@ export default function App() {
       return { enrichedRequest, techAlerts, routing };
     },
     [technicians, allLocations]
+  );
+
+  const scheduleIncomingQuotesForRequest = useCallback(
+    (
+      req: ServiceRequest,
+      routingTargets: ProximityRoutingResult['targets']
+    ) => {
+      if (routingTargets.length === 0) return;
+
+      const market = computeServiceMarketStats(
+        req.serviceTitle,
+        quotes,
+        requests,
+        reviews
+      );
+      const categoryBasePrices: Record<string, number> = {
+        ac: 320,
+        plumbing: 220,
+        electrical: 210,
+        cleaning: 380,
+        carpentry: 260,
+        painting: 450,
+        appliances: 290,
+        pest_control: 300,
+        security_tech: 340,
+        moving: 650,
+        tanks_garden: 320,
+        aluminum_gypsum: 280,
+        carwash: 220,
+        electronics: 280,
+        networks: 260,
+      };
+      const basePrice =
+        market.marketAverageEGP || categoryBasePrices[req.categoryId] || 250;
+
+      const candidates = routingTargets.slice(0, 3);
+      const offerTemplates = [
+        {
+          delayMs: req.urgency === 'urgent' ? 1400 : 2200,
+          factor: 0.92,
+          eta: req.urgency === 'urgent' ? 'خلال 25 دقيقة' : 'اليوم خلال 45 دقيقة',
+          warranty: 'ضمان 30 يوماً',
+          note: req.isWarrantyClaim
+            ? 'فحص ضمان سريع وتحديد الحل فوراً.'
+            : 'متاح قريباً من موقعك مع جميع المعدات وقطع الغيار الأصلية.',
+        },
+        {
+          delayMs: req.urgency === 'urgent' ? 3200 : 4800,
+          factor: 1.04,
+          eta: req.urgency === 'urgent' ? 'خلال 40 دقيقة' : 'اليوم خلال ساعتين',
+          warranty: 'ضمان 60 يوماً',
+          note: 'فحص شامل قبل العمل وتسليم بنظافة تامة والتزام تام بالموعد.',
+        },
+        {
+          delayMs: req.urgency === 'urgent' ? 5200 : 7600,
+          factor: 1.12,
+          eta: req.urgency === 'urgent' ? 'خلال ساعة' : 'في الموعد المحدد بالضبط',
+          warranty: 'ضمان 90 يوماً',
+          note: 'خدمة معتمدة بفريق فني متخصص وشهادة ضمان على التركيب.',
+        },
+      ];
+
+      candidates.forEach(({ technician }, idx) => {
+        const tpl = offerTemplates[idx] || offerTemplates[0];
+        const rawPrice = Math.round((basePrice * tpl.factor) / 10) * 10;
+        const priceEGP = req.isWarrantyClaim ? 0 : Math.max(80, rawPrice);
+
+        const timerId = window.setTimeout(() => {
+          const latestReq = requestsRef.current.find((r) => r.id === req.id);
+          if (!latestReq || latestReq.status !== 'open_for_quotes') return;
+
+          const techStats = computeTechnicianStats(
+            technician.id,
+            reviews,
+            quotes,
+            requests
+          );
+
+          const simulatedQuote: ServiceQuote = {
+            id: `q-auto-${Date.now()}-${technician.id}-${idx}`,
+            requestId: req.id,
+            technicianId: technician.id,
+            technicianName: technician.name,
+            isCompany: technician.isCompany,
+            technicianRating: technician.rating,
+            technicianCompletedJobs: technician.completedJobs,
+            technicianPhone: technician.phone,
+            priceEGP,
+            estimatedArrival: tpl.eta,
+            warrantyLabel: tpl.warranty,
+            notes: tpl.note,
+            createdAt: 'الآن',
+            status: 'pending',
+            ratingBreakdown: techStats.criteriaAverages,
+          };
+
+          const alreadyQuoted = quotesRef.current.some(
+            (q) => q.requestId === req.id && q.technicianId === technician.id
+          );
+          if (alreadyQuoted) return;
+
+          setQuotes((prev) => {
+            if (prev.some((q) => q.requestId === req.id && q.technicianId === technician.id)) {
+              return prev;
+            }
+            return [simulatedQuote, ...prev];
+          });
+
+          const offerAlert: AppNotification = {
+            id: `notif-autoq-${Date.now()}-${technician.id}-${idx}`,
+            recipientRole: 'customer',
+            type: 'new_quote',
+            title: `وصل عرض سعر (${priceEGP === 0 ? 'مجاني بالضمان' : formatEGP(priceEGP)}) · #${req.referenceCode}`,
+            body: `قدّم ${technician.name} عرضاً لخدمة «${req.serviceTitle}» (${tpl.eta}). اضغط لاختيار العرض والتواصل موبايل أو واتساب.`,
+            requestId: req.id,
+            createdAt: 'الآن',
+            isRead: false,
+          };
+
+          setNotifications((prev) => [offerAlert, ...prev]);
+          deliverCustomerPush(offerAlert);
+        }, tpl.delayMs);
+
+        quoteSimulationTimersRef.current.push(timerId);
+      });
+    },
+    [quotes, requests, reviews, deliverCustomerPush]
   );
 
   const handleSubmitRequest = (
@@ -636,7 +959,7 @@ export default function App() {
         return;
       }
 
-      const { enrichedRequest, techAlerts } = buildRequestDispatch(
+      const { enrichedRequest, techAlerts, routing } = buildRequestDispatch(
         {
           ...newReq,
           recurrenceScheduleId: scheduleId,
@@ -648,6 +971,7 @@ export default function App() {
 
       setRequests((prev) => [enrichedRequest, ...prev]);
       setNotifications((prev) => [...techAlerts, ...prev]);
+      scheduleIncomingQuotesForRequest(enrichedRequest, routing.targets);
       return;
     }
 
@@ -661,9 +985,10 @@ export default function App() {
       );
     }
 
-    const { enrichedRequest, techAlerts } = buildRequestDispatch(newReq, false);
+    const { enrichedRequest, techAlerts, routing } = buildRequestDispatch(newReq, false);
     setRequests((prev) => [enrichedRequest, ...prev]);
     setNotifications((prev) => [...techAlerts, ...prev]);
+    scheduleIncomingQuotesForRequest(enrichedRequest, routing.targets);
   };
 
   const executeRecurringScheduleCycle = useCallback(
@@ -692,7 +1017,7 @@ export default function App() {
         recurrenceScheduleId: schedule.id,
         recurrenceFrequency: schedule.frequency,
         recurrenceCycleNumber: nextCycleNumber,
-        createdAt: cycleReason === 'auto' ? 'تلقائي الآن' : 'الآن',
+        createdAt: cycleReason === 'auto' ? 'تلقائي الآن' : 'الآن (دورة مجدولة)',
       };
 
       const { enrichedRequest, techAlerts, routing } = buildRequestDispatch(
@@ -704,8 +1029,8 @@ export default function App() {
         id: `notif-rec-${Date.now()}-${schedule.id}`,
         recipientRole: 'customer',
         type: 'recurring_generated',
-        title: `طلب متكرر جديد (#${refCode})`,
-        body: `«${schedule.serviceTitle}» — تم تنبيه ${routing.targets.length} فنيين.`,
+        title: `تم إنشاء طلبك المتكرر تلقائياً (#${refCode})`,
+        body: `دورة #${nextCycleNumber} (${getRecurrenceLabel(schedule.frequency)}) لخدمة «${schedule.serviceTitle}» — تم تنبيه ${routing.targets.length} فني/شركة مختصة في نطاقك.`,
         requestId: reqId,
         createdAt: 'الآن',
         isRead: false,
@@ -732,6 +1057,7 @@ export default function App() {
     [buildRequestDispatch]
   );
 
+  // Automatic check on app load and every 60s for due recurring schedules
   useEffect(() => {
     const checkDueSchedules = () => {
       const todayISO = getTodayISO();
@@ -864,14 +1190,15 @@ export default function App() {
       id: `notif-q-${Date.now()}`,
       recipientRole: 'customer',
       type: 'new_quote',
-      title: `عرض سعر جديد (#${targetReq.referenceCode})`,
-      body: `${activeTechnician.name}: ${formatEGP(priceEGP)} · اضغط للمراجعة أو التواصل.`,
+      title: `عرض سعر جديد على طلبك (#${targetReq.referenceCode})`,
+      body: `قدّم ${activeTechnician.name} عرضاً بقيمة ${formatEGP(priceEGP)}. اضغط لمراجعة العرض والموافقة.`,
       requestId,
       createdAt: 'الآن',
       isRead: false,
     };
 
     setNotifications((prev) => [customerAlert, ...prev]);
+    deliverCustomerPush(customerAlert);
   };
 
   const handleSendRequestMessage = (
@@ -904,7 +1231,7 @@ export default function App() {
       type: 'new_message',
       title:
         senderRole === 'customer'
-          ? `رسالة من العميل (#${targetReq.referenceCode})`
+          ? `رسالة جديدة من العميل (#${targetReq.referenceCode})`
           : `رسالة من ${technicianName} (#${targetReq.referenceCode})`,
       body: clean,
       requestId,
@@ -912,6 +1239,9 @@ export default function App() {
       isRead: false,
     };
     setNotifications((prev) => [alert, ...prev]);
+    if (alert.recipientRole === 'customer') {
+      deliverCustomerPush(alert);
+    }
   };
 
   const handleAcceptQuote = (
@@ -955,14 +1285,26 @@ export default function App() {
       recipientRole: 'technician',
       recipientTechId: chosenQuote.technicianId,
       type: 'quote_accepted',
-      title: `تمت الموافقة على عرضك (#${targetReq.referenceCode})`,
-      body: `${targetReq.customerName} وافق بـ ${formatEGP(chosenQuote.priceEGP)} (${paymentLabel}) · ${targetReq.customerPhone}`,
+      title: `وافق العميل على عرضك (#${targetReq.referenceCode})`,
+      body: `وافق ${targetReq.customerName} على عرضك بقيمة ${formatEGP(chosenQuote.priceEGP)} (${paymentLabel}). رقم العميل (${targetReq.customerPhone}) متاح الآن للاتصال أو واتساب.`,
       requestId,
       createdAt: 'الآن',
       isRead: false,
     };
 
-    setNotifications((prev) => [techAlert, ...prev]);
+    const customerAcceptedAlert: AppNotification = {
+      id: `notif-cust-acc-${Date.now()}`,
+      recipientRole: 'customer',
+      type: 'quote_accepted',
+      title: `الفني ${chosenQuote.technicianName} قبل العرض (#${targetReq.referenceCode})`,
+      body: `تم تأكيد طلب «${targetReq.serviceTitle}» بقيمة ${formatEGP(chosenQuote.priceEGP)} · الموعد المتوقع: ${chosenQuote.estimatedArrival}.`,
+      requestId,
+      createdAt: 'الآن',
+      isRead: false,
+    };
+
+    setNotifications((prev) => [customerAcceptedAlert, techAlert, ...prev]);
+    deliverCustomerPush(customerAcceptedAlert);
   };
 
   const handleUpdateJobStatus = (
@@ -983,7 +1325,9 @@ export default function App() {
               ...r,
               status: nextStatus,
               enRouteStartedAt:
-                nextStatus === 'en_route' ? Date.now() : r.enRouteStartedAt,
+                nextStatus === 'en_route'
+                  ? Date.now()
+                  : r.enRouteStartedAt,
               completedAtTimestamp:
                 nextStatus === 'completed'
                   ? r.completedAtTimestamp || Date.now()
@@ -1007,13 +1351,30 @@ export default function App() {
         id: `notif-route-${Date.now()}`,
         recipientRole: 'customer',
         type: 'tech_en_route',
-        title: `الفني في الطريق (#${targetReq.referenceCode})`,
-        body: `${activeTechnician.name} متجه إليك في ${targetReq.district}.`,
+        title: `الفني ${activeTechnician.name} في الطريق إليك الآن (#${targetReq.referenceCode})`,
+        body: `تحرك الفني نحو موقعك في ${targetReq.district} لتنفيذ خدمة «${targetReq.serviceTitle}». يمكنك متابعة مساره اللحظي الآن.`,
         requestId,
         createdAt: 'الآن',
         isRead: false,
       };
       setNotifications((prev) => [enRouteAlert, ...prev]);
+      deliverCustomerPush(enRouteAlert);
+      return;
+    }
+
+    if (nextStatus === 'in_progress' && targetReq && activeTechnician) {
+      const inProgressAlert: AppNotification = {
+        id: `notif-prog-${Date.now()}`,
+        recipientRole: 'customer',
+        type: 'job_in_progress',
+        title: `بدأ ${activeTechnician.name} تنفيذ الخدمة (#${targetReq.referenceCode})`,
+        body: `الفني وصل إلى موقعك في ${targetReq.district} وبدأ العمل على «${targetReq.serviceTitle}».`,
+        requestId,
+        createdAt: 'الآن',
+        isRead: false,
+      };
+      setNotifications((prev) => [inProgressAlert, ...prev]);
+      deliverCustomerPush(inProgressAlert);
       return;
     }
 
@@ -1030,19 +1391,25 @@ export default function App() {
         id: `notif-done-${Date.now()}`,
         recipientRole: 'customer',
         type: 'job_completed',
-        title: `اكتملت الخدمة (#${targetReq.referenceCode})`,
+        title: `تم إنهاء الخدمة بواسطة ${activeTechnician.name} (#${targetReq.referenceCode})`,
         body: targetReq.isWarrantyClaim
-          ? 'تم إنهاء فحص الضمان.'
-          : `قيّم ${activeTechnician.name} واكسب +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة.`,
+          ? 'تم إنهاء فحص الضمان بنجاح.'
+          : `أُضيفت +${KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة لرصيدك! قيّم الفني لتحصل على +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة إضافية.`,
         requestId,
         createdAt: 'الآن',
         isRead: false,
       };
       setNotifications((prev) => [rateAlert, ...prev]);
+      deliverCustomerPush(rateAlert);
     }
   };
 
-  const handleRateTechnician = (requestId: string, rating: number, review: string) => {
+  const handleRateTechnician = (
+    requestId: string,
+    rating: number,
+    review: string,
+    ratingBreakdown?: RatingBreakdown
+  ) => {
     const targetReq = requests.find((r) => r.id === requestId);
     const acceptedQuote = quotes.find(
       (q) =>
@@ -1064,6 +1431,7 @@ export default function App() {
                 ? KHADAMAT_POINTS_PER_COMPLETED_ORDER + KHADAMAT_BONUS_POINTS_FOR_RATING
                 : r.pointsAwarded,
               rating,
+              ratingBreakdown,
               review: review || undefined,
             }
           : r
@@ -1078,7 +1446,8 @@ export default function App() {
         area: targetReq.district,
         serviceTitle: targetReq.serviceTitle,
         rating,
-        review: review || 'خدمة ممتازة.',
+        ratingBreakdown,
+        review: review || 'تقييم إيجابي للخدمة المكتملة.',
         dateLabel: 'الآن',
         priceEGP: acceptedQuote.priceEGP,
       };
@@ -1138,13 +1507,25 @@ export default function App() {
       prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
     );
     if (session?.role === 'customer') {
-      setRequestsInitialTab(
-        notif.type === 'tech_en_route' || notif.type === 'job_completed'
-          ? notif.type === 'job_completed'
+      const matchedReq = requests.find((r) => r.id === notif.requestId);
+      const targetTab =
+        notif.type === 'quote_accepted' ||
+        notif.type === 'tech_en_route' ||
+        notif.type === 'job_in_progress'
+          ? 'active'
+          : notif.type === 'job_completed'
             ? 'history'
-            : 'active'
-          : 'open'
-      );
+            : notif.type === 'recurring_generated'
+              ? 'recurring'
+              : matchedReq?.status === 'quote_accepted' ||
+                  matchedReq?.status === 'en_route' ||
+                  matchedReq?.status === 'in_progress'
+                ? 'active'
+                : matchedReq?.status === 'completed' ||
+                    matchedReq?.status === 'cancelled'
+                  ? 'history'
+                  : 'open';
+      setRequestsInitialTab(targetTab);
       setCustomerTab('requests');
     } else if (session?.role === 'technician') {
       setTechTab(notif.type === 'quote_accepted' ? 'accepted_jobs' : 'open_requests');
@@ -1163,6 +1544,7 @@ export default function App() {
     setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
   };
 
+  // Separate Entry / Login Screen when not logged in
   if (!session) {
     return (
       <>
@@ -1197,6 +1579,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 md:pb-0 transition-colors duration-200">
+      {mapsQuotaExceeded && (
+        <div
+          dir="ltr"
+          className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm"
+        >
+          <span>
+            Google Maps Platform quota reached. If you are the app owner, visit{' '}
+            <a
+              href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold text-amber-950 hover:text-amber-800"
+            >
+              maps developer site
+            </a>{' '}
+            for instructions to update your account.
+          </span>
+        </div>
+      )}
       <TopBar
         role={session.role}
         activeCustomerTab={customerTab}
@@ -1215,9 +1616,7 @@ export default function App() {
             : handleSwitchAccount()
         }
         onSwitchAccount={handleSwitchAccount}
-        district={district}
         technicianDisplayName={activeTechnician?.name}
-        onOpenLocation={() => setIsLocationModalOpen(true)}
         unreadNotificationsCount={unreadNotificationsCount}
         openCustomerRequestsCount={openCustomerRequestsCount}
         acceptedTechJobsCount={acceptedTechJobsCount}
@@ -1228,8 +1627,8 @@ export default function App() {
           <>
             {customerTab === 'home' && (
               <HomeScreen
-                user={user}
                 district={district}
+                user={user}
                 locations={allLocations}
                 technicians={technicians}
                 reviews={reviews}
@@ -1238,7 +1637,6 @@ export default function App() {
                 isDark={theme === 'dark'}
                 favoriteServiceIds={favoriteServiceIds}
                 onToggleFavoriteService={handleToggleFavoriteService}
-                onOpenLocation={() => setIsLocationModalOpen(true)}
                 onSelectDistrict={handleDistrictChange}
                 onSelectCategory={(catId) => {
                   setSelectedCategoryId(catId);
@@ -1261,7 +1659,9 @@ export default function App() {
                   setCustomerTab('categories');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
+                onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
                 onDispatchEmergency={handleSubmitRequest}
+                onAcceptQuote={handleAcceptQuote}
               />
             )}
 
@@ -1309,7 +1709,13 @@ export default function App() {
 
             {customerTab === 'notifications' && (
               <NotificationsScreen
+                role="customer"
                 notifications={visibleNotifications}
+                pushPrefs={pushPrefs}
+                browserPermission={browserPermission}
+                onRequestBrowserPermission={handleRequestBrowserPermission}
+                onUpdatePushPrefs={setPushPrefs}
+                onSimulatePush={handleSimulateCustomerPush}
                 onMarkAllRead={handleMarkAllNotificationsRead}
                 onSelectNotification={handleSelectNotification}
               />
@@ -1330,10 +1736,25 @@ export default function App() {
                 onToggleTheme={() =>
                   setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
                 }
+                pushPrefs={pushPrefs}
+                browserPermission={browserPermission}
+                onUpdatePushPrefs={setPushPrefs}
+                onRequestBrowserPermission={handleRequestBrowserPermission}
                 requests={requests}
+                quotes={quotes}
+                reviews={reviews}
                 loyaltyRedemptions={loyaltyRedemptions}
                 onRedeemPoints={handleRedeemPoints}
                 onUseLoyaltyVoucher={handleUseLoyaltyVoucher}
+                favoriteServiceIds={favoriteServiceIds}
+                onToggleFavoriteService={handleToggleFavoriteService}
+                onRequestService={(service) => handleOpenRequestModal(service)}
+                onBrowseServices={() => {
+                  setSelectedCategoryId('all');
+                  setCatalogSearchQuery('');
+                  setCustomerTab('categories');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
             )}
           </>
@@ -1342,6 +1763,7 @@ export default function App() {
             <>
               {techTab === 'notifications' ? (
                 <NotificationsScreen
+                  role="technician"
                   notifications={visibleNotifications}
                   onMarkAllRead={handleMarkAllNotificationsRead}
                   onSelectNotification={handleSelectNotification}
@@ -1360,6 +1782,7 @@ export default function App() {
                   requests={requests}
                   quotes={quotes}
                   messages={messages}
+                  isDark={theme === 'dark'}
                   onSubmitQuote={handleSubmitQuote}
                   onUpdateJobStatus={handleUpdateJobStatus}
                   onSendMessage={handleSendRequestMessage}
@@ -1372,16 +1795,24 @@ export default function App() {
         )}
       </main>
 
-      <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <BrandWordmark size="sm" />
-          <button
-            type="button"
-            onClick={handleSwitchAccount}
-            className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
-          >
-            تبديل الحساب ({session.role === 'customer' ? 'عميل' : 'فني'})
-          </button>
+      {/* Clean Desktop Footer */}
+      <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto transition-colors">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-4">
+            <BrandWordmark size="sm" />
+            <span>
+              خدمات الدقهلية والمنصورة الجديدة
+            </span>
+          </div>
+          <div className="flex items-center gap-6">
+            <button
+              type="button"
+              onClick={handleSwitchAccount}
+              className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
+            >
+              تبديل الحساب ({session.role === 'customer' ? 'عميل' : 'فني / شركة'})
+            </button>
+          </div>
         </div>
       </footer>
 
@@ -1423,6 +1854,8 @@ export default function App() {
         initialLoyaltyVoucher={initialLoyaltyVoucher}
         warrantyClaimTarget={warrantyClaimTarget}
         district={district}
+        locations={allLocations}
+        onAddCustomLocation={handleAddCustomLocation}
         user={user}
         savedAddresses={addresses}
         customerRequests={requests}
@@ -1437,7 +1870,11 @@ export default function App() {
           setInitialLoyaltyVoucher(null);
         }}
         onSubmitRequest={handleSubmitRequest}
-        onGoToRequests={() => setCustomerTab('requests')}
+        onGoToRequests={() => {
+          setRequestsInitialTab('open');
+          setCustomerTab('requests');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <TechnicianReviewsModal
@@ -1452,7 +1889,24 @@ export default function App() {
         onClose={() => setViewingTechStatsId(null)}
       />
 
+      <SmartPlannerModal
+        isOpen={isSmartPlannerOpen}
+        district={district}
+        user={user}
+        onClose={() => setIsSmartPlannerOpen(false)}
+        onRequestService={handleOpenRequestModal}
+        onRequestBundle={handleRequestBundle}
+      />
+
       <OfflineIndicator />
+
+      {session.role === 'customer' && (
+        <PushNotificationBanner
+          toasts={activePushToasts}
+          onDismiss={handleDismissPushToast}
+          onSelect={handleSelectNotification}
+        />
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 import {
   computeDiscountedPrice,
   computeQuoteMarketComparison,
+  computeTechnicianStats,
   formatEGP,
   getWarrantyCertificateStatus,
   parseWarrantyDaysFromLabel,
@@ -189,11 +190,18 @@ export function SmartQuoteComparisonStrip({
       reviews
     );
     const warrantyDays = parseWarrantyDaysFromLabel(q.warrantyLabel, 0);
+    const techStats = computeTechnicianStats(
+      q.technicianId,
+      reviews,
+      allQuotes,
+      allRequests
+    );
     return {
       quote: q,
       finalPriceEGP: promo.finalPriceEGP,
       savingsPercent: comp.savingsPercent,
       warrantyDays,
+      criteria: techStats.criteriaAverages,
     };
   });
 
@@ -215,14 +223,14 @@ export function SmartQuoteComparisonStrip({
               مقارنة ذكية بين العروض ({quotes.length})
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              مقارنة فورية للسعر بعد الخصم، نسبة التوفير، التقييم، ومدة الضمان
+              السعر بعد الخصم وتقييم الموعد ونظافة العمل والاحترافية
             </p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        {enriched.map(({ quote, finalPriceEGP, savingsPercent, warrantyDays }) => {
+        {enriched.map(({ quote, finalPriceEGP, savingsPercent, warrantyDays, criteria }) => {
           const isCheapest = finalPriceEGP === lowestFinalPrice;
           const isTopRated = quote.technicianRating === highestRating;
           const isLongestWarranty =
@@ -277,15 +285,31 @@ export function SmartQuoteComparisonStrip({
                   )}
                 </div>
 
-                <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-200/70 dark:border-slate-700/70">
-                  <div className="flex items-center justify-between tabular-nums">
-                    <span>التقييم والخبرة:</span>
-                    <span className="inline-flex items-center gap-1 font-bold text-slate-800 dark:text-slate-100">
-                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                      {quote.technicianRating.toFixed(1)} ({quote.technicianCompletedJobs} مهمة)
-                    </span>
+                <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-300 pt-1.5 border-t border-slate-200/70 dark:border-slate-700/70">
+                  <div className="grid grid-cols-3 gap-1 text-center bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-slate-200/70 dark:border-slate-700/70 tabular-nums">
+                    <div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">الموعد</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 inline-flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                        {criteria.punctuality.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">النظافة</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 inline-flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                        {criteria.cleanliness.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">الاحترافية</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 inline-flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                        {criteria.professionalism.toFixed(1)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pt-0.5">
                     <span>الضمان:</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-100">
                       {quote.warrantyLabel || 'ضمان 30 يوماً'}

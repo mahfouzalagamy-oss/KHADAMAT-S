@@ -1,9 +1,11 @@
+import { createServer as createHttpServer } from 'http';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
 async function startServer() {
   const app = express();
+  const httpServer = createHttpServer(app);
   app.use(express.json());
 
   const ai = new GoogleGenAI({
@@ -76,14 +78,17 @@ async function startServer() {
   });
 
   const vite = await createViteServer({
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      ws: { server: httpServer },
+    },
     appType: 'spa',
   });
 
   app.use(vite.middlewares);
 
   const port = Number(process.env.PORT) || 3000;
-  app.listen(port, '0.0.0.0', () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
   });
 }

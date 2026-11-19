@@ -1,34 +1,46 @@
 import {
   Award,
+  BellRing,
   Check,
   ChevronDown,
   Gift,
+  Heart,
   LogOut,
   MapPin,
   Moon,
   Plus,
   Sparkles,
+  Star,
   Sun,
   Tag,
   Trash2,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KHADAMAT_BONUS_POINTS_FOR_RATING,
   KHADAMAT_POINTS_PER_COMPLETED_ORDER,
   LOYALTY_REWARDS,
+  SERVICE_CATEGORIES,
+  SERVICES_CATALOG,
   computeCustomerPointsSummary,
+  computeServiceMarketStats,
   formatEGP,
 } from '../data/khadamatData';
 import {
   LoyaltyRedemption,
   LoyaltyRewardTier,
+  PushPreferences,
   SavedAddress,
+  ServiceItem,
+  ServiceQuote,
   ServiceRequest,
+  TechnicianReview,
   UserProfile,
 } from '../types/khadamat';
+import { BrowserPushPermissionState } from '../utils/pushNotifications';
 import { AndroidApkGuideCard } from './PWAInstallBanner';
+import { ServiceImage } from './ServiceImage';
 
 interface CustomerProfileScreenProps {
   user: UserProfile;
@@ -42,28 +54,34 @@ interface CustomerProfileScreenProps {
   onSwitchAccount: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  pushPrefs?: PushPreferences;
+  browserPermission?: BrowserPushPermissionState;
+  onUpdatePushPrefs?: (next: PushPreferences) => void;
+  onRequestBrowserPermission?: () => Promise<void> | void;
   requests?: ServiceRequest[];
+  quotes?: ServiceQuote[];
+  reviews?: TechnicianReview[];
   loyaltyRedemptions?: LoyaltyRedemption[];
   onRedeemPoints?: (reward: LoyaltyRewardTier) => void;
   onUseLoyaltyVoucher?: (voucher: LoyaltyRedemption) => void;
+  favoriteServiceIds?: string[];
+  onToggleFavoriteService?: (serviceId: string) => void;
+  onRequestService?: (service: ServiceItem) => void;
+  onBrowseServices?: () => void;
 }
 
 const FAQS = [
   {
-    q: 'كيف يتم تحديد السعر؟',
-    a: 'تصف الخدمة ويقدم لك الفنيون عروضهم بالجنيه لتختار الأنسب.',
-  },
-  {
-    q: 'كيف يتم إرسال الطلبات؟',
-    a: 'تصل لفنيي منطقتك أولاً أو الأقرب فالأقرب داخل الدقهلية.',
+    q: 'كيف يتحدد السعر؟',
+    a: 'يرسل لك الفنيون عروضهم لتختار الأنسب.',
   },
   {
     q: 'متى يظهر رقم موبايلي؟',
-    a: 'يظل مخفياً ولا يظهر إلا للفني الذي توافق على عرضه.',
+    a: 'يظهر فقط للفني الذي توافق على عرضه.',
   },
   {
-    q: 'هل يمكنني إضافة منطقة جديدة؟',
-    a: 'نعم، من نافذة اختيار المنطقة اختر «إضافة منطقة جديدة» وأدخل اسمها.',
+    q: 'هل يمكن إضافة منطقة؟',
+    a: 'نعم، من نافذة اختيار المنطقة.',
   },
 ];
 
@@ -79,10 +97,20 @@ export function CustomerProfileScreen({
   onSwitchAccount,
   theme,
   onToggleTheme,
+  pushPrefs,
+  browserPermission = 'default',
+  onUpdatePushPrefs,
+  onRequestBrowserPermission,
   requests = [],
+  quotes = [],
+  reviews = [],
   loyaltyRedemptions = [],
   onRedeemPoints,
   onUseLoyaltyVoucher,
+  favoriteServiceIds = [],
+  onToggleFavoriteService,
+  onRequestService,
+  onBrowseServices,
 }: CustomerProfileScreenProps) {
   const [editName, setEditName] = useState(user.name);
   const [editPhone, setEditPhone] = useState(user.phone);
@@ -93,17 +121,25 @@ export function CustomerProfileScreen({
   const [addrLabel, setAddrLabel] = useState('المنزل');
   const [addrStreet, setAddrStreet] = useState('');
   const [addrBuilding, setAddrBuilding] = useState('');
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const isDark = theme === 'dark';
   const pointsSummary = computeCustomerPointsSummary(requests, loyaltyRedemptions);
   const activeVouchers = loyaltyRedemptions.filter((v) => !v.isUsed);
 
+  const favoriteServices = useMemo(
+    () =>
+      favoriteServiceIds
+        .map((id) => SERVICES_CATALOG.find((s) => s.id === id))
+        .filter((s): s is ServiceItem => Boolean(s)),
+    [favoriteServiceIds]
+  );
+
   const handleRedeem = (reward: LoyaltyRewardTier) => {
     if (!onRedeemPoints || pointsSummary.availablePoints < reward.pointsCost) return;
     onRedeemPoints(reward);
-    setRedeemedNotice(`تم استبدال ${reward.pointsCost} نقطة والحصول على ${reward.title}!`);
-    window.setTimeout(() => setRedeemedNotice(''), 3500);
+    setRedeemedNotice(`تم استبدال ${reward.pointsCost} نقطة (${reward.title})`);
+    window.setTimeout(() => setRedeemedNotice(''), 3000);
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -130,384 +166,305 @@ export function CustomerProfileScreen({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6 pb-14">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50">
-            حسابي وعناويني
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            بيانات التواصل، المظهر الليلي، والعناوين المحفوظة
-          </p>
-        </div>
+    <div className="max-w-4xl mx-auto px-3.5 md:px-6 py-4 md:py-6 space-y-4 pb-12">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50">
+          حسابي
+        </h1>
 
         <button
           type="button"
           onClick={onSwitchAccount}
-          className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition-colors cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 cursor-pointer shrink-0"
         >
-          <LogOut className="w-4 h-4" />
-          <span>تبديل الحساب (عميل / فني)</span>
+          <LogOut className="w-3.5 h-3.5" />
+          <span>تبديل الحساب</span>
         </button>
       </div>
 
-      {/* Khadamat Loyalty Points Progress & Instant Discount Redemption */}
-      <section className="bg-white dark:bg-slate-900 border border-orange-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ff7426] via-[#ea580c] to-[#c2410c] text-white flex items-center justify-center shrink-0 shadow-sm shadow-orange-600/20">
-              <Award className="w-6 h-6" aria-hidden="true" />
+      {/* Loyalty Points */}
+      <section className="bg-white dark:bg-slate-900 border border-orange-200 dark:border-slate-800 rounded-2xl p-4 space-y-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff7426] to-[#c2410c] text-white flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5" aria-hidden="true" />
             </div>
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-50">
-                  نقاط خدمات للولاء والمكافآت
-                </h2>
-                <span className="text-xs font-bold text-[#ea580c] dark:text-orange-400">
-                  · {pointsSummary.tierName}
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed tabular-nums">
-                تكسب +{KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة مع كل طلب مكتمل و+{KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة عند التقييم (كل 100 نقطة = خصم 10 ج.م فوري).
+            <div className="min-w-0">
+              <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-50 truncate">
+                نقاط خدمات · {pointsSummary.tierName}
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                +{KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة/طلب و+{KHADAMAT_BONUS_POINTS_FOR_RATING} للتقييم (100 نقطة = 10 ج.م ولا تنتهي)
               </p>
             </div>
           </div>
 
-          <div className="bg-orange-50/80 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/80 rounded-2xl px-4 py-3 text-right sm:text-left shrink-0">
-            <div className="text-[11px] font-semibold text-orange-800 dark:text-orange-300">
-              رصيدك المتاح للاستبدال
+          <div className="text-left shrink-0">
+            <div className="text-xl font-black text-[#ea580c] dark:text-orange-400 tabular-nums leading-none">
+              {pointsSummary.availablePoints}
             </div>
-            <div className="text-2xl font-black text-[#ea580c] dark:text-orange-400 tabular-nums">
-              {pointsSummary.availablePoints} <span className="text-sm font-bold">نقطة</span>
-            </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-              {pointsSummary.completedOrdersCount} طلب مكتمل · إجمالي {pointsSummary.earnedPoints} نقطة
-            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400">نقطة متاحة</div>
           </div>
         </div>
 
-        {/* Points Progress Bar */}
-        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl p-4 space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="font-bold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#ea580c] dark:text-orange-400 shrink-0" />
-              <span>التقدم نحو المكافأة القادمة: {pointsSummary.nextMilestoneLabel}</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-bold">
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-200">
+              <Sparkles className="w-3 h-3 text-[#ea580c]" />
+              {pointsSummary.nextMilestoneLabel}
             </span>
-            <span className="font-extrabold text-[#ea580c] dark:text-orange-400 tabular-nums">
-              {pointsSummary.pointsToNextMilestone > 0
-                ? `متبقي ${pointsSummary.pointsToNextMilestone} نقطة (${pointsSummary.progressPercent}%)`
-                : 'جاهز لأعلى مكافأة (100%)'}
-            </span>
+            <span className="text-[#ea580c] tabular-nums">{pointsSummary.progressPercent}%</span>
           </div>
-
-          <div
-            className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"
-            role="progressbar"
-            aria-valuenow={pointsSummary.progressPercent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="شريط تقدم نقاط خدمات"
-          >
+          <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-l from-[#ea580c] via-orange-500 to-amber-500 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-l from-[#ea580c] to-amber-500 transition-all"
               style={{ width: `${Math.max(4, pointsSummary.progressPercent)}%` }}
             />
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
-            <span>0 نقطة</span>
-            <span className={pointsSummary.availablePoints >= 100 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}>
-              100 نقطة (10 ج.م)
-            </span>
-            <span className={pointsSummary.availablePoints >= 200 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}>
-              200 نقطة (20 ج.م)
-            </span>
-            <span className={pointsSummary.availablePoints >= 400 ? 'text-emerald-700 dark:text-emerald-400 font-bold' : ''}>
-              400 نقطة (40 ج.م)
-            </span>
-          </div>
-
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2">
-            <span>💡 متى يتجدد الرصيد؟ النقاط لا تنتهي صلاحيتها أبداً وتبقى في حسابك الدائم حتى تستبدلها.</span>
           </div>
         </div>
 
         {redeemedNotice && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
             <Check className="w-4 h-4 shrink-0" />
             <span>{redeemedNotice}</span>
           </div>
         )}
 
-        {/* Active Redeemed Vouchers */}
         {activeVouchers.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>قسائم الخصم المستبدلة والجاهزة للاستخدام ({activeVouchers.length})</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {activeVouchers.map((voucher) => (
-                <div
-                  key={voucher.id}
-                  className="bg-emerald-50/75 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-3 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="text-xs font-extrabold text-emerald-900 dark:text-emerald-200">
-                      {voucher.title}
-                    </div>
-                    <div className="text-[11px] text-emerald-700 dark:text-emerald-400 tabular-nums">
-                      كود {voucher.promoCode} · استُبدل بـ {voucher.pointsSpent} نقطة
-                    </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {activeVouchers.map((voucher) => (
+              <div
+                key={voucher.id}
+                className="bg-emerald-50/75 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-2.5 flex items-center justify-between gap-2"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate">
+                    {voucher.title}
                   </div>
-                  {onUseLoyaltyVoucher && (
-                    <button
-                      type="button"
-                      onClick={() => onUseLoyaltyVoucher(voucher)}
-                      className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer transition-colors"
-                    >
-                      استخدم في طلب الآن
-                    </button>
-                  )}
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    <Tag className="w-3 h-3 inline ml-1" />
+                    {voucher.promoCode}
+                  </div>
                 </div>
-              ))}
-            </div>
+                {onUseLoyaltyVoucher && (
+                  <button
+                    type="button"
+                    onClick={() => onUseLoyaltyVoucher(voucher)}
+                    className="min-h-[36px] px-3 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-bold shrink-0 cursor-pointer"
+                  >
+                    استخدم
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Redeemable Discount Tiers */}
-        <div className="space-y-2.5">
-          <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-            <Gift className="w-3.5 h-3.5 text-[#ea580c] dark:text-orange-400" />
-            <span>استبدال النقاط بخصومات فورية</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {LOYALTY_REWARDS.map((reward) => {
-              const canRedeem = pointsSummary.availablePoints >= reward.pointsCost;
-              const missingPoints = Math.max(
-                0,
-                reward.pointsCost - pointsSummary.availablePoints
-              );
-              return (
-                <div
-                  key={reward.id}
-                  className={`rounded-xl border p-4 flex flex-col justify-between gap-3 transition-colors ${
-                    canRedeem
-                      ? 'border-orange-200 dark:border-orange-800/80 bg-orange-50/40 dark:bg-orange-950/25'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40'
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
-                        {reward.title}
-                      </span>
-                      <span className="text-xs font-bold text-[#ea580c] dark:text-orange-400 tabular-nums shrink-0">
-                        {reward.pointsCost} نقطة
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                      {reward.description}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={!canRedeem || !onRedeemPoints}
-                    onClick={() => handleRedeem(reward)}
-                    className={`w-full min-h-[42px] px-3 py-2 rounded-xl text-xs font-bold transition-colors tabular-nums ${
-                      canRedeem
-                        ? 'bg-[#ea580c] hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 text-white cursor-pointer'
-                        : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {canRedeem
-                      ? `استبدال بخصم ${formatEGP(reward.discountEGP)}`
-                      : `ينقصك ${missingPoints} نقطة`}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Appearance & Dark Mode Toggle Card */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 transition-colors">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5 min-w-0">
-            <div
-              className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                isDark
-                  ? 'bg-orange-950/80 text-orange-300 border border-orange-800/70'
-                  : 'bg-orange-50 text-orange-700 border border-orange-200/70'
-              }`}
-            >
-              {isDark ? (
-                <Moon className="w-5 h-5" aria-hidden="true" />
-              ) : (
-                <Sun className="w-5 h-5" aria-hidden="true" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">
-                  الوضع الداكن (Dark Mode)
-                </h2>
-                <span
-                  className={`text-[11px] font-bold ${
-                    isDark ? 'text-orange-400' : 'text-slate-500 dark:text-slate-400'
-                  }`}
-                >
-                  {isDark ? 'مُفعّل' : 'الوضع الفاتح'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                تبديل ألوان كافة شاشات التطبيق إلى درجات داكنة هادئة لراحة العين في الاستخدام الليلي.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isDark}
-            aria-label="تبديل الوضع الداكن"
-            onClick={onToggleTheme}
-            className="min-h-[44px] min-w-[64px] flex items-center justify-center px-1 rounded-2xl cursor-pointer shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600"
-          >
-            <span
-              dir="ltr"
-              className={`relative inline-flex h-8 w-14 items-center rounded-full border transition-colors duration-200 ${
-                isDark
-                  ? 'bg-orange-600 border-orange-500'
-                  : 'bg-slate-200 border-slate-300'
-              }`}
-            >
-              <span
-                className={`inline-flex h-6 w-6 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                  isDark ? 'translate-x-7' : 'translate-x-1'
+        <div className="grid grid-cols-3 gap-2">
+          {LOYALTY_REWARDS.map((reward) => {
+            const canRedeem = pointsSummary.availablePoints >= reward.pointsCost;
+            return (
+              <button
+                key={reward.id}
+                type="button"
+                disabled={!canRedeem || !onRedeemPoints}
+                onClick={() => handleRedeem(reward)}
+                className={`p-2.5 rounded-xl border text-right transition-colors tabular-nums ${
+                  canRedeem
+                    ? 'border-orange-200 bg-orange-50/60 dark:border-orange-800 dark:bg-orange-950/30 hover:bg-orange-100 cursor-pointer'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 opacity-75 cursor-not-allowed'
                 }`}
               >
-                {isDark ? (
-                  <Moon className="w-3.5 h-3.5 text-orange-600" aria-hidden="true" />
-                ) : (
-                  <Sun className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-                )}
-              </span>
-            </span>
-          </button>
+                <div className="flex items-center gap-1 text-[11px] font-extrabold text-slate-900 dark:text-slate-100">
+                  <Gift className="w-3 h-3 text-[#ea580c] shrink-0" />
+                  <span className="truncate">{formatEGP(reward.discountEGP)}</span>
+                </div>
+                <div className="text-[10px] font-bold text-[#ea580c] dark:text-orange-400 mt-0.5">
+                  {reward.pointsCost} نقطة
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* User Info */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-4">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">بيانات العميل</h2>
-        <form onSubmit={handleSaveProfile} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              الاسم
-            </label>
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-            />
+      {/* Dark Mode Switch */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 flex items-center justify-center shrink-0">
+            {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-              رقم الموبايل
-            </label>
-            <input
-              type="tel"
-              value={editPhone}
-              onChange={(e) => setEditPhone(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-right tabular-nums focus:bg-white dark:focus:bg-slate-800 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+          <div className="text-sm font-bold text-slate-900 dark:text-slate-50">
+            الوضع الداكن
+          </div>
+        </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isDark}
+          aria-label="تبديل الوضع الداكن"
+          onClick={onToggleTheme}
+          className="min-h-[40px] flex items-center cursor-pointer shrink-0"
+        >
+          <span
+            dir="ltr"
+            className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors ${
+              isDark ? 'bg-orange-600 border-orange-500' : 'bg-slate-200 border-slate-300'
+            }`}
+          >
+            <span
+              className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform ${
+                isDark ? 'translate-x-6' : 'translate-x-1'
+              }`}
             />
+          </span>
+        </button>
+      </section>
+
+      {/* Smart Push Notifications Toggle */}
+      {pushPrefs && onUpdatePushPrefs && (
+        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <BellRing className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-slate-900 dark:text-slate-50">
+                إشعارات البوش الذكية
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                تنبيه ملون عند قبول العرض وتحرك الفني والإنهاء
+              </div>
+            </div>
           </div>
 
-          <div className="md:col-span-2 flex items-center justify-between pt-1">
+          <div className="flex items-center gap-2.5 shrink-0">
+            {browserPermission === 'default' && onRequestBrowserPermission && (
+              <button
+                type="button"
+                onClick={() => void onRequestBrowserPermission()}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold cursor-pointer"
+              >
+                تفعيل إشعارات الجهاز
+              </button>
+            )}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={pushPrefs.inAppBannerEnabled}
+              aria-label="تفعيل إشعارات البوش الذكية"
+              onClick={() =>
+                onUpdatePushPrefs({
+                  ...pushPrefs,
+                  inAppBannerEnabled: !pushPrefs.inAppBannerEnabled,
+                })
+              }
+              className="min-h-[40px] flex items-center cursor-pointer"
+            >
+              <span
+                dir="ltr"
+                className={`relative inline-flex h-7 w-12 items-center rounded-full border transition-colors ${
+                  pushPrefs.inAppBannerEnabled
+                    ? 'bg-orange-600 border-orange-500'
+                    : 'bg-slate-200 border-slate-300'
+                }`}
+              >
+                <span
+                  className={`inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-sm transition-transform ${
+                    pushPrefs.inAppBannerEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* User Info */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-50">بيانات العميل</h2>
+        <form onSubmit={handleSaveProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="الاسم"
+            className="w-full h-10 px-3 text-xs md:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] focus:outline-none"
+          />
+          <input
+            type="tel"
+            value={editPhone}
+            onChange={(e) => setEditPhone(e.target.value)}
+            placeholder="الموبايل"
+            className="w-full h-10 px-3 text-xs md:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-right tabular-nums focus:border-[#FF5A00] focus:outline-none"
+          />
+          <div className="sm:col-span-2 flex items-center justify-between">
             <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-              {savedMsg ? 'تم حفظ البيانات بنجاح.' : ''}
+              {savedMsg ? 'تم الحفظ' : ''}
             </span>
             <button
               type="submit"
-              className="px-5 py-2.5 min-h-[44px] bg-[#FF5A00] dark:bg-orange-600 text-white text-xs font-semibold rounded-xl hover:bg-orange-700 dark:hover:bg-orange-500 transition-colors cursor-pointer"
+              className="px-4 py-2 min-h-[40px] bg-[#FF5A00] dark:bg-orange-600 text-white text-xs font-bold rounded-xl hover:bg-orange-700 cursor-pointer"
             >
-              حفظ التعديلات
+              حفظ
             </button>
           </div>
         </form>
       </section>
 
       {/* Saved Addresses */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">
-              العناوين المحفوظة
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              لتعبئة العنوان سريعاً عند الطلب
-            </p>
-          </div>
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-50">العناوين المحفوظة</h2>
           <button
             type="button"
             onClick={() => setShowAddAddress(true)}
-            className="inline-flex items-center gap-1.5 min-h-[42px] px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-700 border border-transparent dark:border-slate-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 min-h-[38px] px-3 py-1.5 bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold rounded-xl cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>إضافة عنوان</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>إضافة</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {addresses.map((addr) => (
             <div
               key={addr.id}
-              className={`p-4 rounded-xl border flex flex-col justify-between gap-3 ${
+              className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${
                 addr.isDefault
                   ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/45 dark:bg-orange-950/30'
-                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'
+                  : 'border-slate-200 dark:border-slate-800'
               }`}
             >
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-slate-100">
-                    <MapPin className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                    {addr.label}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">
-                    {addr.district}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <MapPin className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+                  <span>{addr.label}</span>
+                  <span className="text-[11px] font-normal text-slate-500 truncate">
+                    · {addr.district}
                   </span>
                 </div>
-                <p className="text-xs text-slate-700 dark:text-slate-300 pt-1">
-                  {addr.streetDetails}
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                  {addr.streetDetails} · {addr.buildingFloor}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{addr.buildingFloor}</p>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
-                {addr.isDefault ? (
-                  <span className="font-semibold text-orange-700 dark:text-orange-400">
-                    العنوان الافتراضي
-                  </span>
-                ) : (
+              <div className="flex items-center gap-1 shrink-0">
+                {!addr.isDefault && (
                   <button
                     type="button"
                     onClick={() => onSetDefaultAddress(addr.id)}
-                    className="font-semibold text-slate-700 dark:text-slate-300 hover:text-[#FF5A00] dark:hover:text-orange-400 cursor-pointer"
+                    className="text-[11px] font-bold text-orange-700 dark:text-orange-400 px-2 py-1 cursor-pointer"
                   >
-                    تعيين كافتراضي
+                    افتراضي
                   </button>
                 )}
-
                 <button
                   type="button"
                   onClick={() => onDeleteAddress(addr.id)}
-                  aria-label={`حذف عنوان ${addr.label}`}
-                  className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg cursor-pointer"
+                  aria-label={`حذف ${addr.label}`}
+                  className="p-1.5 text-slate-400 hover:text-red-600 cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -517,30 +474,26 @@ export function CustomerProfileScreen({
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-3">
-        <h2 className="text-base font-bold text-slate-900 dark:text-slate-50">الأسئلة الشائعة</h2>
+      {/* Compact FAQ */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-50">الأسئلة الشائعة</h2>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {FAQS.map((faq, idx) => {
             const open = openFaqIndex === idx;
             return (
-              <div key={faq.q} className="py-3">
+              <div key={faq.q} className="py-1.5">
                 <button
                   type="button"
                   onClick={() => setOpenFaqIndex(open ? null : idx)}
-                  className="w-full flex items-center justify-between gap-4 text-right min-h-[44px] cursor-pointer"
+                  className="w-full flex items-center justify-between gap-3 text-right min-h-[38px] cursor-pointer"
                 >
-                  <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                     {faq.q}
                   </span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${
-                      open ? 'rotate-180' : ''
-                    }`}
-                  />
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
                 {open && (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pt-1 pb-2">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 pb-1.5">
                     {faq.a}
                   </p>
                 )}
@@ -552,90 +505,173 @@ export function CustomerProfileScreen({
 
       <AndroidApkGuideCard />
 
+      {/* Customer-Only Favorite Services Section at Bottom of Profile («خدماتي المفضلة») */}
+      <section
+        id="favorite-services"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 fill-rose-500 text-rose-500 shrink-0" aria-hidden="true" />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-50">
+              الخدمات المفضلة ({favoriteServices.length})
+            </h2>
+          </div>
+          {onBrowseServices && (
+            <button
+              type="button"
+              onClick={onBrowseServices}
+              className="text-xs font-bold text-[#FF5A00] dark:text-orange-400 hover:underline cursor-pointer"
+            >
+              تصفح الخدمات
+            </button>
+          )}
+        </div>
+
+        {favoriteServices.length === 0 ? (
+          <div className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-400">
+            <span>اضغط على أيقونة القلب في أي خدمة لحفظها هنا.</span>
+            {onBrowseServices && (
+              <button
+                type="button"
+                onClick={onBrowseServices}
+                className="px-3 py-1.5 bg-[#FF5A00] text-white text-[11px] font-bold rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                الخدمات
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {favoriteServices.map((service) => {
+              const cat = SERVICE_CATEGORIES.find((c) => c.id === service.categoryId);
+              const marketStats = computeServiceMarketStats(
+                service.title,
+                quotes,
+                requests,
+                reviews
+              );
+
+              return (
+                <article
+                  key={`profile-fav-${service.id}`}
+                  className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col justify-between bg-slate-50/50 dark:bg-slate-800/40"
+                >
+                  <div>
+                    <div className="relative aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <ServiceImage
+                        src={service.imageUrl}
+                        alt={service.title}
+                        iconKey={cat?.iconKey || 'carpentry'}
+                        className="w-full h-full"
+                      />
+                      {onToggleFavoriteService && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleFavoriteService(service.id)}
+                          aria-label={`إزالة ${service.title} من المفضلة`}
+                          className="absolute top-1.5 left-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-rose-50/95 dark:bg-rose-950/90 text-rose-600 cursor-pointer"
+                        >
+                          <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="p-2.5 space-y-0.5">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 tabular-nums">
+                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span>{service.rating}</span>
+                        <span>·</span>
+                        <span className="truncate">{cat?.name}</span>
+                      </div>
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                        {service.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="px-2.5 pb-2.5 flex items-center justify-between gap-1.5">
+                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400 tabular-nums truncate">
+                      {marketStats.lowestOfferEGP !== null
+                        ? `من ${formatEGP(marketStats.lowestOfferEGP)}`
+                        : service.estimatedDuration}
+                    </span>
+                    {onRequestService && (
+                      <button
+                        type="button"
+                        onClick={() => onRequestService(service)}
+                        className="min-h-[32px] px-2.5 py-1 bg-[#FF5A00] text-white text-[11px] font-bold rounded-lg shrink-0 cursor-pointer"
+                      >
+                        اطلب
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* Add Address Modal */}
       {showAddAddress && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-950/60 backdrop-blur-sm p-0 md:p-4"
           role="dialog"
           aria-modal="true"
         >
           <form
             onSubmit={handleSaveAddress}
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-2xl"
+            className="w-full md:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3 shadow-2xl"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50">
-                إضافة عنوان جديد
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">
+                إضافة عنوان
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddAddress(false)}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-slate-500 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  التسمية
-                </label>
-                <input
-                  type="text"
-                  value={addrLabel}
-                  onChange={(e) => setAddrLabel(e.target.value)}
-                  placeholder="مثال: المنزل، العمل، بيت العائلة"
-                  className="w-full h-11 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  المدينة أو القرية
-                </label>
-                <button
-                  type="button"
-                  onClick={onOpenLocation}
-                  className="w-full min-h-[44px] px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl flex items-center justify-between gap-2 text-right cursor-pointer"
-                >
-                  <span className="truncate">{currentDistrict}</span>
-                  <span className="text-xs font-semibold text-[#FF5A00] dark:text-orange-400 shrink-0">
-                    تغيير
-                  </span>
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  اسم الشارع ورقم المنزل
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={addrStreet}
-                  onChange={(e) => setAddrStreet(e.target.value)}
-                  placeholder="مثال: شارع الجمهورية، بجوار المحكمة"
-                  className="w-full h-11 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  الدور ورقم الشقة
-                </label>
-                <input
-                  type="text"
-                  value={addrBuilding}
-                  onChange={(e) => setAddrBuilding(e.target.value)}
-                  placeholder="مثال: الدور الثالث · شقة 5"
-                  className="w-full h-11 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                />
-              </div>
+            <div className="space-y-2.5">
+              <input
+                type="text"
+                value={addrLabel}
+                onChange={(e) => setAddrLabel(e.target.value)}
+                placeholder="التسمية (المنزل، العمل...)"
+                className="w-full h-10 px-3 text-xs md:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl"
+              />
+              <button
+                type="button"
+                onClick={onOpenLocation}
+                className="w-full min-h-[40px] px-3 text-xs md:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl flex items-center justify-between gap-2 text-right cursor-pointer"
+              >
+                <span className="truncate">{currentDistrict}</span>
+                <span className="text-xs font-semibold text-[#FF5A00] shrink-0">تغيير</span>
+              </button>
+              <input
+                type="text"
+                required
+                value={addrStreet}
+                onChange={(e) => setAddrStreet(e.target.value)}
+                placeholder="اسم الشارع ورقم المنزل"
+                className="w-full h-10 px-3 text-xs md:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl"
+              />
+              <input
+                type="text"
+                value={addrBuilding}
+                onChange={(e) => setAddrBuilding(e.target.value)}
+                placeholder="الدور والشقة"
+                className="w-full h-10 px-3 text-xs md:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl"
+              />
             </div>
 
             <button
               type="submit"
-              className="w-full h-12 bg-[#FF5A00] dark:bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 dark:hover:bg-orange-500 transition-colors cursor-pointer"
+              className="w-full h-11 bg-[#FF5A00] dark:bg-orange-600 text-white text-sm font-bold rounded-xl cursor-pointer"
             >
               حفظ العنوان
             </button>

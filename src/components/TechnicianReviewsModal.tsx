@@ -63,61 +63,54 @@ export function TechnicianReviewsModal({
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 md:p-6 space-y-6">
-          {/* Average & Distribution */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-5">
-            <div className="sm:col-span-5 space-y-2">
+          {/* 3-Criteria Performance Summary */}
+          <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-semibold text-orange-700 dark:text-orange-400 inline-flex items-center gap-1">
                 <ShieldCheck className="w-4 h-4" />
-                متوسط التقييم الحقيقي
+                تقييم الأداء الدقيق من العملاء
               </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {stats.averageRating.toFixed(1)}
-                </span>
-                <span className="text-sm text-slate-400 dark:text-slate-500 font-semibold tabular-nums">/ 5.0</span>
-              </div>
-              <div className="flex items-center gap-0.5 text-amber-500">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`w-4 h-4 ${
-                      s <= Math.round(stats.averageRating)
-                        ? 'fill-amber-500 text-amber-500'
-                        : 'text-slate-300 dark:text-slate-600'
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+              <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                 {stats.totalReviews} تقييم · {technician.completedJobs} مهمة مكتملة
-              </p>
+              </span>
             </div>
 
-            <div className="sm:col-span-7 space-y-2">
-              {starLevels.map((star) => {
-                const count = stats.ratingCounts[star];
-                const pct =
-                  stats.totalReviews > 0
-                    ? Math.round((count / stats.totalReviews) * 100)
-                    : 0;
-                return (
-                  <div key={star} className="flex items-center gap-2.5 text-xs">
-                    <span className="w-10 text-slate-700 dark:text-slate-300 font-semibold inline-flex items-center gap-1 tabular-nums">
-                      {star}
-                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                {
+                  label: 'الالتزام بالموعد',
+                  value: stats.criteriaAverages.punctuality,
+                },
+                {
+                  label: 'نظافة العمل',
+                  value: stats.criteriaAverages.cleanliness,
+                },
+                {
+                  label: 'الاحترافية',
+                  value: stats.criteriaAverages.professionalism,
+                },
+              ].map((crit) => (
+                <div
+                  key={crit.label}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {crit.label}
                     </span>
-                    <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#FF5A00] dark:bg-orange-500 rounded-full"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-12 text-left text-slate-500 dark:text-slate-400 tabular-nums">
-                      {count}
+                    <span className="font-extrabold text-slate-900 dark:text-slate-100 tabular-nums inline-flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      {crit.value.toFixed(1)}
                     </span>
                   </div>
-                );
-              })}
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#FF5A00] dark:bg-orange-500 rounded-full"
+                      style={{ width: `${Math.min(100, Math.round((crit.value / 5) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -141,10 +134,21 @@ export function TechnicianReviewsModal({
                           {formatEGP(rev.priceEGP)}
                         </span>
                       )}
-                      <span className="inline-flex items-center gap-0.5 text-amber-500">
-                        {Array.from({ length: rev.rating }).map((_, idx) => (
-                          <Star key={idx} className="w-3.5 h-3.5 fill-amber-500" />
-                        ))}
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 tabular-nums">
+                        {rev.ratingBreakdown ? (
+                          <>
+                            <span>الموعد {rev.ratingBreakdown.punctuality}</span>
+                            <span>·</span>
+                            <span>النظافة {rev.ratingBreakdown.cleanliness}</span>
+                            <span>·</span>
+                            <span>الاحترافية {rev.ratingBreakdown.professionalism}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                            <span>{rev.rating.toFixed(1)}</span>
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>

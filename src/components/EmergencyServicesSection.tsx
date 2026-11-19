@@ -1,290 +1,335 @@
-import { AlertTriangle, Camera, Check, Clock, ShieldCheck, Siren, X } from 'lucide-react';
-import { useState } from 'react';
-import { SERVICES_CATALOG } from '../data/khadamatData';
-import { ServiceItem, ServiceRequest, UserProfile } from '../types/khadamat';
+import { ArrowLeft, Check, MapPin, MessageCircle, Phone, Siren, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  DAKAHLIA_CENTERS,
+  EGYPT_LOCATIONS,
+  findNearestMatchingTechnicians,
+  getLocationMeta,
+} from '../data/dakahliaLocations';
+import {
+  VERIFIED_TECHNICIANS,
+  buildWhatsAppLink,
+  computeTechnicianStats,
+  formatEGP,
+} from '../data/khadamatData';
+import {
+  LocationEntry,
+  ServiceQuote,
+  ServiceRequest,
+  Technician,
+  TechnicianReview,
+  UserProfile,
+} from '../types/khadamat';
 
 interface EmergencyServicesSectionProps {
   district: string;
+  locations?: LocationEntry[];
+  technicians?: Technician[];
   user: UserProfile;
+  requests: ServiceRequest[];
+  quotes?: ServiceQuote[];
+  reviews?: TechnicianReview[];
   onDispatchEmergency: (req: ServiceRequest) => void;
-  onOpenLocation: () => void;
+  onAcceptQuote?: (requestId: string, quoteId: string) => void;
+  onOpenRequests?: (targetTab?: 'open' | 'active' | 'history') => void;
+  compactTile?: boolean;
 }
 
-const EMERGENCY_SCENARIOS = [
-  {
-    id: 'em-leak',
-    title: 'تسريب مياه مفاجئ في الحمام أو المطبخ',
-    subtitle: 'تدخل عاجل لمنع غرق الأرضيات وتلف الحوائط',
-    categoryId: 'plumbing',
-    serviceId: 'plumb-leak',
-    eta: '15 – 25 دقيقة',
-    tips: ['أغلق محبس المياه الرئيسي فوراً', 'افصل الأجهزة الكهربائية المجاورة لمنطقة المياه'],
-  },
-  {
-    id: 'em-elec',
-    title: 'قفلة كهربائية أو شرارة في لوحة التوزيع',
-    subtitle: 'خطر حدوث ماس كهربائي لا قدر الله',
-    categoryId: 'electrical',
-    serviceId: 'elec-panel',
-    eta: '15 – 20 دقيقة',
-    tips: ['افصل القاطع الرئيسي (العمومي)', 'لا تلمس أي أسلاك مكشوفة بأيدي مبتلة'],
-  },
-  {
-    id: 'em-ac',
-    title: 'عطل تكييف طارئ في حر شديد',
-    subtitle: 'توقف تام للاتصال أو خروج دخان أو أصوات حادة',
-    categoryId: 'ac',
-    serviceId: 'ac-freon-full',
-    eta: '20 – 30 دقيقة',
-    tips: ['افصل مفتاح التكييف من لوحة الحائط', 'اترك باب الغرفة مهوى حتى وصول الفني'],
-  },
+const QUICK_EMERGENCIES = [
+  { id: 'em-leak', title: 'تسريب مياه', categoryId: 'plumbing' },
+  { id: 'em-elec', title: 'عطل كهرباء', categoryId: 'electrical' },
+  { id: 'em-ac', title: 'عطل تكييف', categoryId: 'ac' },
+  { id: 'em-gas', title: 'سخان / غاز', categoryId: 'plumbing' },
 ];
 
 export function EmergencyServicesSection({
   district,
+  locations = EGYPT_LOCATIONS,
+  technicians = VERIFIED_TECHNICIANS,
   user,
+  requests,
+  quotes = [],
+  reviews = [],
   onDispatchEmergency,
-  onOpenLocation,
+  onAcceptQuote,
+  onOpenRequests,
+  compactTile = false,
 }: EmergencyServicesSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedScenario, setSelectedScenario] = useState(EMERGENCY_SCENARIOS[0]);
-  const [customNotes, setCustomNotes] = useState('');
-  const [faultPhoto, setFaultPhoto] = useState<string | null>(null);
-  const [addressDetails, setAddressDetails] = useState('');
-  const [isDispatched, setIsDispatched] = useState(false);
-  const [dispatchRef, setDispatchRef] = useState('');
+  const [activeEmergencyReqId, setActiveEmergencyReqId] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>(district);
+  const [selectedCenter, setSelectedCenter] = useState<string>(
+    () => getLocationMeta(district, locations).center
+  );
 
-  const handleDispatch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const centerLocations = useMemo(() => {
+    const matches = locations.filter((l) => l.center === selectedCenter);
+    return matches.length > 0 ? matches : locations.slice(0, 6);
+  }, [locations, selectedCenter]);
+
+  const emergencyProximity = useMemo(
+    () => findNearestMatchingTechnicians('plumbing', selectedDistrict, technicians, locations),
+    [selectedDistrict, technicians, locations]
+  );
+
+  const activeEmergency = requests.find(
+    (r) =>
+      (activeEmergencyReqId ? r.id === activeEmergencyReqId : r.urgency === 'urgent') &&
+      r.status !== 'completed' &&
+      r.status !== 'cancelled'
+  );
+
+  const emergencyQuotes = activeEmergency
+    ? quotes.filter((q) => q.requestId === activeEmergency.id)
+    : [];
+
+  const handleCenterChange = (nextCenter: string) => {
+    setSelectedCenter(nextCenter);
+    const firstArea = locations.find((l) => l.center === nextCenter);
+    if (firstArea) {
+      setSelectedDistrict(firstArea.displayLabel);
+    }
+  };
+
+  const handleQuickDispatch = (item: (typeof QUICK_EMERGENCIES)[0]) => {
     const refCode = `EMG-${Math.floor(10000 + Math.random() * 89999)}`;
-    const matchedService = SERVICES_CATALOG.find((s) => s.id === selectedScenario.serviceId);
-
+    const routing = findNearestMatchingTechnicians(
+      item.categoryId,
+      selectedDistrict,
+      technicians,
+      locations
+    );
     const emergencyReq: ServiceRequest = {
       id: `req-emg-${Date.now()}`,
       referenceCode: refCode,
-      categoryId: selectedScenario.categoryId,
-      categoryName: 'خدمات الطوارئ 24/7',
-      serviceTitle: `[طوارئ 24/7] ${selectedScenario.title}`,
-      detailedDescription: `${customNotes.trim() ? customNotes.trim() : selectedScenario.subtitle} — (نداء طارئ عاجل)`,
-      faultPhotos: faultPhoto ? [faultPhoto] : undefined,
-      district,
-      addressText: addressDetails.trim() || 'العنوان الرئيسي المسجل',
-      preferredDate: 'الآن فوراً (أولوية قصوى)',
-      preferredTime: 'أسرع وقت متاح (خلال 20 دقيقة)',
+      categoryId: item.categoryId,
+      categoryName: 'طوارئ',
+      serviceTitle: `[طوارئ] ${item.title}`,
+      detailedDescription: `طلب طوارئ سريع: ${item.title}`,
+      district: selectedDistrict,
+      addressText: 'العنوان المسجل بالطلب',
+      preferredDate: 'الآن فوراً',
+      preferredTime: 'أسرع وقت',
       urgency: 'urgent',
       customerName: user.name,
       customerPhone: user.phone,
       status: 'open_for_quotes',
       paymentMethod: 'cash',
-      createdAt: 'طارئ الآن',
+      createdAt: 'الآن',
       createdAtTimestamp: Date.now(),
       routingInfo: {
-        matchType: 'exact_area',
-        notifiedCount: 8,
-        nearestCenterName: district,
-        distanceKm: 0,
+        matchType: routing.matchType,
+        notifiedCount: routing.targets.length,
+        nearestCenterName: routing.nearestCenterName,
+        distanceKm: routing.minDistanceKm,
       },
     };
 
     onDispatchEmergency(emergencyReq);
-    setDispatchRef(refCode);
-    setIsDispatched(true);
+    setActiveEmergencyReqId(emergencyReq.id);
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 md:px-6">
-      <div className="bg-gradient-to-l from-rose-600 via-rose-700 to-orange-600 text-white rounded-2xl p-6 md:p-8 shadow-lg shadow-rose-900/20 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-start gap-4 min-w-0">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 animate-pulse">
-            <Siren className="w-7 h-7 text-white" aria-hidden="true" />
-          </div>
-          <div className="space-y-1.5 min-w-0">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/20 text-xs font-bold text-white">
-              <Clock className="w-3.5 h-3.5" />
-              <span>متاح 24 ساعة طوال أيام الأسبوع</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black text-white">
-              خدمات الطوارئ السريعة في الدقهلية
-            </h2>
-            <p className="text-xs md:text-sm text-rose-100 max-w-xl leading-relaxed">
-              تسريب مياه مفاجئ، قفلة كهربائية، أو عطل تكييف حرج؟ اضغط لنداء الفنيين المتاحين فوراً بأولوية قصوى ومسار لحظي.
-            </p>
-          </div>
-        </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setIsModalOpen(true)}
+        className={
+          compactTile
+            ? 'w-full min-h-[54px] px-3 py-2.5 rounded-2xl border border-rose-200 dark:border-rose-900/70 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-800 dark:text-rose-200 flex items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer whitespace-nowrap'
+            : 'min-h-[38px] px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap'
+        }
+      >
+        <Siren className={`w-4 h-4 shrink-0 ${compactTile ? 'text-rose-600 dark:text-rose-400' : ''}`} />
+        <span>خدمة طوارئ</span>
+      </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setIsDispatched(false);
-            setDispatchRef('');
-            setCustomNotes('');
-            setFaultPhoto(null);
-            setIsModalOpen(true);
-          }}
-          className="min-h-[50px] px-6 py-3 bg-white text-rose-700 hover:bg-rose-50 text-sm font-black rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95"
-        >
-          نداء فني طوارئ الآن
-        </button>
-      </div>
-
-      {/* Emergency Modal */}
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-slate-950/70 backdrop-blur-sm p-0 md:p-4"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="emergency-modal-title"
         >
-          <div className="w-full md:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-2xl border border-rose-200 dark:border-rose-900/60 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
-            <div className="md:hidden w-10 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-3 shrink-0" />
+          <div className="w-full md:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-2xl border border-rose-200 dark:border-rose-900 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+            <div className="md:hidden w-10 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 shrink-0" />
 
-            <div className="flex items-center justify-between px-5 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-rose-50/50 dark:bg-rose-950/30">
-              <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-extrabold text-base">
-                <Siren className="w-5 h-5 shrink-0" />
-                <span>نداء فني طوارئ 24/7 (أولوية قصوى)</span>
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-rose-50/60 dark:bg-rose-950/30">
+              <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-sm">
+                <Siren className="w-4 h-4 shrink-0" />
+                <span id="emergency-modal-title">خدمة طوارئ سريعة</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
+                aria-label="إغلاق"
                 className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 md:p-6 overflow-y-auto space-y-5">
-              {isDispatched ? (
-                <div className="text-center py-6 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 mx-auto flex items-center justify-center">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                      تم بث نداء الطوارئ بنجاح! ({dispatchRef})
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                      تم تنبيه الفنيين المتاحين حالياً في {district} بصوت تنبيهي خاص، وجاري تتبع مسار الفني اللحظي على خريطة التطبيق.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-full min-h-[46px] px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-colors cursor-pointer"
-                  >
-                    متابعة الطلب على الخريطة
-                  </button>
+            <div className="p-4 space-y-3.5 overflow-y-auto">
+              {/* Customer Area Picker Inside Emergency Flow */}
+              <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#FF5A00] shrink-0" />
+                    <span>حدد منطقتك لإرسال التنبيه لأقرب الفنيين</span>
+                  </span>
                 </div>
-              ) : (
-                <form onSubmit={handleDispatch} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                      اختر نوع الحالة الطارئة:
-                    </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <select
+                    aria-label="المركز في الدقهلية"
+                    value={selectedCenter}
+                    onChange={(e) => handleCenterChange(e.target.value)}
+                    className="w-full h-10 px-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-[#FF5A00] focus:outline-none"
+                  >
+                    {DAKAHLIA_CENTERS.map((c) => (
+                      <option key={c} value={c}>
+                        مركز {c}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="المنطقة أو الحي"
+                    value={selectedDistrict}
+                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    className="w-full h-10 px-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:border-[#FF5A00] focus:outline-none"
+                  >
+                    {centerLocations.map((loc) => (
+                      <option key={loc.id} value={loc.displayLabel}>
+                        {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-[11px] font-semibold text-orange-700 dark:text-orange-400 tabular-nums">
+                  {emergencyProximity.matchType === 'nearest_center'
+                    ? `سيصل التنبيه لأقرب ${emergencyProximity.targets.length} فنيين في ${emergencyProximity.nearestCenterName} (~${emergencyProximity.minDistanceKm} كم)`
+                    : `سيصل التنبيه فوراً إلى ${emergencyProximity.targets.length} فني/شركة قريبة في ${selectedCenter}`}
+                </p>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                اختر نوع العطل لتنبيه أقرب الفنيين فوراً بدون كتابة:
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {QUICK_EMERGENCIES.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleQuickDispatch(item)}
+                    className="min-h-[46px] px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-right font-bold text-xs text-rose-950 dark:text-rose-200 transition-colors cursor-pointer flex items-center gap-2"
+                  >
+                    <Siren className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span className="truncate">{item.title}</span>
+                  </button>
+                ))}
+              </div>
+
+              {activeEmergency && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/45 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                      تم تنبيه الفنيين (#{activeEmergency.referenceCode})
+                    </span>
+                    {onOpenRequests && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsModalOpen(false);
+                          onOpenRequests(
+                            activeEmergency.status === 'open_for_quotes' ? 'open' : 'active'
+                          );
+                        }}
+                        className="inline-flex items-center gap-1 font-bold text-[#FF5A00] dark:text-orange-400 cursor-pointer"
+                      >
+                        <span>طلباتي</span>
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {emergencyQuotes.length === 0 ? (
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      بانتظار وصول عروض الأسعار من أقرب الفنيين لـ {activeEmergency.district}.
+                    </p>
+                  ) : (
                     <div className="space-y-2">
-                      {EMERGENCY_SCENARIOS.map((sc) => {
-                        const isSelected = selectedScenario.id === sc.id;
+                      {emergencyQuotes.map((quote) => {
+                        const isAccepted = quote.status === 'accepted';
+                        const techStats = computeTechnicianStats(
+                          quote.technicianId,
+                          reviews,
+                          quotes,
+                          requests
+                        );
                         return (
-                          <button
-                            key={sc.id}
-                            type="button"
-                            onClick={() => setSelectedScenario(sc)}
-                            className={`w-full text-right p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
-                              isSelected
-                                ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-500 text-rose-950 dark:text-rose-200'
-                                : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-300 hover:border-rose-300'
-                            }`}
+                          <div
+                            key={quote.id}
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2"
                           >
-                            <AlertTriangle
-                              className={`w-4 h-4 mt-0.5 shrink-0 ${
-                                isSelected ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'
-                              }`}
-                            />
-                            <div className="space-y-0.5 min-w-0">
-                              <div className="text-xs font-bold">{sc.title}</div>
-                              <div className="text-[11px] opacity-80">{sc.subtitle}</div>
-                              <div className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 pt-0.5">
-                                زمن الاستجابة المتوقع: {sc.eta}
+                            <div className="min-w-0 space-y-1">
+                              <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                                {quote.technicianName}
+                              </div>
+                              <div className="text-[11px] font-bold text-[#FF5A00] dark:text-orange-400 tabular-nums">
+                                {formatEGP(quote.priceEGP)} · {quote.estimatedArrival}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+                                <span>الموعد {techStats.criteriaAverages.punctuality.toFixed(1)}</span>
+                                <span>النظافة {techStats.criteriaAverages.cleanliness.toFixed(1)}</span>
+                                <span>الاحترافية {techStats.criteriaAverages.professionalism.toFixed(1)}</span>
                               </div>
                             </div>
-                          </button>
+
+                            {isAccepted ? (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <a
+                                  href={`tel:${quote.technicianPhone}`}
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] font-bold inline-flex items-center gap-1"
+                                >
+                                  <Phone className="w-3.5 h-3.5" />
+                                  <span>اتصال</span>
+                                </a>
+                                <a
+                                  href={buildWhatsAppLink(
+                                    quote.technicianPhone,
+                                    `مرحباً ${quote.technicianName}، بخصوص طلب الطوارئ #${activeEmergency.referenceCode}`
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold inline-flex items-center gap-1"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  <span>واتساب</span>
+                                </a>
+                              </div>
+                            ) : (
+                              onAcceptQuote && (
+                                <button
+                                  type="button"
+                                  onClick={() => onAcceptQuote(activeEmergency.id, quote.id)}
+                                  className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#FF5A00] hover:bg-orange-700 text-white text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>موافق</span>
+                                </button>
+                              )
+                            )}
+                          </div>
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Safety tips */}
-                  <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl p-3.5 space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-                    <div className="font-bold flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span>إرشادات السلامة الفورية:</span>
-                    </div>
-                    <ul className="list-disc list-inside space-y-1 text-[11px] opacity-90">
-                      {selectedScenario.tips.map((t, idx) => (
-                        <li key={idx}>{t}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Address & District */}
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          المنطقة في الدقهلية
-                        </label>
-                        <button
-                          type="button"
-                          onClick={onOpenLocation}
-                          className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
-                        >
-                          تغيير المنطقة
-                        </button>
-                      </div>
-                      <div className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                        📍 {district}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        العنوان التفصيلي ورقم الطابق *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={addressDetails}
-                        onChange={(e) => setAddressDetails(e.target.value)}
-                        placeholder="الشارع، رقم العمارة والدور والشقة"
-                        className="w-full h-11 px-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:border-rose-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        تفاصيل إضافية عن العطل (اختياري)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={customNotes}
-                        onChange={(e) => setCustomNotes(e.target.value)}
-                        placeholder="أي تفاصيل تهم الفني عند وصوله..."
-                        className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:border-rose-500"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full min-h-[48px] px-5 py-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-black rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Siren className="w-4 h-4" />
-                    <span>تأكيد نداء طوارئ فوري الآن</span>
-                  </button>
-                </form>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }

@@ -449,43 +449,38 @@ export function AuthLoginScreen({
         </div>
       )}
 
-      <div className="max-w-5xl w-full mx-auto space-y-4">
+      <div className="max-w-5xl w-full mx-auto space-y-3">
         {/* Top Install Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            منصة خدمات · الدقهلية والمنصورة الجديدة
+            منصة خدمات · الدقهلية
           </div>
           <PWAInstallButton compact />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Editorial Intro Panel - Warm Talabat-inspired Orange */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-[#FF5A00] via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-800 dark:to-slate-900 text-white rounded-2xl p-7 md:p-8 flex flex-col justify-between gap-8 shadow-lg shadow-orange-600/15 border border-orange-500/30">
-            <div className="space-y-4">
-              <BrandWordmark size="lg" variant="inverted" showTagline />
-              <h1 className="text-2xl md:text-3xl font-bold leading-snug text-balance pt-1">
-                اطلب خدمتك في الدقهلية والمنصورة الجديدة
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          {/* Editorial Intro Panel */}
+          <div className="lg:col-span-5 bg-gradient-to-br from-[#FF5A00] via-orange-600 to-orange-700 dark:from-orange-700 dark:via-orange-800 dark:to-slate-900 text-white rounded-2xl p-4 md:p-7 flex flex-col justify-between gap-4 shadow-md border border-orange-500/30">
+            <div className="space-y-2">
+              <BrandWordmark size="md" variant="inverted" />
+              <h1 className="text-lg md:text-2xl font-bold leading-snug text-balance">
+                اطلب فني في الدقهلية بأفضل سعر
               </h1>
-              <p className="text-sm text-orange-50 leading-relaxed">
-                تنبيهات فورية لأقرب الفنيين والشركات مع مؤشر عروض خلال 30 دقيقة وتتبع لحظي لحالة الفني.
-              </p>
             </div>
 
-            <div className="space-y-3 pt-6 border-t border-white/20 text-xs text-orange-50">
-              <div className="flex items-center gap-2.5">
-                <MapPin className="w-4 h-4 shrink-0 text-white" />
-                <span>توجيه تلقائي لأقرب فني في نطاقك</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <KeyRound className="w-4 h-4 shrink-0 text-white" />
-                <span>تحقق OTP مكون من 4 أرقام</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Bell className="w-4 h-4 shrink-0 text-white" />
-                <span className="tabular-nums font-semibold">
-                  {openRequestsCount} طلب مفتوح الآن
-                </span>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t border-white/20 text-[11px] text-orange-50">
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                توجيه لأقرب فني
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                تحقق OTP
+              </span>
+              <span className="inline-flex items-center gap-1 tabular-nums font-semibold">
+                <Bell className="w-3.5 h-3.5 shrink-0" />
+                {openRequestsCount} طلب مفتوح
+              </span>
             </div>
           </div>
 

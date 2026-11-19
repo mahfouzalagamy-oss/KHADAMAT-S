@@ -67,88 +67,50 @@ export function TechnicianStatsScreen({
         </div>
       </div>
 
-      {/* Main Rating Summary & Star Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Average Rating Hero Card */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col justify-between gap-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">متوسط التقييم العام</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700 dark:text-orange-400">
-                <ShieldCheck className="w-4 h-4" />
-                موثق من طلبات مكتملة
-              </span>
-            </div>
-
-            <div className="flex items-baseline gap-3 pt-1">
-              <span className="text-5xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {stats.averageRating.toFixed(1)}
-              </span>
-              <span className="text-base text-slate-400 dark:text-slate-500 font-semibold tabular-nums">
-                / 5.0
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1" aria-label={`التقييم ${stats.averageRating} من 5`}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`w-5 h-5 ${
-                    star <= Math.round(stats.averageRating)
-                      ? 'fill-amber-500 text-amber-500'
-                      : 'text-slate-200 dark:text-slate-700'
-                  }`}
-                />
-              ))}
-              <span className="text-xs text-slate-500 dark:text-slate-400 mr-2 tabular-nums">
-                بناءً على {stats.totalReviews} تقييم من العملاء
-              </span>
-            </div>
+      {/* 3-Criteria Performance Breakdown */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              تقييم الأداء الدقيق (يظهر للعملاء قبل قبول العرض)
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
+              مبني على {stats.totalReviews} تقييم موثق من عملاء الدقهلية
+            </p>
           </div>
-
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-600 dark:text-slate-400">نسبة رضا العملاء (4 و 5 نجوم)</span>
-            <span className="font-bold text-orange-700 dark:text-orange-400 tabular-nums">
-              {stats.positivePercent}%
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700 dark:text-orange-400">
+            <ShieldCheck className="w-4 h-4" />
+            رضا العملاء {stats.positivePercent}%
+          </span>
         </div>
 
-        {/* 5-Level Star Distribution Bars */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">توزيع التقييمات السابقة</h2>
-            <span className="text-xs text-slate-500 dark:text-slate-400">يظهر للعملاء عند استعراض عروضك</span>
-          </div>
-
-          <div className="space-y-3">
-            {starLevels.map((star) => {
-              const count = stats.ratingCounts[star];
-              const pct =
-                stats.totalReviews > 0
-                  ? Math.round((count / stats.totalReviews) * 100)
-                  : 0;
-              return (
-                <div key={star} className="flex items-center gap-3 text-xs">
-                  <div className="w-16 flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300 shrink-0 tabular-nums">
-                    <span>{star}</span>
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  </div>
-
-                  <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#FF5A00] dark:bg-orange-500 rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-
-                  <div className="w-20 text-left text-slate-500 dark:text-slate-400 tabular-nums shrink-0">
-                    {count} ({pct}%)
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { label: 'الالتزام بالموعد', value: stats.criteriaAverages.punctuality },
+            { label: 'نظافة العمل', value: stats.criteriaAverages.cleanliness },
+            { label: 'الاحترافية', value: stats.criteriaAverages.professionalism },
+          ].map((crit) => (
+            <div
+              key={crit.label}
+              className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {crit.label}
+                </span>
+                <span className="text-xl font-extrabold text-[#FF5A00] dark:text-orange-400 tabular-nums inline-flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                  {crit.value.toFixed(1)}
+                </span>
+              </div>
+              <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#FF5A00] dark:bg-orange-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Math.round((crit.value / 5) * 100))}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -253,10 +215,21 @@ export function TechnicianStatsScreen({
                         {formatEGP(item.priceEGP)}
                       </span>
                     )}
-                    <div className="inline-flex items-center gap-0.5 text-amber-500">
-                      {Array.from({ length: item.rating }).map((_, idx) => (
-                        <Star key={idx} className="w-3.5 h-3.5 fill-amber-500" />
-                      ))}
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 tabular-nums">
+                      {item.ratingBreakdown ? (
+                        <>
+                          <span>الموعد {item.ratingBreakdown.punctuality}</span>
+                          <span>·</span>
+                          <span>النظافة {item.ratingBreakdown.cleanliness}</span>
+                          <span>·</span>
+                          <span>الاحترافية {item.ratingBreakdown.professionalism}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          <span>{item.rating.toFixed(1)}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

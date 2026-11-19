@@ -74,6 +74,7 @@ export interface ServiceCategory {
     | 'tanks_garden'
     | 'aluminum_gypsum';
   servicesCount: number;
+  imageUrl?: string;
 }
 
 export interface ServiceItem {
@@ -149,6 +150,7 @@ export interface ServiceQuote {
   notes: string;
   createdAt: string;
   status: QuoteStatus;
+  ratingBreakdown?: RatingBreakdown;
 }
 
 export interface RequestMessage {
@@ -166,6 +168,13 @@ export interface RequestRoutingInfo {
   notifiedCount: number;
   nearestCenterName: string;
   distanceKm: number;
+}
+
+export interface FaultVideoAttachment {
+  url: string;
+  durationSec?: number;
+  mimeType?: string;
+  sizeLabel?: string;
 }
 
 export interface ServiceRequest {
@@ -196,6 +205,7 @@ export interface ServiceRequest {
   warrantyClaimForRef?: string;
   isWarrantyClaim?: boolean;
   faultPhotos?: string[];
+  faultVideos?: FaultVideoAttachment[];
   promoCode?: string;
   discountPercent?: number;
   maxDiscountEGP?: number;
@@ -206,6 +216,7 @@ export interface ServiceRequest {
   bundleTitle?: string;
   acceptedQuoteId?: string;
   rating?: number;
+  ratingBreakdown?: RatingBreakdown;
   review?: string;
   routingInfo?: RequestRoutingInfo;
 }
@@ -241,6 +252,7 @@ export interface AppNotification {
     | 'new_quote'
     | 'quote_accepted'
     | 'tech_en_route'
+    | 'job_in_progress'
     | 'job_completed'
     | 'recurring_generated'
     | 'new_message';
@@ -249,6 +261,17 @@ export interface AppNotification {
   requestId: string;
   createdAt: string;
   isRead: boolean;
+}
+
+export interface PushPreferences {
+  inAppBannerEnabled: boolean;
+  browserPushEnabled: boolean;
+  soundEnabled: boolean;
+  quoteAccepted: boolean;
+  techEnRoute: boolean;
+  jobInProgress: boolean;
+  jobCompleted: boolean;
+  newQuote: boolean;
 }
 
 export interface SavedAddress {
@@ -266,6 +289,12 @@ export interface UserProfile {
   defaultDistrict: string;
 }
 
+export interface RatingBreakdown {
+  punctuality: number; // الالتزام بالموعد
+  cleanliness: number; // نظافة العمل
+  professionalism: number; // الاحترافية
+}
+
 export interface TechnicianReview {
   id: string;
   technicianId: string;
@@ -273,6 +302,7 @@ export interface TechnicianReview {
   area: string;
   serviceTitle: string;
   rating: number;
+  ratingBreakdown?: RatingBreakdown;
   review: string;
   dateLabel: string;
   priceEGP?: number;
