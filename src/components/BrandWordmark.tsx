@@ -23,11 +23,7 @@ export function BrandWordmark({
         : 'w-11 h-11 rounded-[14px]';
 
   const wordmarkTextSize =
-    size === 'sm'
-      ? 'text-[24px]'
-      : size === 'lg'
-        ? 'text-[40px] sm:text-[46px]'
-        : 'text-[30px]';
+    size === 'sm' ? 'text-[24px]' : size === 'lg' ? 'text-[40px] sm:text-[46px]' : 'text-[30px]';
 
   const swoopClass =
     size === 'sm'
@@ -41,10 +37,7 @@ export function BrandWordmark({
   const markStroke = isInverted ? '#ea580c' : '#ffffff';
 
   return (
-    <span
-      className={`inline-flex items-center ${lockupGap} select-none group`}
-      aria-label="خدمات"
-    >
+    <span className={`inline-flex items-center ${lockupGap} select-none group`} aria-label="خدمات">
       {/* Signature Home + Precision Maintenance Emblem */}
       <span
         className={`${iconBoxSize} relative flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 group-hover:scale-[1.04] ${
@@ -78,11 +71,7 @@ export function BrandWordmark({
           {!isInverted && (
             <>
               <rect width="48" height="48" fill={`url(#${gradId})`} />
-              <path
-                d="M0 0H48V18C35 11 16 10 0 17V0Z"
-                fill="#ffffff"
-                fillOpacity="0.14"
-              />
+              <path d="M0 0H48V18C35 11 16 10 0 17V0Z" fill="#ffffff" fillOpacity="0.14" />
             </>
           )}
 
@@ -114,9 +103,7 @@ export function BrandWordmark({
         <span className="relative inline-flex flex-col items-stretch">
           <span
             className={`font-display font-extrabold tracking-tight leading-[1.06] ${wordmarkTextSize} ${
-              isInverted
-                ? 'text-white drop-shadow-sm'
-                : 'text-[#ea580c] dark:text-[#fb923c]'
+              isInverted ? 'text-white drop-shadow-sm' : 'text-[#ea580c] dark:text-[#fb923c]'
             }`}
             style={{
               letterSpacing: '-0.02em',
@@ -142,14 +129,8 @@ export function BrandWordmark({
                 y2="4"
                 gradientUnits="userSpaceOnUse"
               >
-                <stop
-                  offset="0%"
-                  stopColor={isInverted ? '#ffffff' : '#ff5a00'}
-                />
-                <stop
-                  offset="100%"
-                  stopColor={isInverted ? '#fed7aa' : '#fb923c'}
-                />
+                <stop offset="0%" stopColor={isInverted ? '#ffffff' : '#ff5a00'} />
+                <stop offset="100%" stopColor={isInverted ? '#fed7aa' : '#fb923c'} />
               </linearGradient>
             </defs>
             <path
@@ -158,21 +139,14 @@ export function BrandWordmark({
               strokeWidth="3.1"
               strokeLinecap="round"
             />
-            <circle
-              cx="114.5"
-              cy="2.7"
-              r="2.2"
-              fill={isInverted ? '#ffffff' : '#ff5a00'}
-            />
+            <circle cx="114.5" cy="2.7" r="2.2" fill={isInverted ? '#ffffff' : '#ff5a00'} />
           </svg>
         </span>
 
         {showTagline && (
           <span
             className={`text-[11px] font-semibold mt-1.5 flex items-center gap-1.5 ${
-              isInverted
-                ? 'text-orange-100'
-                : 'text-slate-600 dark:text-slate-300'
+              isInverted ? 'text-orange-100' : 'text-slate-600 dark:text-slate-300'
             }`}
           >
             <span>صيانة المنزل الذكية · الدقهلية</span>

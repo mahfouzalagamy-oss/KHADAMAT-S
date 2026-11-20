@@ -1,13 +1,4 @@
-import {
-  Building2,
-  Check,
-  Clock,
-  Scale,
-  ShieldCheck,
-  Star,
-  TrendingDown,
-  X,
-} from 'lucide-react';
+import { Building2, Check, Clock, Scale, ShieldCheck, Star, TrendingDown, X } from 'lucide-react';
 import {
   computeDiscountedPrice,
   computeQuoteMarketComparison,
@@ -15,11 +6,7 @@ import {
   formatEGP,
   parseWarrantyDaysFromLabel,
 } from '../data/khadamatData';
-import {
-  ServiceQuote,
-  ServiceRequest,
-  TechnicianReview,
-} from '../types/khadamat';
+import { ServiceQuote, ServiceRequest, TechnicianReview } from '../types/khadamat';
 
 interface QuoteComparisonMatrixProps {
   request: ServiceRequest;
@@ -69,12 +56,7 @@ export function QuoteComparisonMatrix({
       reviews
     );
     const warrantyDays = parseWarrantyDaysFromLabel(q.warrantyLabel, 0);
-    const techStats = computeTechnicianStats(
-      q.technicianId,
-      reviews,
-      allQuotes,
-      allRequests
-    );
+    const techStats = computeTechnicianStats(q.technicianId, reviews, allQuotes, allRequests);
 
     return {
       quote: q,
@@ -88,17 +70,11 @@ export function QuoteComparisonMatrix({
   });
 
   const minFinalPrice =
-    enriched.length >= 2
-      ? Math.min(...enriched.map((e) => e.finalPriceEGP))
-      : null;
+    enriched.length >= 2 ? Math.min(...enriched.map((e) => e.finalPriceEGP)) : null;
   const maxWarrantyDays =
-    enriched.length >= 2
-      ? Math.max(...enriched.map((e) => e.warrantyDays))
-      : 0;
+    enriched.length >= 2 ? Math.max(...enriched.map((e) => e.warrantyDays)) : 0;
   const maxRating =
-    enriched.length >= 2
-      ? Math.max(...enriched.map((e) => e.quote.technicianRating))
-      : null;
+    enriched.length >= 2 ? Math.max(...enriched.map((e) => e.quote.technicianRating)) : null;
 
   const maxReached = selectedQuotes.length >= 3;
 
@@ -128,9 +104,7 @@ export function QuoteComparisonMatrix({
             {quotes.length > 2 && selectedQuotes.length < Math.min(3, quotes.length) && (
               <button
                 type="button"
-                onClick={() =>
-                  onAutoSelectQuotes(quotes.slice(0, 3).map((q) => q.id))
-                }
+                onClick={() => onAutoSelectQuotes(quotes.slice(0, 3).map((q) => q.id))}
                 className="min-h-[36px] px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-[#FF5A00] text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap cursor-pointer"
               >
                 اختيار أول {Math.min(3, quotes.length)} عروض
@@ -189,9 +163,7 @@ export function QuoteComparisonMatrix({
                 <span className="max-w-[140px] truncate">{q.technicianName}</span>
                 <span
                   className={`tabular-nums text-[11px] ${
-                    isSelected
-                      ? 'text-orange-100'
-                      : 'text-slate-500 dark:text-slate-400'
+                    isSelected ? 'text-orange-100' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   ({formatEGP(discounted.finalPriceEGP)})
@@ -282,8 +254,7 @@ export function QuoteComparisonMatrix({
                 </th>
                 {enriched.map(
                   ({ quote, finalPriceEGP, originalPriceEGP, hasPromo, savingsPercent }) => {
-                    const isCheapest =
-                      minFinalPrice !== null && finalPriceEGP === minFinalPrice;
+                    const isCheapest = minFinalPrice !== null && finalPriceEGP === minFinalPrice;
                     return (
                       <td
                         key={`price-${quote.id}`}
@@ -333,8 +304,7 @@ export function QuoteComparisonMatrix({
                 </th>
                 {enriched.map(({ quote, warrantyDays, finalPriceEGP }) => {
                   const isCheapest = minFinalPrice !== null && finalPriceEGP === minFinalPrice;
-                  const isLongestWarranty =
-                    maxWarrantyDays > 0 && warrantyDays === maxWarrantyDays;
+                  const isLongestWarranty = maxWarrantyDays > 0 && warrantyDays === maxWarrantyDays;
                   return (
                     <td
                       key={`warranty-${quote.id}`}
@@ -371,8 +341,7 @@ export function QuoteComparisonMatrix({
                 </th>
                 {enriched.map(({ quote, techStats, finalPriceEGP }) => {
                   const isCheapest = minFinalPrice !== null && finalPriceEGP === minFinalPrice;
-                  const isTopRated =
-                    maxRating !== null && quote.technicianRating === maxRating;
+                  const isTopRated = maxRating !== null && quote.technicianRating === maxRating;
                   const { criteriaAverages } = techStats;
                   return (
                     <td

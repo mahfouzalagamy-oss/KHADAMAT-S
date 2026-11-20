@@ -62,7 +62,12 @@ interface HomeScreenProps {
   onOpenAllServices: (initialQuery?: string) => void;
   onOpenSmartPlanner: () => void;
   onDispatchEmergency: (req: ServiceRequest) => void;
-  onAcceptQuote?: (requestId: string, quoteId: string) => void;
+  onAcceptQuote?: (
+    requestId: string,
+    quoteId: string,
+    paymentMethod?: string,
+    walletProvider?: string
+  ) => void;
 }
 
 const HOME_TRACKING_STEPS: {
@@ -126,9 +131,7 @@ export function HomeScreen({
       quote_accepted: 2,
       open_for_quotes: 3,
     };
-    return [...active].sort(
-      (a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9)
-    )[0];
+    return [...active].sort((a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9))[0];
   }, [requests]);
 
   const openOffersAlert = useMemo(() => {
@@ -138,9 +141,7 @@ export function HomeScreen({
     let firstReqWithOffers: ServiceRequest | null = null;
 
     for (const req of openReqs) {
-      const reqQuotes = quotes.filter(
-        (q) => q.requestId === req.id && q.status === 'pending'
-      );
+      const reqQuotes = quotes.filter((q) => q.requestId === req.id && q.status === 'pending');
       if (reqQuotes.length > 0) {
         if (!firstReqWithOffers) firstReqWithOffers = req;
         totalOffers += reqQuotes.length;
@@ -201,7 +202,8 @@ export function HomeScreen({
               <div className="min-w-0 space-y-0.5">
                 <div className="text-xs md:text-sm font-extrabold truncate tabular-nums">
                   تنبيه: وصلك {openOffersAlert.totalOffers}{' '}
-                  {openOffersAlert.totalOffers === 1 ? 'عرض سعر' : 'عروض أسعار'} لطلب «{openOffersAlert.firstReqWithOffers.serviceTitle}»
+                  {openOffersAlert.totalOffers === 1 ? 'عرض سعر' : 'عروض أسعار'} لطلب «
+                  {openOffersAlert.firstReqWithOffers.serviceTitle}»
                 </div>
                 <div className="text-[11px] text-orange-100 truncate tabular-nums">
                   {openOffersAlert.lowestOfferPrice !== null
@@ -295,7 +297,9 @@ export function HomeScreen({
                       <div key={stage.id} className="space-y-1">
                         <div
                           className={`h-1 rounded-full ${
-                            isDone ? 'bg-[#FF5A00] dark:bg-orange-500' : 'bg-slate-200 dark:bg-slate-800'
+                            isDone
+                              ? 'bg-[#FF5A00] dark:bg-orange-500'
+                              : 'bg-slate-200 dark:bg-slate-800'
                           }`}
                         />
                         <div
@@ -317,7 +321,9 @@ export function HomeScreen({
         })()}
 
       {/* Compact Mobile-First Hero + Search + Action Tiles */}
-      <section className={`max-w-7xl mx-auto px-3.5 md:px-6 ${activeTrackingRequest || openOffersAlert.totalOffers > 0 ? 'pt-0' : 'pt-3 md:pt-5'}`}>
+      <section
+        className={`max-w-7xl mx-auto px-3.5 md:px-6 ${activeTrackingRequest || openOffersAlert.totalOffers > 0 ? 'pt-0' : 'pt-3 md:pt-5'}`}
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-6 flex flex-col justify-between gap-4">
             <div className="space-y-3">
@@ -534,12 +540,7 @@ export function HomeScreen({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
           {displayedServices.map((service) => {
             const cat = SERVICE_CATEGORIES.find((c) => c.id === service.categoryId);
-            const marketStats = computeServiceMarketStats(
-              service.title,
-              quotes,
-              requests,
-              reviews
-            );
+            const marketStats = computeServiceMarketStats(service.title, quotes, requests, reviews);
             const isFavorite = favoriteServiceIds.includes(service.id);
 
             return (
@@ -560,14 +561,20 @@ export function HomeScreen({
                         type="button"
                         onClick={() => onToggleFavoriteService(service.id)}
                         aria-pressed={isFavorite}
-                        aria-label={isFavorite ? `إزالة ${service.title} من المفضلة` : `إضافة ${service.title} للمفضلة`}
+                        aria-label={
+                          isFavorite
+                            ? `إزالة ${service.title} من المفضلة`
+                            : `إضافة ${service.title} للمفضلة`
+                        }
                         className={`absolute top-2 left-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl border backdrop-blur-sm transition-colors cursor-pointer ${
                           isFavorite
                             ? 'bg-rose-50/95 dark:bg-rose-950/90 border-rose-200 dark:border-rose-800 text-rose-600'
                             : 'bg-white/90 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+                        <Heart
+                          className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`}
+                        />
                       </button>
                     )}
                   </div>

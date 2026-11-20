@@ -16,10 +16,7 @@ interface NotificationStatusIconProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function NotificationStatusIcon({
-  type,
-  size = 'md',
-}: NotificationStatusIconProps) {
+export function NotificationStatusIcon({ type, size = 'md' }: NotificationStatusIconProps) {
   const meta = getNotificationVisualMeta(type);
 
   const boxSizeClass =
@@ -29,8 +26,7 @@ export function NotificationStatusIcon({
         ? 'w-11 h-11 rounded-2xl'
         : 'w-10 h-10 rounded-xl';
 
-  const iconSizeClass =
-    size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-5 h-5' : 'w-4 h-4';
+  const iconSizeClass = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-5 h-5' : 'w-4 h-4';
 
   const renderGlyph = () => {
     switch (type) {

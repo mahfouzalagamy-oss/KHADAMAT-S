@@ -25,16 +25,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  DAKAHLIA_CENTER_COORDS,
-  getLocationMeta,
-  haversineKm,
-} from '../data/dakahliaLocations';
-import {
-  ServiceQuote,
-  ServiceRequest,
-  Technician,
-} from '../types/khadamat';
+import { DAKAHLIA_CENTER_COORDS, getLocationMeta, haversineKm } from '../data/dakahliaLocations';
+import { ServiceQuote, ServiceRequest, Technician } from '../types/khadamat';
 
 export interface LiveTripMetrics {
   originCenter: string;
@@ -70,8 +62,7 @@ function resolveTripEndpoints(
   const customerLoc = getLocationMeta(request.district);
   const tech = technicians.find((t) => t.id === quote?.technicianId);
   const originCenter = tech?.primaryCenter || customerLoc.center || 'المنصورة';
-  const baseTechCoords =
-    DAKAHLIA_CENTER_COORDS[originCenter] || DAKAHLIA_CENTER_COORDS['المنصورة'];
+  const baseTechCoords = DAKAHLIA_CENTER_COORDS[originCenter] || DAKAHLIA_CENTER_COORDS['المنصورة'];
 
   const fracA = deterministicFraction(`${request.id}-dest`);
   const fracB = deterministicFraction(`${request.id}-${quote?.technicianId || 'tech'}`);
@@ -79,7 +70,7 @@ function resolveTripEndpoints(
   // Micro-offset customer pin inside target neighborhood so each order has distinct placement
   const destination: google.maps.LatLngLiteral = {
     lat: Number((customerLoc.lat + (fracA - 0.5) * 0.006).toFixed(6)),
-    lng: Number((customerLoc.lng + ((fracA * 1.7) % 1 - 0.5) * 0.006).toFixed(6)),
+    lng: Number((customerLoc.lng + (((fracA * 1.7) % 1) - 0.5) * 0.006).toFixed(6)),
   };
 
   // Ensure origin & destination always form a realistic street-level route even within the same center
@@ -95,7 +86,7 @@ function resolveTripEndpoints(
       }
     : {
         lat: Number((baseTechCoords.lat + (fracB - 0.5) * 0.005).toFixed(6)),
-        lng: Number((baseTechCoords.lng + ((fracB * 1.3) % 1 - 0.5) * 0.005).toFixed(6)),
+        lng: Number((baseTechCoords.lng + (((fracB * 1.3) % 1) - 0.5) * 0.005).toFixed(6)),
       };
 
   return {
@@ -147,17 +138,13 @@ export function computeLiveTripMetrics(
     };
   }
 
-  const startedAt =
-    request.enRouteStartedAt ?? fallbackAnchorMs ?? nowMs - 2 * 60 * 1000;
+  const startedAt = request.enRouteStartedAt ?? fallbackAnchorMs ?? nowMs - 2 * 60 * 1000;
   const elapsedSeconds = Math.max(0, (nowMs - startedAt) / 1000);
   const expectedTripSeconds = Math.max(240, Math.round(totalDistanceKm * 135));
   const rawProgress = 0.22 + (elapsedSeconds / expectedTripSeconds) * 0.72;
   const progress = Math.min(0.94, Math.max(0.22, rawProgress));
 
-  const remainingKm = Math.max(
-    0.2,
-    Number((totalDistanceKm * (1 - progress)).toFixed(1))
-  );
+  const remainingKm = Math.max(0.2, Number((totalDistanceKm * (1 - progress)).toFixed(1)));
   const etaMinutes = Math.max(1, Math.ceil(remainingKm * 2.4));
 
   const arrivalDate = new Date(nowMs + etaMinutes * 60 * 1000);
@@ -323,11 +310,13 @@ function RouteAndMarkersLayer({
     basePolylinesRef.current.forEach((p) => p.setMap(null));
     basePolylinesRef.current = [];
 
-    const routeClass = (routesLib as unknown as {
-      Route?: {
-        computeRoutes: (req: Record<string, unknown>) => Promise<{ routes?: unknown[] }>;
-      };
-    }).Route;
+    const routeClass = (
+      routesLib as unknown as {
+        Route?: {
+          computeRoutes: (req: Record<string, unknown>) => Promise<{ routes?: unknown[] }>;
+        };
+      }
+    ).Route;
 
     if (!routeClass?.computeRoutes) {
       setComputedPath(fallbackPath);
@@ -360,12 +349,10 @@ function RouteAndMarkersLayer({
           return;
         }
 
-        const rawPoints: google.maps.LatLngLiteral[] = (primaryRoute.path || []).map(
-          (pt) => ({
-            lat: typeof pt.lat === 'function' ? pt.lat() : (pt as unknown as number),
-            lng: typeof pt.lng === 'function' ? pt.lng() : (pt as unknown as number),
-          })
-        );
+        const rawPoints: google.maps.LatLngLiteral[] = (primaryRoute.path || []).map((pt) => ({
+          lat: typeof pt.lat === 'function' ? pt.lat() : (pt as unknown as number),
+          lng: typeof pt.lng === 'function' ? pt.lng() : (pt as unknown as number),
+        }));
 
         const resolvedPath = rawPoints.length >= 2 ? rawPoints : fallbackPath;
         setComputedPath(resolvedPath);
@@ -379,8 +366,8 @@ function RouteAndMarkersLayer({
                   ? '#34d399'
                   : '#059669'
                 : isDark
-                ? '#475569'
-                : '#94a3b8',
+                  ? '#475569'
+                  : '#94a3b8',
               strokeOpacity: isInProgress ? 0.5 : 0.72,
               strokeWeight: 5,
             });
@@ -492,8 +479,8 @@ function RouteAndMarkersLayer({
             ? '#10b981'
             : '#059669'
           : isDark
-          ? '#fb923c'
-          : '#FF5A00',
+            ? '#fb923c'
+            : '#FF5A00',
         strokeOpacity: 0.95,
         strokeWeight: 5.5,
         zIndex: 12,
@@ -629,22 +616,14 @@ function RouteAndMarkersLayer({
                 : 'bg-[#FF5A00] ring-4 ring-orange-500/35'
             }`}
           >
-            {isInProgress ? (
-              <Wrench className="w-4 h-4" />
-            ) : (
-              <Navigation className="w-4 h-4" />
-            )}
+            {isInProgress ? <Wrench className="w-4 h-4" /> : <Navigation className="w-4 h-4" />}
           </div>
         </div>
       </AdvancedMarker>
 
       {/* Interactive InfoWindow for Customer Pin */}
       {activeInfo === 'customer' && customerMarker && (
-        <InfoWindow
-          anchor={customerMarker}
-          maxWidth={250}
-          onCloseClick={() => setActiveInfo(null)}
-        >
+        <InfoWindow anchor={customerMarker} maxWidth={250} onCloseClick={() => setActiveInfo(null)}>
           <div dir="rtl" className="p-1 text-right space-y-1 text-slate-900">
             <div className="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
               <Home className="w-3.5 h-3.5 shrink-0" />
@@ -652,9 +631,7 @@ function RouteAndMarkersLayer({
             </div>
             <div className="text-xs font-bold">{destinationArea}</div>
             {request.addressText && (
-              <div className="text-[11px] text-slate-600 leading-snug">
-                {request.addressText}
-              </div>
+              <div className="text-[11px] text-slate-600 leading-snug">{request.addressText}</div>
             )}
             <div className="text-[10px] font-semibold text-slate-500 pt-0.5">
               طلب #{request.referenceCode}
@@ -665,11 +642,7 @@ function RouteAndMarkersLayer({
 
       {/* Interactive InfoWindow for Technician Pin */}
       {activeInfo === 'tech' && techMarker && (
-        <InfoWindow
-          anchor={techMarker}
-          maxWidth={270}
-          onCloseClick={() => setActiveInfo(null)}
-        >
+        <InfoWindow anchor={techMarker} maxWidth={270} onCloseClick={() => setActiveInfo(null)}>
           <div dir="rtl" className="p-1 text-right space-y-2 text-slate-900">
             <div className="space-y-0.5">
               <div className="text-xs font-extrabold text-slate-900 flex items-center gap-1">
@@ -839,14 +812,7 @@ export function LiveTechnicianRouteMap({
   );
 
   const baseTrip = useMemo(
-    () =>
-      computeLiveTripMetrics(
-        request,
-        quote,
-        technicians,
-        nowMs,
-        fallbackAnchorMs
-      ),
+    () => computeLiveTripMetrics(request, quote, technicians, nowMs, fallbackAnchorMs),
     [request, quote, technicians, nowMs, fallbackAnchorMs]
   );
 
@@ -857,8 +823,8 @@ export function LiveTechnicianRouteMap({
   const etaMinutes = isInProgress
     ? 0
     : realRouteMetrics
-    ? Math.max(1, Math.ceil(realRouteMetrics.durationMinutes * (1 - baseTrip.progress)))
-    : baseTrip.etaMinutes;
+      ? Math.max(1, Math.ceil(realRouteMetrics.durationMinutes * (1 - baseTrip.progress)))
+      : baseTrip.etaMinutes;
 
   const techProfile = technicians.find((t) => t.id === quote.technicianId);
   const techPhone = techProfile?.phone || '01012345678';
@@ -895,9 +861,7 @@ export function LiveTechnicianRouteMap({
         <div className="flex items-start gap-3 min-w-0">
           <div
             className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shrink-0 ${
-              isInProgress
-                ? 'bg-amber-600 dark:bg-amber-500'
-                : 'bg-[#FF5A00] dark:bg-orange-600'
+              isInProgress ? 'bg-amber-600 dark:bg-amber-500' : 'bg-[#FF5A00] dark:bg-orange-600'
             }`}
           >
             {isInProgress ? (
@@ -933,8 +897,8 @@ export function LiveTechnicianRouteMap({
                   ? `موقع تنفيذ خدمة «${request.serviceTitle}» في ${endpoints.destinationArea}`
                   : `مسارك إلى موقع العميل في ${endpoints.destinationArea}`
                 : isInProgress
-                ? `${quote.technicianName} متواجد الآن في موقعك وينفذ «${request.serviceTitle}»`
-                : `${quote.technicianName} في طريقه من ${endpoints.originCenter} إلى موقعك في ${endpoints.destinationArea}`}
+                  ? `${quote.technicianName} متواجد الآن في موقعك وينفذ «${request.serviceTitle}»`
+                  : `${quote.technicianName} في طريقه من ${endpoints.originCenter} إلى موقعك في ${endpoints.destinationArea}`}
             </p>
           </div>
         </div>
@@ -1027,7 +991,8 @@ export function LiveTechnicianRouteMap({
                 مفتاح خرائط جوجل غير مفعّل في البيئة الحالية
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                يمكنك متابعة مسار الفني مباشرة بين {endpoints.originCenter} و{endpoints.destinationArea}.
+                يمكنك متابعة مسار الفني مباشرة بين {endpoints.originCenter} و
+                {endpoints.destinationArea}.
               </p>
             </div>
             <a
@@ -1115,8 +1080,7 @@ export function LiveTechnicianRouteMap({
             </div>
           ) : (
             <div className="text-base font-extrabold text-orange-700 dark:text-orange-400 tabular-nums">
-              {etaMinutes}{' '}
-              {etaMinutes <= 10 && etaMinutes >= 3 ? 'دقائق' : 'دقيقة'}{' '}
+              {etaMinutes} {etaMinutes <= 10 && etaMinutes >= 3 ? 'دقائق' : 'دقيقة'}{' '}
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                 (الساعة {baseTrip.arrivalTimeLabel})
               </span>

@@ -33,11 +33,7 @@ import {
   ZoomIn,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  DAKAHLIA_CENTERS,
-  EGYPT_LOCATIONS,
-  getLocationMeta,
-} from '../data/dakahliaLocations';
+import { DAKAHLIA_CENTERS, EGYPT_LOCATIONS, getLocationMeta } from '../data/dakahliaLocations';
 import {
   SERVICE_CATEGORIES,
   SERVICES_CATALOG,
@@ -276,8 +272,8 @@ export function RequestServiceModal({
     warrantyClaimTarget
       ? `طلب إعادة فحص مجاني مشمول بشهادة الضمان رقم WR-${warrantyClaimTarget.originalRequest.referenceCode} (${warrantyClaimTarget.warrantyDays} يوماً)${warrantyClaimTarget.technicianName ? ` — المنفذ: ${warrantyClaimTarget.technicianName}` : ''}.\nتفاصيل الملاحظة الجديدة: `
       : initialBundle
-      ? `${initialBundle.title}: ${initialBundle.includedTasks.join(' + ')}`
-      : ''
+        ? `${initialBundle.title}: ${initialBundle.includedTasks.join(' + ')}`
+        : ''
   );
   const [faultPhotos, setFaultPhotos] = useState<string[]>([]);
   const [faultVideos, setFaultVideos] = useState<FaultVideoAttachment[]>([]);
@@ -305,16 +301,15 @@ export function RequestServiceModal({
   const osVideoInputRef = useRef<HTMLInputElement | null>(null);
 
   const startingCode = initialBundle?.promoCode || initialPromoCode || '';
-  const initialPromoRes = startingCode
-    ? validatePromoCode(startingCode, defaultCatId)
-    : null;
+  const initialPromoRes = startingCode ? validatePromoCode(startingCode, defaultCatId) : null;
 
   const [promoInput, setPromoInput] = useState<string>(startingCode);
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(
     initialPromoRes && initialPromoRes.valid ? initialPromoRes.promo : null
   );
-  const [selectedLoyaltyVoucher, setSelectedLoyaltyVoucher] =
-    useState<LoyaltyRedemption | null>(initialLoyaltyVoucher);
+  const [selectedLoyaltyVoucher, setSelectedLoyaltyVoucher] = useState<LoyaltyRedemption | null>(
+    initialLoyaltyVoucher
+  );
   const [promoFeedback, setPromoFeedback] = useState<string>('');
 
   const [isAnalyzingFault, setIsAnalyzingFault] = useState(false);
@@ -356,9 +351,7 @@ export function RequestServiceModal({
 
   const [preferredDate, setPreferredDate] = useState<string>(DATE_OPTIONS[0]);
   const [preferredTime, setPreferredTime] = useState<string>(TIME_WINDOWS[2]);
-  const [urgency, setUrgency] = useState<RequestUrgency>(
-    warrantyClaimTarget ? 'urgent' : 'normal'
-  );
+  const [urgency, setUrgency] = useState<RequestUrgency>(warrantyClaimTarget ? 'urgent' : 'normal');
 
   const defaultAddr = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
   const initialSelectedDistrict =
@@ -376,11 +369,8 @@ export function RequestServiceModal({
   const [customerPhone, setCustomerPhone] = useState<string>(user.phone);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [walletProvider, setWalletProvider] = useState<string>(WALLET_PROVIDERS[0]);
-  const [recurrenceFrequency, setRecurrenceFrequency] =
-    useState<RecurrenceFrequency>('none');
-  const [recurrenceStartDate, setRecurrenceStartDate] = useState<string>(
-    getTodayISO()
-  );
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>('none');
+  const [recurrenceStartDate, setRecurrenceStartDate] = useState<string>(getTodayISO());
   const [addedHintIds, setAddedHintIds] = useState<string[]>([]);
   const [switchedHintNotice, setSwitchedHintNotice] = useState<{
     title: string;
@@ -392,7 +382,7 @@ export function RequestServiceModal({
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(initialWizardStep);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [createdRef, setCreatedRef] = useState<string | null>(null);
-  const [submittedRouting, setSubmittedRouting] = useState<RoutingPreview | null>(null);
+  const [_submittedRouting, _setSubmittedRouting] = useState<RoutingPreview | null>(null);
 
   const prevDistrictPropRef = useRef(district);
   useEffect(() => {
@@ -496,8 +486,14 @@ export function RequestServiceModal({
     setPhotoFallbackAvailable(false);
 
     const fileArr = Array.from(files);
-    const imageFiles = fileArr.filter((f) => f.type.startsWith('image/') || (!f.type.startsWith('video/') && /\.(jpe?g|png|webp|heic)$/i.test(f.name)));
-    const videoFiles = fileArr.filter((f) => f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|3gp)$/i.test(f.name));
+    const imageFiles = fileArr.filter(
+      (f) =>
+        f.type.startsWith('image/') ||
+        (!f.type.startsWith('video/') && /\.(jpe?g|png|webp|heic)$/i.test(f.name))
+    );
+    const videoFiles = fileArr.filter(
+      (f) => f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|3gp)$/i.test(f.name)
+    );
 
     const remainingPhotos = MAX_FAULT_PHOTOS - faultPhotos.length;
     const remainingVideos = MAX_FAULT_VIDEOS - faultVideos.length;
@@ -515,9 +511,7 @@ export function RequestServiceModal({
     try {
       if (imageFiles.length > 0 && remainingPhotos > 0) {
         const pickedImages = imageFiles.slice(0, remainingPhotos);
-        const compressed = await Promise.all(
-          pickedImages.map((f) => compressImageToDataUrl(f))
-        );
+        const compressed = await Promise.all(pickedImages.map((f) => compressImageToDataUrl(f)));
         setFaultPhotos((prev) => [...prev, ...compressed].slice(0, MAX_FAULT_PHOTOS));
       }
 
@@ -763,7 +757,7 @@ export function RequestServiceModal({
     const codeToTry = overrideCode ?? promoInput;
     if (overrideCode !== undefined) setPromoInput(overrideCode);
     const result = validatePromoCode(codeToTry, categoryId);
-    if (!result.valid) {
+    if (result.valid === false) {
       setAppliedPromo(null);
       setPromoFeedback(result.error);
       return;
@@ -869,8 +863,7 @@ export function RequestServiceModal({
     setErrorMsg('');
     const refCode = `KH-${Math.floor(91000 + Math.random() * 8900)}`;
 
-    const isFutureStart =
-      recurrenceFrequency !== 'none' && recurrenceStartDate > getTodayISO();
+    const isFutureStart = recurrenceFrequency !== 'none' && recurrenceStartDate > getTodayISO();
 
     const newReq: ServiceRequest = {
       id: `req-${Date.now()}`,
@@ -898,10 +891,8 @@ export function RequestServiceModal({
       status: 'open_for_quotes',
       paymentMethod,
       walletProvider: paymentMethod === 'wallet' ? walletProvider : undefined,
-      recurrenceFrequency:
-        recurrenceFrequency !== 'none' ? recurrenceFrequency : undefined,
-      recurrenceCycleNumber:
-        recurrenceFrequency !== 'none' && !isFutureStart ? 1 : undefined,
+      recurrenceFrequency: recurrenceFrequency !== 'none' ? recurrenceFrequency : undefined,
+      recurrenceCycleNumber: recurrenceFrequency !== 'none' && !isFutureStart ? 1 : undefined,
       createdAt: 'الآن',
       createdAtTimestamp: Date.now(),
       warrantyClaimForRef: warrantyClaimTarget?.originalRequest.referenceCode,
@@ -920,7 +911,7 @@ export function RequestServiceModal({
         ? { frequency: recurrenceFrequency, startDateISO: recurrenceStartDate }
         : undefined
     );
-    setSubmittedRouting(routingPreview);
+    _setSubmittedRouting(routingPreview);
     setCreatedRef(refCode);
   };
 
@@ -947,10 +938,11 @@ export function RequestServiceModal({
         {/* Header */}
         <div className="flex items-center justify-between px-4 md:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div>
-            <h2 id="request-modal-title" className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100">
-              {createdRef
-                ? 'تم بث طلبك للفنيين'
-                : `طلب خدمة · خطوة ${wizardStep} من 4`}
+            <h2
+              id="request-modal-title"
+              className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100"
+            >
+              {createdRef ? 'تم بث طلبك للفنيين' : `طلب خدمة · خطوة ${wizardStep} من 4`}
             </h2>
             {!createdRef && (
               <p className="text-[11px] md:text-xs text-orange-700 dark:text-orange-400 mt-0.5 tabular-nums font-medium">
@@ -1060,8 +1052,7 @@ export function RequestServiceModal({
               {(faultPhotos.length > 0 || faultVideos.length > 0) && (
                 <div className="space-y-1.5 pt-1">
                   <div className="text-slate-600 dark:text-slate-300 tabular-nums font-semibold">
-                    تم إرفاق{' '}
-                    {faultPhotos.length > 0 ? `${faultPhotos.length} صورة` : ''}
+                    تم إرفاق {faultPhotos.length > 0 ? `${faultPhotos.length} صورة` : ''}
                     {faultPhotos.length > 0 && faultVideos.length > 0 ? ' و' : ''}
                     {faultVideos.length > 0 ? 'فيديو قصير للعطل' : ''} للفني
                   </div>
@@ -1097,7 +1088,8 @@ export function RequestServiceModal({
                 <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
                   <Tag className="w-3.5 h-3.5 shrink-0" />
                   <span>
-                    كود الخصم المطبق: {appliedPromo.code} ({appliedPromo.discountPercent}% حتى {appliedPromo.maxDiscountEGP} ج.م)
+                    كود الخصم المطبق: {appliedPromo.code} ({appliedPromo.discountPercent}% حتى{' '}
+                    {appliedPromo.maxDiscountEGP} ج.م)
                   </span>
                 </div>
               )}
@@ -1105,7 +1097,8 @@ export function RequestServiceModal({
                 <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
                   <Gift className="w-3.5 h-3.5 shrink-0" />
                   <span>
-                    قسيمة نقاط خدمات المطبقة: خصم فوري {selectedLoyaltyVoucher.discountEGP} ج.م ({selectedLoyaltyVoucher.promoCode})
+                    قسيمة نقاط خدمات المطبقة: خصم فوري {selectedLoyaltyVoucher.discountEGP} ج.م (
+                    {selectedLoyaltyVoucher.promoCode})
                   </span>
                 </div>
               )}
@@ -1127,18 +1120,13 @@ export function RequestServiceModal({
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-start gap-2 font-semibold text-orange-800 dark:text-orange-300">
                   <Repeat className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
-                    <div>
-                      تكرار الطلب: {getRecurrenceLabel(recurrenceFrequency)}
-                    </div>
+                    <div>تكرار الطلب: {getRecurrenceLabel(recurrenceFrequency)}</div>
                     <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 tabular-nums">
                       الموعد التلقائي القادم:{' '}
                       {formatArabicDateLabel(
                         recurrenceStartDate > getTodayISO()
                           ? recurrenceStartDate
-                          : addRecurrenceIntervalISO(
-                              recurrenceStartDate,
-                              recurrenceFrequency
-                            )
+                          : addRecurrenceIntervalISO(recurrenceStartDate, recurrenceFrequency)
                       )}
                     </div>
                   </div>
@@ -1169,1300 +1157,1348 @@ export function RequestServiceModal({
         ) : (
           <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
             <div className="overflow-y-auto flex-1 p-4 md:p-6 space-y-4">
-            {/* Active Warranty Claim Banner */}
-            {warrantyClaimTarget && (
-              <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-start justify-between gap-3">
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>
-                      طلب إعادة فحص مجاني مشمول بالضمان · WR-{warrantyClaimTarget.originalRequest.referenceCode}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Selected Seasonal Bundle Banner */}
-            {initialBundle && (
-              <div className="bg-orange-50/80 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-xl p-3 flex items-start justify-between gap-3">
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-orange-800 dark:text-orange-300">
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>{initialBundle.title} · كود {initialBundle.promoCode}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                    {initialBundle.estimatedSavingsLabel}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 1: Category & Service Picker */}
-            {wizardStep === 1 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                    1. اختر التخصص المطلوب
-                  </label>
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                    {SERVICE_CATEGORIES.map((cat) => {
-                      const isCatActive = cat.id === categoryId;
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => {
-                            setCategoryId(cat.id);
-                            const firstInCat = SERVICES_CATALOG.find((s) => s.categoryId === cat.id);
-                            setServiceTitle(firstInCat?.title || '');
-                          }}
-                          className={`min-h-[42px] pl-3 pr-1.5 py-1 rounded-xl border text-xs font-bold inline-flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
-                            isCatActive
-                              ? 'bg-[#FF5A00] dark:bg-orange-600 text-white border-[#FF5A00]'
-                              : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-orange-400'
-                          }`}
-                        >
-                          <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-700">
-                            <ServiceImage
-                              src={cat.imageUrl}
-                              alt={cat.name}
-                              iconKey={cat.iconKey}
-                              className="w-full h-full"
-                            />
-                          </div>
-                          <span>{cat.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                    2. حدد نوع الخدمة ({selectedCategory?.name})
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {categoryServices.map((srv) => {
-                      const isPicked = activeServiceTitle === srv.title;
-                      return (
-                        <button
-                          key={srv.id}
-                          type="button"
-                          onClick={() => setServiceTitle(srv.title)}
-                          className={`p-2.5 rounded-xl border text-right flex items-center gap-3 transition-colors cursor-pointer ${
-                            isPicked
-                              ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/55'
-                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/70 hover:border-orange-300'
-                          }`}
-                        >
-                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
-                            <ServiceImage
-                              src={srv.imageUrl}
-                              alt={srv.title}
-                              iconKey={selectedCategory?.iconKey || 'carpentry'}
-                              className="w-full h-full"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0 space-y-0.5">
-                            <div className="flex items-center justify-between gap-1">
-                              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                                {srv.title}
-                              </span>
-                              {isPicked && (
-                                <Check className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                              {srv.summary}
-                            </p>
-                            <div className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 tabular-nums">
-                              المدة {srv.estimatedDuration} · ضمان {srv.warrantyDays} يوم
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-
-                    <button
-                      type="button"
-                      onClick={() => setServiceTitle('خدمة مخصصة أخرى في هذا القسم')}
-                      className={`p-3 rounded-xl border text-right flex items-center gap-3 transition-colors cursor-pointer ${
-                        serviceTitle === 'خدمة مخصصة أخرى في هذا القسم'
-                          ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/55'
-                          : 'border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:border-orange-400'
-                      }`}
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <Wrench className="w-5 h-5 text-[#FF5A00] dark:text-orange-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                          عطل آخر في {selectedCategory?.name}
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                          اشرحه في الخطوة التالية ليصل للفنيين
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {selectedServiceObj && (
-                  <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-1.5">
-                    <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">ما يغطيه التخصص:</div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
-                      {selectedServiceObj.included.map((item) => (
-                        <span key={item} className="inline-flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                          {item}
-                        </span>
-                      ))}
+              {/* Active Warranty Claim Banner */}
+              {warrantyClaimTarget && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-start justify-between gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span>
+                        طلب إعادة فحص مجاني مشمول بالضمان · WR-
+                        {warrantyClaimTarget.originalRequest.referenceCode}
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* STEP 2: Problem Description, Media & AI Fault Analyzer */}
-            {wizardStep === 2 && (
-              <div className="space-y-4">
-                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                    الخدمة المختارة: {activeServiceTitle || selectedCategory?.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setWizardStep(1)}
-                    className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
-                  >
-                    تغيير
-                  </button>
                 </div>
+              )}
 
-                {/* Quick Symptom Tags */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                    اختيارات سريعة (اضغط للإضافة لوصف العطل):
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {QUICK_ISSUE_CHIPS.map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() =>
-                          setDetailedDescription((prev) => {
-                            const clean = prev.trim();
-                            if (clean.includes(chip)) return prev;
-                            return clean ? `${clean} — ${chip}` : `${activeServiceTitle}: ${chip}`;
-                          })
-                        }
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#FF5A00] text-[11px] font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
-                      >
-                        + {chip}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-            {/* Smart Hints */}
-            {(smartHints.length > 0 || switchedHintNotice) && (
-              <div className="bg-orange-50/60 dark:bg-orange-950/35 border border-orange-200/80 dark:border-orange-800/70 rounded-xl p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-orange-950 dark:text-orange-200">
-                    <Lightbulb className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" aria-hidden="true" />
-                    <span>تلميحات ذكية مقترحة لك</span>
-                  </div>
-                  <span className="text-[11px] text-orange-700 dark:text-orange-300">
-                    حسب اختيارك وسجل طلباتك
-                  </span>
-                </div>
-
-                {switchedHintNotice && (
-                  <div className="bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-xs">
-                    <span className="text-slate-800 dark:text-slate-200 font-medium">
-                      تم تجهيز الطلب لخدمة «{switchedHintNotice.title}»
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryId(switchedHintNotice.prevCategoryId);
-                        setServiceTitle(switchedHintNotice.prevServiceTitle);
-                        setSwitchedHintNotice(null);
-                      }}
-                      className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
-                    >
-                      <Undo2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>تراجع</span>
-                    </button>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  {smartHints.map((hint) => {
-                    const isAdded = addedHintIds.includes(hint.id);
-                    return (
-                      <div
-                        key={hint.id}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
-                      >
-                        <div className="min-w-0 space-y-0.5">
-                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                            {hint.service.title}
-                          </div>
-                          <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                            {hint.reason}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleToggleHintInNotes(hint.id, hint.noteAddition)
-                            }
-                            aria-pressed={isAdded}
-                            className={`min-h-[40px] px-3 py-1.5 text-[11px] font-semibold rounded-lg border inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer ${
-                              isAdded
-                                ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
-                                : 'bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-[#FF5A00] dark:hover:border-orange-500'
-                            }`}
-                          >
-                            {isAdded ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                                <span>تمت الإضافة للملاحظات</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                                <span>أضف لملاحظات الطلب</span>
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleRequestHintNow(hint.service)}
-                            className="min-h-[40px] px-3 py-1.5 text-[11px] font-bold rounded-lg bg-[#FF5A00] text-white hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer"
-                          >
-                            <span>اطلبها فوراً</span>
-                            <ArrowUpLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Detailed Description */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                وصف الخدمة المطلوبة *
-              </label>
-              <textarea
-                rows={3}
-                required
-                value={detailedDescription}
-                onChange={(e) => setDetailedDescription(e.target.value)}
-                placeholder="اكتب تفاصيل المشكلة أو نوع الجهاز..."
-                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none leading-relaxed"
-              />
-            </div>
-
-            {/* AI Fault Analysis Chatbot Assistant (Gemini 3.5 Flash Lite) */}
-            <div className="bg-gradient-to-l from-orange-50/80 via-white to-orange-50/40 dark:from-orange-950/40 dark:via-slate-900 dark:to-slate-900 border border-orange-200 dark:border-orange-800/80 rounded-xl p-4 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#FF5A00] text-white flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                      الشات بوت الذكي لتحليل العطل وقطع الغيار (Gemini 3.5 Flash Lite)
-                    </h4>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      اكتب وصف المشكلة واضغط التحليل لاقتراح القسم وقطع الغيار وتوجيهك فوراً
+              {/* Selected Seasonal Bundle Banner */}
+              {initialBundle && (
+                <div className="bg-orange-50/80 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 rounded-xl p-3 flex items-start justify-between gap-3">
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-orange-800 dark:text-orange-300">
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                      <span>
+                        {initialBundle.title} · كود {initialBundle.promoCode}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                      {initialBundle.estimatedSavingsLabel}
                     </p>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  disabled={isAnalyzingFault}
-                  onClick={handleAnalyzeFaultWithAI}
-                  className="min-h-[40px] px-4 py-2 bg-[#FF5A00] hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 disabled:opacity-50 inline-flex items-center gap-1.5"
-                >
-                  {isAnalyzingFault ? (
-                    <>
-                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>جاري التحليل...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>تحليل العطل بالذكاء الاصطناعي</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {aiAnalysisError && (
-                <p className="text-xs text-rose-700 dark:text-rose-400 font-semibold">{aiAnalysisError}</p>
               )}
 
-              {aiFaultAnalysis && (
-                <div className="bg-white dark:bg-slate-900 border border-orange-200/80 dark:border-orange-800/80 rounded-xl p-3.5 space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between gap-2 text-orange-800 dark:text-orange-300 font-bold border-b border-slate-100 dark:border-slate-800 pb-2">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>نتيجة تحليل الشات بوت الذكي:</span>
-                    </span>
-                    {aiFaultAnalysis.suggestedServiceTitle && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setServiceTitle(aiFaultAnalysis.suggestedServiceTitle || serviceTitle);
-                          if (aiFaultAnalysis.suggestedCategoryId) {
-                            setCategoryId(aiFaultAnalysis.suggestedCategoryId);
-                          }
-                        }}
-                        className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-                      >
-                        تطبيق التوجيه السريع: {aiFaultAnalysis.suggestedServiceTitle}
-                      </button>
-                    )}
+              {/* STEP 1: Category & Service Picker */}
+              {wizardStep === 1 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      1. اختر التخصص المطلوب
+                    </label>
+                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                      {SERVICE_CATEGORIES.map((cat) => {
+                        const isCatActive = cat.id === categoryId;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setCategoryId(cat.id);
+                              const firstInCat = SERVICES_CATALOG.find(
+                                (s) => s.categoryId === cat.id
+                              );
+                              setServiceTitle(firstInCat?.title || '');
+                            }}
+                            className={`min-h-[42px] pl-3 pr-1.5 py-1 rounded-xl border text-xs font-bold inline-flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                              isCatActive
+                                ? 'bg-[#FF5A00] dark:bg-orange-600 text-white border-[#FF5A00]'
+                                : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                            }`}
+                          >
+                            <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 bg-slate-200 dark:bg-slate-700">
+                              <ServiceImage
+                                src={cat.imageUrl}
+                                alt={cat.name}
+                                iconKey={cat.iconKey}
+                                className="w-full h-full"
+                              />
+                            </div>
+                            <span>{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                    {aiFaultAnalysis.analysisText}
-                  </p>
-
-                  {aiFaultAnalysis.spareParts && aiFaultAnalysis.spareParts.length > 0 && (
-                    <div className="space-y-1 pt-1">
-                      <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                        قطع الغيار المحتملة المطلوبة:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {aiFaultAnalysis.spareParts.map((part, pIdx) => (
-                          <span
-                            key={pIdx}
-                            className="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/70 text-orange-800 dark:text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      2. حدد نوع الخدمة ({selectedCategory?.name})
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {categoryServices.map((srv) => {
+                        const isPicked = activeServiceTitle === srv.title;
+                        return (
+                          <button
+                            key={srv.id}
+                            type="button"
+                            onClick={() => setServiceTitle(srv.title)}
+                            className={`p-2.5 rounded-xl border text-right flex items-center gap-3 transition-colors cursor-pointer ${
+                              isPicked
+                                ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/55'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/70 hover:border-orange-300'
+                            }`}
                           >
-                            {part}
+                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
+                              <ServiceImage
+                                src={srv.imageUrl}
+                                alt={srv.title}
+                                iconKey={selectedCategory?.iconKey || 'carpentry'}
+                                className="w-full h-full"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-0.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                                  {srv.title}
+                                </span>
+                                {isPicked && (
+                                  <Check className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                                {srv.summary}
+                              </p>
+                              <div className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 tabular-nums">
+                                المدة {srv.estimatedDuration} · ضمان {srv.warrantyDays} يوم
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        type="button"
+                        onClick={() => setServiceTitle('خدمة مخصصة أخرى في هذا القسم')}
+                        className={`p-3 rounded-xl border text-right flex items-center gap-3 transition-colors cursor-pointer ${
+                          serviceTitle === 'خدمة مخصصة أخرى في هذا القسم'
+                            ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/55'
+                            : 'border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:border-orange-400'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                          <Wrench className="w-5 h-5 text-[#FF5A00] dark:text-orange-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            عطل آخر في {selectedCategory?.name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            اشرحه في الخطوة التالية ليصل للفنيين
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {selectedServiceObj && (
+                    <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-1.5">
+                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        ما يغطيه التخصص:
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                        {selectedServiceObj.included.map((item) => (
+                          <span key={item} className="inline-flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                            {item}
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {aiFaultAnalysis.advice && (
-                    <div className="bg-slate-50 dark:bg-slate-800/70 rounded-lg p-2.5 text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                      <strong>نصيحة فنية تحضيرية:</strong> {aiFaultAnalysis.advice}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Fault Photos & Short Video Attachment */}
-            <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                  <span>صور أو فيديو للعطل (اختياري)</span>
-                </label>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums font-medium">
-                  {faultPhotos.length}/{MAX_FAULT_PHOTOS} صور · {faultVideos.length}/{MAX_FAULT_VIDEOS} فيديو (حتى {MAX_VIDEO_DURATION_SEC}ث)
-                </span>
-              </div>
-
-              {/* Hidden OS camera capture inputs for mobile lens & video */}
-              <input
-                ref={osCameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                disabled={isCompressingPhotos}
-                className="hidden"
-                onChange={(e) => {
-                  void handleMediaSelect(e.target.files);
-                  e.currentTarget.value = '';
-                }}
-              />
-              <input
-                ref={osVideoInputRef}
-                type="file"
-                accept="video/*"
-                capture="environment"
-                disabled={isCompressingPhotos}
-                className="hidden"
-                onChange={(e) => {
-                  void handleMediaSelect(e.target.files);
-                  e.currentTarget.value = '';
-                }}
-              />
-
-              {/* Attached Photos & Video Thumbnails */}
-              {(faultPhotos.length > 0 || faultVideos.length > 0) && (
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {faultVideos.map((vid, idx) => (
-                    <div
-                      key={`fault-vid-${idx}`}
-                      className="relative w-28 h-20 rounded-xl overflow-hidden border border-orange-300 dark:border-orange-700 bg-slate-900 shrink-0 group"
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPreviewMedia({
-                            kind: 'video',
-                            url: vid.url,
-                            label: `فيديو العطل${vid.durationSec ? ` (${formatDurationBadge(vid.durationSec)})` : ''}`,
-                          })
-                        }
-                        aria-label="تشغيل فيديو العطل المرفق"
-                        className="w-full h-full block cursor-pointer"
-                      >
-                        <video
-                          src={vid.url}
-                          muted
-                          playsInline
-                          preload="metadata"
-                          className="w-full h-full object-cover opacity-85"
-                        />
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="w-8 h-8 rounded-full bg-slate-950/75 text-white flex items-center justify-center">
-                            <Play className="w-4 h-4 fill-white" />
-                          </span>
-                        </span>
-                        <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/80 text-white text-[10px] font-bold tabular-nums">
-                          {vid.durationSec ? formatDurationBadge(vid.durationSec) : 'فيديو'}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFaultVideos((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        aria-label="حذف فيديو العطل"
-                        className="absolute top-1 left-1 w-7 h-7 rounded-lg bg-slate-950/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {faultPhotos.map((src, idx) => (
-                    <div
-                      key={`${idx}-${src.slice(0, 24)}`}
-                      className="relative w-24 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 group"
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPreviewMedia({
-                            kind: 'image',
-                            url: src,
-                            label: `صورة العطل (${idx + 1} من ${faultPhotos.length})`,
-                          })
-                        }
-                        aria-label={`معاينة صورة العطل ${idx + 1}`}
-                        className="w-full h-full block cursor-pointer"
-                      >
-                        <img
-                          src={src}
-                          alt={`صورة العطل ${idx + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-slate-950/70 text-white flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity">
-                          <ZoomIn className="w-3.5 h-3.5" />
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFaultPhotos((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        aria-label={`حذف صورة العطل ${idx + 1}`}
-                        className="absolute top-1 left-1 w-7 h-7 rounded-lg bg-slate-950/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
                 </div>
               )}
 
-              {/* Live Camera Viewfinder (Photo + Short Video Recording) */}
-              {isCameraOpen ? (
-                <div className="rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-950 space-y-0">
-                  <div className="relative w-full aspect-[4/3] max-h-64 bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                    />
-                    {isRecordingVideo && (
-                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-red-600 text-white text-xs font-bold tabular-nums inline-flex items-center gap-1.5">
-                        <Video className="w-3.5 h-3.5 shrink-0" />
-                        <span>
-                          جاري التسجيل {formatDurationBadge(recordingSeconds)} / {formatDurationBadge(MAX_VIDEO_DURATION_SEC)}
-                        </span>
-                      </div>
-                    )}
-                    {isCameraLoading && (
-                      <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center text-xs font-semibold text-white">
-                        جاري تشغيل الكاميرا...
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-slate-900 flex flex-wrap items-center justify-between gap-2">
-                    {isRecordingVideo ? (
-                      <button
-                        type="button"
-                        onClick={stopVideoRecording}
-                        className="flex-1 min-h-[44px] px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-2 transition-colors cursor-pointer tabular-nums"
-                      >
-                        <Square className="w-4 h-4 fill-white shrink-0" />
-                        <span>إيقاف وحفظ الفيديو ({formatDurationBadge(recordingSeconds)})</span>
-                      </button>
-                    ) : (
-                      <>
-                        {faultPhotos.length < MAX_FAULT_PHOTOS && (
-                          <button
-                            type="button"
-                            disabled={isCameraLoading}
-                            onClick={captureFrameFromCamera}
-                            className="flex-1 min-w-[125px] min-h-[44px] px-3.5 py-2 bg-[#FF5A00] hover:bg-orange-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Camera className="w-4 h-4 shrink-0" />
-                            <span>التقاط صورة</span>
-                          </button>
-                        )}
-                        {faultVideos.length < MAX_FAULT_VIDEOS && canRecordLiveVideo && (
-                          <button
-                            type="button"
-                            disabled={isCameraLoading}
-                            onClick={startVideoRecording}
-                            className="flex-1 min-w-[130px] min-h-[44px] px-3.5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <Video className="w-4 h-4 shrink-0" />
-                            <span>تسجيل فيديو ({MAX_VIDEO_DURATION_SEC}ث)</span>
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={isCameraLoading}
-                          onClick={() =>
-                            void openLiveCamera(
-                              cameraFacingMode === 'environment' ? 'user' : 'environment'
-                            )
-                          }
-                          className="min-h-[44px] px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <SwitchCamera className="w-4 h-4 shrink-0" />
-                          <span>تبديل</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={closeLiveCamera}
-                          className="min-h-[44px] px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-                        >
-                          إلغاء
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                (faultPhotos.length < MAX_FAULT_PHOTOS || faultVideos.length < MAX_FAULT_VIDEOS) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* STEP 2: Problem Description, Media & AI Fault Analyzer */}
+              {wizardStep === 2 && (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                      الخدمة المختارة: {activeServiceTitle || selectedCategory?.name}
+                    </span>
                     <button
                       type="button"
-                      disabled={isCompressingPhotos}
-                      onClick={() => void openLiveCamera()}
-                      className="min-h-[48px] px-3 py-2 rounded-xl border border-[#FF5A00]/40 dark:border-orange-500/50 bg-orange-50/75 dark:bg-orange-950/40 hover:bg-orange-100/80 dark:hover:bg-orange-900/50 text-orange-900 dark:text-orange-200 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                      onClick={() => setWizardStep(1)}
+                      className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
                     >
-                      <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                      <span>تصوير بالكاميرا</span>
+                      تغيير
                     </button>
-
-                    {faultVideos.length < MAX_FAULT_VIDEOS && (
-                      <button
-                        type="button"
-                        disabled={isCompressingPhotos}
-                        onClick={() => osVideoInputRef.current?.click()}
-                        className="min-h-[48px] px-3 py-2 rounded-xl border border-rose-300/70 dark:border-rose-700/70 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 text-rose-900 dark:text-rose-200 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60 whitespace-nowrap"
-                      >
-                        <Video className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                        <span>فيديو سريع للعطل</span>
-                      </button>
-                    )}
-
-                    <label className="min-h-[48px] px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 hover:border-[#FF5A00] dark:hover:border-orange-500 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap">
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        multiple
-                        disabled={isCompressingPhotos}
-                        className="hidden"
-                        onChange={(e) => {
-                          void handleMediaSelect(e.target.files);
-                          e.currentTarget.value = '';
-                        }}
-                      />
-                      <ImagePlus className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                      <span>
-                        {isCompressingPhotos ? 'جاري المعالجة...' : 'رفع صورة / فيديو'}
-                      </span>
-                    </label>
                   </div>
-                )
-              )}
 
-              {photoError && (
-                <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-red-700 dark:text-red-300">{photoError}</p>
-                  {photoFallbackAvailable && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => osCameraInputRef.current?.click()}
-                        className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#FF5A00] hover:bg-orange-600 text-white text-xs font-bold cursor-pointer shrink-0"
-                      >
-                        صورة بكاميرا الجهاز
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => osVideoInputRef.current?.click()}
-                        className="min-h-[36px] px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shrink-0"
-                      >
-                        فيديو بكاميرا الجهاز
-                      </button>
+                  {/* Quick Symptom Tags */}
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      اختيارات سريعة (اضغط للإضافة لوصف العطل):
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-              </div>
-            )}
-
-            {/* STEP 3: Location, Schedule, Payment & Contact */}
-            {wizardStep === 3 && (
-              <div className="space-y-4">
-                {/* Location & Address */}
-                <div className="space-y-3">
-                  <div className="bg-orange-50/60 dark:bg-orange-950/35 border border-orange-200/80 dark:border-orange-800/70 rounded-2xl p-3.5 space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                        <span>اختر المنطقة (لإرسال التنبيه لأقرب الفنيين)</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={onOpenLocation}
-                        className="text-[11px] font-bold text-[#FF5A00] dark:text-orange-400 hover:underline inline-flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <span>تحديد من الخريطة</span>
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                          المركز / المدينة
-                        </label>
-                        <select
-                          value={selectedCenter}
-                          onChange={(e) => {
-                            const nextCenter = e.target.value;
-                            setSelectedCenter(nextCenter);
-                            const firstLoc = locations.find((l) => l.center === nextCenter);
-                            if (firstLoc) {
-                              setSelectedDistrict(firstLoc.displayLabel);
-                            }
-                          }}
-                          className="w-full h-11 px-3 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                        >
-                          {DAKAHLIA_CENTERS.map((c) => (
-                            <option key={c} value={c}>
-                              مركز {c}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                          المنطقة / الحي / القرية
-                        </label>
-                        <select
-                          value={
-                            centerAreaOptions.some((l) => l.displayLabel === selectedDistrict)
-                              ? selectedDistrict
-                              : centerAreaOptions[0]?.displayLabel || selectedDistrict
-                          }
-                          onChange={(e) => setSelectedDistrict(e.target.value)}
-                          className="w-full h-11 px-3 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                        >
-                          {centerAreaOptions.map((loc) => (
-                            <option key={loc.id} value={loc.displayLabel}>
-                              {loc.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
-                      <span className="text-[11px] font-bold text-orange-800 dark:text-orange-300 inline-flex items-center gap-1.5 tabular-nums">
-                        <Bell className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                        <span>{describeRouting(routingPreview)}</span>
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomAreaBox((prev) => !prev)}
-                        className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-[#FF5A00] cursor-pointer inline-flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>{showCustomAreaBox ? 'إغلاق' : 'منطقة أخرى'}</span>
-                      </button>
-                    </div>
-
-                    {showCustomAreaBox && (
-                      <div className="flex gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={customAreaInput}
-                          onChange={(e) => setCustomAreaInput(e.target.value)}
-                          placeholder={`اكتب اسم الحي أو القرية داخل ${selectedCenter}...`}
-                          className="flex-1 h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:border-[#FF5A00] focus:outline-none"
-                        />
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_ISSUE_CHIPS.map((chip) => (
                         <button
+                          key={chip}
                           type="button"
-                          onClick={() => {
-                            const clean = customAreaInput.trim();
-                            if (clean.length < 2) return;
-                            const created = onAddCustomLocation?.(selectedCenter, clean);
-                            if (created) {
-                              setSelectedDistrict(created.displayLabel);
-                            } else {
-                              setSelectedDistrict(`الدقهلية · ${selectedCenter} - ${clean}`);
-                            }
-                            setCustomAreaInput('');
-                            setShowCustomAreaBox(false);
-                          }}
-                          className="min-h-[40px] px-3.5 text-xs font-bold text-white bg-[#FF5A00] rounded-xl hover:bg-orange-700 cursor-pointer shrink-0"
+                          onClick={() =>
+                            setDetailedDescription((prev) => {
+                              const clean = prev.trim();
+                              if (clean.includes(chip)) return prev;
+                              return clean
+                                ? `${clean} — ${chip}`
+                                : `${activeServiceTitle}: ${chip}`;
+                            })
+                          }
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#FF5A00] text-[11px] font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
                         >
-                          تأكيد
+                          + {chip}
                         </button>
-                      </div>
-                    )}
+                      ))}
+                    </div>
                   </div>
 
-                  {savedAddresses.length > 0 && (
-                    <div className="space-y-1.5">
-                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
-                        عناوينك المحفوظة (اختر بضغطة واحدة):
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {savedAddresses.map((addr) => {
-                          const composed = `${addr.streetDetails}${addr.buildingFloor ? ` · ${addr.buildingFloor}` : ''}`;
-                          const isCurrent = addressText.trim() === composed.trim();
+                  {/* Smart Hints */}
+                  {(smartHints.length > 0 || switchedHintNotice) && (
+                    <div className="bg-orange-50/60 dark:bg-orange-950/35 border border-orange-200/80 dark:border-orange-800/70 rounded-xl p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-orange-950 dark:text-orange-200">
+                          <Lightbulb
+                            className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span>تلميحات ذكية مقترحة لك</span>
+                        </div>
+                        <span className="text-[11px] text-orange-700 dark:text-orange-300">
+                          حسب اختيارك وسجل طلباتك
+                        </span>
+                      </div>
+
+                      {switchedHintNotice && (
+                        <div className="bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-800 rounded-lg px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                          <span className="text-slate-800 dark:text-slate-200 font-medium">
+                            تم تجهيز الطلب لخدمة «{switchedHintNotice.title}»
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCategoryId(switchedHintNotice.prevCategoryId);
+                              setServiceTitle(switchedHintNotice.prevServiceTitle);
+                              setSwitchedHintNotice(null);
+                            }}
+                            className="inline-flex items-center gap-1 text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
+                          >
+                            <Undo2 className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>تراجع</span>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        {smartHints.map((hint) => {
+                          const isAdded = addedHintIds.includes(hint.id);
                           return (
-                            <button
-                              key={addr.id}
-                              type="button"
-                              onClick={() => {
-                                setAddressText(composed);
-                                if (addr.district) {
-                                  setSelectedDistrict(addr.district);
-                                  setSelectedCenter(getLocationMeta(addr.district, locations).center);
-                                }
-                              }}
-                              className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
-                                isCurrent
-                                  ? 'bg-[#FF5A00] text-white border-[#FF5A00]'
-                                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-orange-400'
-                              }`}
+                            <div
+                              key={hint.id}
+                              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                             >
-                              <MapPin className="w-3.5 h-3.5 shrink-0" />
-                              <span>{addr.label}</span>
-                            </button>
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                                  {hint.service.title}
+                                </div>
+                                <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                                  {hint.reason}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleToggleHintInNotes(hint.id, hint.noteAddition)
+                                  }
+                                  aria-pressed={isAdded}
+                                  className={`min-h-[40px] px-3 py-1.5 text-[11px] font-semibold rounded-lg border inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer ${
+                                    isAdded
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                                      : 'bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-[#FF5A00] dark:hover:border-orange-500'
+                                  }`}
+                                >
+                                  {isAdded ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                      <span>تمت الإضافة للملاحظات</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                      <span>أضف لملاحظات الطلب</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRequestHintNow(hint.service)}
+                                  className="min-h-[40px] px-3 py-1.5 text-[11px] font-bold rounded-lg bg-[#FF5A00] text-white hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 inline-flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer"
+                                >
+                                  <span>اطلبها فوراً</span>
+                                  <ArrowUpLeft
+                                    className="w-3.5 h-3.5 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
                     </div>
                   )}
 
+                  {/* Detailed Description */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                      العنوان التفصيلي *
+                      وصف الخدمة المطلوبة *
                     </label>
-                    <input
-                      type="text"
-                      value={addressText}
-                      onChange={(e) => setAddressText(e.target.value)}
-                      placeholder="الشارع، رقم العمارة، الدور والشقة"
-                      className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                    <textarea
+                      rows={3}
+                      required
+                      value={detailedDescription}
+                      onChange={(e) => setDetailedDescription(e.target.value)}
+                      placeholder="اكتب تفاصيل المشكلة أو نوع الجهاز..."
+                      className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none leading-relaxed"
                     />
                   </div>
-                </div>
 
-                {/* Phone + Privacy */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
-                    <span>رقم الموبايل *</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="01012345678"
-                    className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-right tabular-nums focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                  />
-                  <div className="flex items-center gap-2 text-xs text-orange-700 dark:text-orange-400">
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>
-                      رقمك مخفي تماماً حتى توافق على أحد العروض.
-                    </span>
+                  {/* AI Fault Analysis Chatbot Assistant (Gemini 3.5 Flash Lite) */}
+                  <div className="bg-gradient-to-l from-orange-50/80 via-white to-orange-50/40 dark:from-orange-950/40 dark:via-slate-900 dark:to-slate-900 border border-orange-200 dark:border-orange-800/80 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-[#FF5A00] text-white flex items-center justify-center shrink-0">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            الشات بوت الذكي لتحليل العطل وقطع الغيار (Gemini 3.5 Flash Lite)
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            اكتب وصف المشكلة واضغط التحليل لاقتراح القسم وقطع الغيار وتوجيهك فوراً
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isAnalyzingFault}
+                        onClick={handleAnalyzeFaultWithAI}
+                        className="min-h-[40px] px-4 py-2 bg-[#FF5A00] hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shrink-0 disabled:opacity-50 inline-flex items-center gap-1.5"
+                      >
+                        {isAnalyzingFault ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>جاري التحليل...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>تحليل العطل بالذكاء الاصطناعي</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {aiAnalysisError && (
+                      <p className="text-xs text-rose-700 dark:text-rose-400 font-semibold">
+                        {aiAnalysisError}
+                      </p>
+                    )}
+
+                    {aiFaultAnalysis && (
+                      <div className="bg-white dark:bg-slate-900 border border-orange-200/80 dark:border-orange-800/80 rounded-xl p-3.5 space-y-2.5 text-xs">
+                        <div className="flex items-center justify-between gap-2 text-orange-800 dark:text-orange-300 font-bold border-b border-slate-100 dark:border-slate-800 pb-2">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>نتيجة تحليل الشات بوت الذكي:</span>
+                          </span>
+                          {aiFaultAnalysis.suggestedServiceTitle && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setServiceTitle(
+                                  aiFaultAnalysis.suggestedServiceTitle || serviceTitle
+                                );
+                                if (aiFaultAnalysis.suggestedCategoryId) {
+                                  setCategoryId(aiFaultAnalysis.suggestedCategoryId);
+                                }
+                              }}
+                              className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                            >
+                              تطبيق التوجيه السريع: {aiFaultAnalysis.suggestedServiceTitle}
+                            </button>
+                          )}
+                        </div>
+
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {aiFaultAnalysis.analysisText}
+                        </p>
+
+                        {aiFaultAnalysis.spareParts && aiFaultAnalysis.spareParts.length > 0 && (
+                          <div className="space-y-1 pt-1">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                              قطع الغيار المحتملة المطلوبة:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {aiFaultAnalysis.spareParts.map((part, pIdx) => (
+                                <span
+                                  key={pIdx}
+                                  className="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/70 text-orange-800 dark:text-orange-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+                                >
+                                  {part}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {aiFaultAnalysis.advice && (
+                          <div className="bg-slate-50 dark:bg-slate-800/70 rounded-lg p-2.5 text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                            <strong>نصيحة فنية تحضيرية:</strong> {aiFaultAnalysis.advice}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fault Photos & Short Video Attachment */}
+                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                        <span>صور أو فيديو للعطل (اختياري)</span>
+                      </label>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums font-medium">
+                        {faultPhotos.length}/{MAX_FAULT_PHOTOS} صور · {faultVideos.length}/
+                        {MAX_FAULT_VIDEOS} فيديو (حتى {MAX_VIDEO_DURATION_SEC}ث)
+                      </span>
+                    </div>
+
+                    {/* Hidden OS camera capture inputs for mobile lens & video */}
+                    <input
+                      ref={osCameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      disabled={isCompressingPhotos}
+                      className="hidden"
+                      onChange={(e) => {
+                        void handleMediaSelect(e.target.files);
+                        e.currentTarget.value = '';
+                      }}
+                    />
+                    <input
+                      ref={osVideoInputRef}
+                      type="file"
+                      accept="video/*"
+                      capture="environment"
+                      disabled={isCompressingPhotos}
+                      className="hidden"
+                      onChange={(e) => {
+                        void handleMediaSelect(e.target.files);
+                        e.currentTarget.value = '';
+                      }}
+                    />
+
+                    {/* Attached Photos & Video Thumbnails */}
+                    {(faultPhotos.length > 0 || faultVideos.length > 0) && (
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {faultVideos.map((vid, idx) => (
+                          <div
+                            key={`fault-vid-${idx}`}
+                            className="relative w-28 h-20 rounded-xl overflow-hidden border border-orange-300 dark:border-orange-700 bg-slate-900 shrink-0 group"
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewMedia({
+                                  kind: 'video',
+                                  url: vid.url,
+                                  label: `فيديو العطل${vid.durationSec ? ` (${formatDurationBadge(vid.durationSec)})` : ''}`,
+                                })
+                              }
+                              aria-label="تشغيل فيديو العطل المرفق"
+                              className="w-full h-full block cursor-pointer"
+                            >
+                              <video
+                                src={vid.url}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-full h-full object-cover opacity-85"
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center">
+                                <span className="w-8 h-8 rounded-full bg-slate-950/75 text-white flex items-center justify-center">
+                                  <Play className="w-4 h-4 fill-white" />
+                                </span>
+                              </span>
+                              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/80 text-white text-[10px] font-bold tabular-nums">
+                                {vid.durationSec ? formatDurationBadge(vid.durationSec) : 'فيديو'}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFaultVideos((prev) => prev.filter((_, i) => i !== idx))
+                              }
+                              aria-label="حذف فيديو العطل"
+                              className="absolute top-1 left-1 w-7 h-7 rounded-lg bg-slate-950/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+
+                        {faultPhotos.map((src, idx) => (
+                          <div
+                            key={`${idx}-${src.slice(0, 24)}`}
+                            className="relative w-24 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 group"
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewMedia({
+                                  kind: 'image',
+                                  url: src,
+                                  label: `صورة العطل (${idx + 1} من ${faultPhotos.length})`,
+                                })
+                              }
+                              aria-label={`معاينة صورة العطل ${idx + 1}`}
+                              className="w-full h-full block cursor-pointer"
+                            >
+                              <img
+                                src={src}
+                                alt={`صورة العطل ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <span className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-slate-950/70 text-white flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity">
+                                <ZoomIn className="w-3.5 h-3.5" />
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFaultPhotos((prev) => prev.filter((_, i) => i !== idx))
+                              }
+                              aria-label={`حذف صورة العطل ${idx + 1}`}
+                              className="absolute top-1 left-1 w-7 h-7 rounded-lg bg-slate-950/80 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Live Camera Viewfinder (Photo + Short Video Recording) */}
+                    {isCameraOpen ? (
+                      <div className="rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-950 space-y-0">
+                        <div className="relative w-full aspect-[4/3] max-h-64 bg-slate-950 flex items-center justify-center overflow-hidden">
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover"
+                          />
+                          {isRecordingVideo && (
+                            <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-red-600 text-white text-xs font-bold tabular-nums inline-flex items-center gap-1.5">
+                              <Video className="w-3.5 h-3.5 shrink-0" />
+                              <span>
+                                جاري التسجيل {formatDurationBadge(recordingSeconds)} /{' '}
+                                {formatDurationBadge(MAX_VIDEO_DURATION_SEC)}
+                              </span>
+                            </div>
+                          )}
+                          {isCameraLoading && (
+                            <div className="absolute inset-0 bg-slate-950/75 flex items-center justify-center text-xs font-semibold text-white">
+                              جاري تشغيل الكاميرا...
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3 bg-slate-900 flex flex-wrap items-center justify-between gap-2">
+                          {isRecordingVideo ? (
+                            <button
+                              type="button"
+                              onClick={stopVideoRecording}
+                              className="flex-1 min-h-[44px] px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-2 transition-colors cursor-pointer tabular-nums"
+                            >
+                              <Square className="w-4 h-4 fill-white shrink-0" />
+                              <span>
+                                إيقاف وحفظ الفيديو ({formatDurationBadge(recordingSeconds)})
+                              </span>
+                            </button>
+                          ) : (
+                            <>
+                              {faultPhotos.length < MAX_FAULT_PHOTOS && (
+                                <button
+                                  type="button"
+                                  disabled={isCameraLoading}
+                                  onClick={captureFrameFromCamera}
+                                  className="flex-1 min-w-[125px] min-h-[44px] px-3.5 py-2 bg-[#FF5A00] hover:bg-orange-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <Camera className="w-4 h-4 shrink-0" />
+                                  <span>التقاط صورة</span>
+                                </button>
+                              )}
+                              {faultVideos.length < MAX_FAULT_VIDEOS && canRecordLiveVideo && (
+                                <button
+                                  type="button"
+                                  disabled={isCameraLoading}
+                                  onClick={startVideoRecording}
+                                  className="flex-1 min-w-[130px] min-h-[44px] px-3.5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <Video className="w-4 h-4 shrink-0" />
+                                  <span>تسجيل فيديو ({MAX_VIDEO_DURATION_SEC}ث)</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                disabled={isCameraLoading}
+                                onClick={() =>
+                                  void openLiveCamera(
+                                    cameraFacingMode === 'environment' ? 'user' : 'environment'
+                                  )
+                                }
+                                className="min-h-[44px] px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <SwitchCamera className="w-4 h-4 shrink-0" />
+                                <span>تبديل</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={closeLiveCamera}
+                                className="min-h-[44px] px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                              >
+                                إلغاء
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      (faultPhotos.length < MAX_FAULT_PHOTOS ||
+                        faultVideos.length < MAX_FAULT_VIDEOS) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            disabled={isCompressingPhotos}
+                            onClick={() => void openLiveCamera()}
+                            className="min-h-[48px] px-3 py-2 rounded-xl border border-[#FF5A00]/40 dark:border-orange-500/50 bg-orange-50/75 dark:bg-orange-950/40 hover:bg-orange-100/80 dark:hover:bg-orange-900/50 text-orange-900 dark:text-orange-200 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                          >
+                            <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                            <span>تصوير بالكاميرا</span>
+                          </button>
+
+                          {faultVideos.length < MAX_FAULT_VIDEOS && (
+                            <button
+                              type="button"
+                              disabled={isCompressingPhotos}
+                              onClick={() => osVideoInputRef.current?.click()}
+                              className="min-h-[48px] px-3 py-2 rounded-xl border border-rose-300/70 dark:border-rose-700/70 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 text-rose-900 dark:text-rose-200 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                            >
+                              <Video className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                              <span>فيديو سريع للعطل</span>
+                            </button>
+                          )}
+
+                          <label className="min-h-[48px] px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 hover:border-[#FF5A00] dark:hover:border-orange-500 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap">
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              multiple
+                              disabled={isCompressingPhotos}
+                              className="hidden"
+                              onChange={(e) => {
+                                void handleMediaSelect(e.target.files);
+                                e.currentTarget.value = '';
+                              }}
+                            />
+                            <ImagePlus className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                            <span>
+                              {isCompressingPhotos ? 'جاري المعالجة...' : 'رفع صورة / فيديو'}
+                            </span>
+                          </label>
+                        </div>
+                      )
+                    )}
+
+                    {photoError && (
+                      <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-red-700 dark:text-red-300">{photoError}</p>
+                        {photoFallbackAvailable && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => osCameraInputRef.current?.click()}
+                              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#FF5A00] hover:bg-orange-600 text-white text-xs font-bold cursor-pointer shrink-0"
+                            >
+                              صورة بكاميرا الجهاز
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => osVideoInputRef.current?.click()}
+                              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shrink-0"
+                            >
+                              فيديو بكاميرا الجهاز
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
+              )}
 
-                {/* Preferred Date & Time */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
-                      <span>اليوم المناسب</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {DATE_OPTIONS.map((d) => (
+              {/* STEP 3: Location, Schedule, Payment & Contact */}
+              {wizardStep === 3 && (
+                <div className="space-y-4">
+                  {/* Location & Address */}
+                  <div className="space-y-3">
+                    <div className="bg-orange-50/60 dark:bg-orange-950/35 border border-orange-200/80 dark:border-orange-800/70 rounded-2xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <label className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                          <MapPin className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                          <span>اختر المنطقة (لإرسال التنبيه لأقرب الفنيين)</span>
+                        </label>
                         <button
-                          key={d}
                           type="button"
-                          onClick={() => setPreferredDate(d)}
-                          className={`min-h-[40px] px-2.5 text-xs font-semibold rounded-xl border cursor-pointer ${
-                            preferredDate === d
-                              ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
-                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
-                          }`}
+                          onClick={onOpenLocation}
+                          className="text-[11px] font-bold text-[#FF5A00] dark:text-orange-400 hover:underline inline-flex items-center gap-1 cursor-pointer shrink-0"
                         >
-                          {d}
+                          <span>تحديد من الخريطة</span>
+                          <ChevronDown className="w-3.5 h-3.5" />
                         </button>
-                      ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            المركز / المدينة
+                          </label>
+                          <select
+                            value={selectedCenter}
+                            onChange={(e) => {
+                              const nextCenter = e.target.value;
+                              setSelectedCenter(nextCenter);
+                              const firstLoc = locations.find((l) => l.center === nextCenter);
+                              if (firstLoc) {
+                                setSelectedDistrict(firstLoc.displayLabel);
+                              }
+                            }}
+                            className="w-full h-11 px-3 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                          >
+                            {DAKAHLIA_CENTERS.map((c) => (
+                              <option key={c} value={c}>
+                                مركز {c}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            المنطقة / الحي / القرية
+                          </label>
+                          <select
+                            value={
+                              centerAreaOptions.some((l) => l.displayLabel === selectedDistrict)
+                                ? selectedDistrict
+                                : centerAreaOptions[0]?.displayLabel || selectedDistrict
+                            }
+                            onChange={(e) => setSelectedDistrict(e.target.value)}
+                            className="w-full h-11 px-3 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                          >
+                            {centerAreaOptions.map((loc) => (
+                              <option key={loc.id} value={loc.displayLabel}>
+                                {loc.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+                        <span className="text-[11px] font-bold text-orange-800 dark:text-orange-300 inline-flex items-center gap-1.5 tabular-nums">
+                          <Bell className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                          <span>{describeRouting(routingPreview)}</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomAreaBox((prev) => !prev)}
+                          className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-[#FF5A00] cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{showCustomAreaBox ? 'إغلاق' : 'منطقة أخرى'}</span>
+                        </button>
+                      </div>
+
+                      {showCustomAreaBox && (
+                        <div className="flex gap-2 pt-1">
+                          <input
+                            type="text"
+                            value={customAreaInput}
+                            onChange={(e) => setCustomAreaInput(e.target.value)}
+                            placeholder={`اكتب اسم الحي أو القرية داخل ${selectedCenter}...`}
+                            className="flex-1 h-10 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:border-[#FF5A00] focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const clean = customAreaInput.trim();
+                              if (clean.length < 2) return;
+                              const created = onAddCustomLocation?.(selectedCenter, clean);
+                              if (created) {
+                                setSelectedDistrict(created.displayLabel);
+                              } else {
+                                setSelectedDistrict(`الدقهلية · ${selectedCenter} - ${clean}`);
+                              }
+                              setCustomAreaInput('');
+                              setShowCustomAreaBox(false);
+                            }}
+                            className="min-h-[40px] px-3.5 text-xs font-bold text-white bg-[#FF5A00] rounded-xl hover:bg-orange-700 cursor-pointer shrink-0"
+                          >
+                            تأكيد
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {savedAddresses.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+                          عناوينك المحفوظة (اختر بضغطة واحدة):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {savedAddresses.map((addr) => {
+                            const composed = `${addr.streetDetails}${addr.buildingFloor ? ` · ${addr.buildingFloor}` : ''}`;
+                            const isCurrent = addressText.trim() === composed.trim();
+                            return (
+                              <button
+                                key={addr.id}
+                                type="button"
+                                onClick={() => {
+                                  setAddressText(composed);
+                                  if (addr.district) {
+                                    setSelectedDistrict(addr.district);
+                                    setSelectedCenter(
+                                      getLocationMeta(addr.district, locations).center
+                                    );
+                                  }
+                                }}
+                                className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+                                  isCurrent
+                                    ? 'bg-[#FF5A00] text-white border-[#FF5A00]'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                                }`}
+                              >
+                                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                                <span>{addr.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                        العنوان التفصيلي *
+                      </label>
+                      <input
+                        type="text"
+                        value={addressText}
+                        onChange={(e) => setAddressText(e.target.value)}
+                        placeholder="الشارع، رقم العمارة، الدور والشقة"
+                        className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                      />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
-                      <span>الفترة المفضلة</span>
+                  {/* Phone + Privacy */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
+                      <span>رقم الموبايل *</span>
                     </label>
-                    <select
-                      value={preferredTime}
-                      onChange={(e) => setPreferredTime(e.target.value)}
-                      className="w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                    >
-                      {TIME_WINDOWS.map((tw) => (
-                        <option key={tw} value={tw}>
-                          {tw}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Urgency Selection */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    أولوية تنفيذ الطلب
-                  </label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setUrgency('normal')}
-                      aria-pressed={urgency === 'normal'}
-                      className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                        urgency === 'normal'
-                          ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      عادي حسب الموعد
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUrgency('urgent')}
-                      aria-pressed={urgency === 'urgent'}
-                      className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                        urgency === 'urgent'
-                          ? 'bg-amber-600 text-white border-amber-600'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      طوارئ سريعة اليوم
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    طريقة الدفع *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('cash')}
-                      aria-pressed={paymentMethod === 'cash'}
-                      className={`min-h-[54px] p-3 rounded-xl border text-right flex items-start gap-2.5 transition-colors cursor-pointer ${
-                        paymentMethod === 'cash'
-                          ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/60 text-orange-950 dark:text-orange-100'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      <Banknote
-                        className={`w-4 h-4 shrink-0 mt-0.5 ${
-                          paymentMethod === 'cash' ? 'text-[#FF5A00] dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold flex items-center justify-between gap-2">
-                          <span>نقد عند الاستلام</span>
-                          {paymentMethod === 'cash' && (
-                            <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          بعد إتمام الخدمة ومعاينة الشغل
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('wallet')}
-                      aria-pressed={paymentMethod === 'wallet'}
-                      className={`min-h-[54px] p-3 rounded-xl border text-right flex items-start gap-2.5 transition-colors cursor-pointer ${
-                        paymentMethod === 'wallet'
-                          ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/60 text-orange-950 dark:text-orange-100'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                    >
-                      <Wallet
-                        className={`w-4 h-4 shrink-0 mt-0.5 ${
-                          paymentMethod === 'wallet' ? 'text-[#FF5A00] dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold flex items-center justify-between gap-2">
-                          <span>محفظة إلكترونية</span>
-                          {paymentMethod === 'wallet' && (
-                            <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          فودافون كاش / إنستاباي / أورنج
-                        </p>
-                      </div>
-                    </button>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="01012345678"
+                      className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-right tabular-nums focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                    />
+                    <div className="flex items-center gap-2 text-xs text-orange-700 dark:text-orange-400">
+                      <ShieldCheck className="w-4 h-4 shrink-0" />
+                      <span>رقمك مخفي تماماً حتى توافق على أحد العروض.</span>
+                    </div>
                   </div>
 
-                  {paymentMethod === 'wallet' && (
-                    <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2">
-                      <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        اختر المحفظة:
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {WALLET_PROVIDERS.map((provider) => (
+                  {/* Preferred Date & Time */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
+                        <span>اليوم المناسب</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {DATE_OPTIONS.map((d) => (
                           <button
-                            key={provider}
+                            key={d}
                             type="button"
-                            onClick={() => setWalletProvider(provider)}
-                            className={`min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                              walletProvider === provider
+                            onClick={() => setPreferredDate(d)}
+                            className={`min-h-[40px] px-2.5 text-xs font-semibold rounded-xl border cursor-pointer ${
+                              preferredDate === d
                                 ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
-                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
                             }`}
                           >
-                            {provider}
+                            {d}
                           </button>
                         ))}
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {/* Recurrence Selection */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Repeat className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
-                    <span>تكرار الطلب تلقائياً (اختياري)</span>
-                  </label>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
+                        <span>الفترة المفضلة</span>
+                      </label>
+                      <select
+                        value={preferredTime}
+                        onChange={(e) => setPreferredTime(e.target.value)}
+                        className="w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                      >
+                        {TIME_WINDOWS.map((tw) => (
+                          <option key={tw} value={tw}>
+                            {tw}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {(
-                      [
-                        { id: 'none', label: 'مرة واحدة' },
-                        { id: 'daily', label: 'يومياً' },
-                        { id: 'weekly', label: 'أسبوعياً' },
-                        { id: 'monthly', label: 'شهرياً' },
-                      ] as const
-                    ).map((opt) => (
+                  {/* Urgency Selection */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      أولوية تنفيذ الطلب
+                    </label>
+                    <div className="grid grid-cols-2 gap-2.5">
                       <button
-                        key={opt.id}
                         type="button"
-                        onClick={() => setRecurrenceFrequency(opt.id)}
-                        aria-pressed={recurrenceFrequency === opt.id}
-                        className={`min-h-[42px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors whitespace-nowrap cursor-pointer ${
-                          recurrenceFrequency === opt.id
+                        onClick={() => setUrgency('normal')}
+                        aria-pressed={urgency === 'normal'}
+                        className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                          urgency === 'normal'
                             ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                         }`}
                       >
-                        {opt.label}
+                        عادي حسب الموعد
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setUrgency('urgent')}
+                        aria-pressed={urgency === 'urgent'}
+                        className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                          urgency === 'urgent'
+                            ? 'bg-amber-600 text-white border-amber-600'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        طوارئ سريعة اليوم
+                      </button>
+                    </div>
                   </div>
 
-                  {recurrenceFrequency !== 'none' && (
-                    <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2.5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                            تاريخ بدء التكرار
-                          </label>
-                          <input
-                            type="date"
-                            min={getTodayISO()}
-                            value={recurrenceStartDate}
-                            onChange={(e) =>
-                              setRecurrenceStartDate(e.target.value || getTodayISO())
-                            }
-                            className="w-full h-11 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl tabular-nums focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div className="text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 min-h-[44px] flex flex-col justify-center">
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                            الموعد التلقائي التالي:
-                          </span>
-                          <span className="font-bold text-orange-700 dark:text-orange-400 tabular-nums">
-                            {formatArabicDateLabel(
-                              recurrenceStartDate > getTodayISO()
-                                ? recurrenceStartDate
-                                : addRecurrenceIntervalISO(
-                                    recurrenceStartDate,
-                                    recurrenceFrequency
-                                  )
+                  {/* Payment Method */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      طريقة الدفع *
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash')}
+                        aria-pressed={paymentMethod === 'cash'}
+                        className={`min-h-[54px] p-3 rounded-xl border text-right flex items-start gap-2.5 transition-colors cursor-pointer ${
+                          paymentMethod === 'cash'
+                            ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/60 text-orange-950 dark:text-orange-100'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <Banknote
+                          className={`w-4 h-4 shrink-0 mt-0.5 ${
+                            paymentMethod === 'cash'
+                              ? 'text-[#FF5A00] dark:text-orange-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold flex items-center justify-between gap-2">
+                            <span>نقد عند الاستلام</span>
+                            {paymentMethod === 'cash' && (
+                              <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
                             )}
-                          </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            بعد إتمام الخدمة ومعاينة الشغل
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('wallet')}
+                        aria-pressed={paymentMethod === 'wallet'}
+                        className={`min-h-[54px] p-3 rounded-xl border text-right flex items-start gap-2.5 transition-colors cursor-pointer ${
+                          paymentMethod === 'wallet'
+                            ? 'border-[#FF5A00] dark:border-orange-500 bg-orange-50/75 dark:bg-orange-950/60 text-orange-950 dark:text-orange-100'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <Wallet
+                          className={`w-4 h-4 shrink-0 mt-0.5 ${
+                            paymentMethod === 'wallet'
+                              ? 'text-[#FF5A00] dark:text-orange-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold flex items-center justify-between gap-2">
+                            <span>محفظة إلكترونية</span>
+                            {paymentMethod === 'wallet' && (
+                              <Check className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            فودافون كاش / إنستاباي / أورنج
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {paymentMethod === 'wallet' && (
+                      <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2">
+                        <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                          اختر المحفظة:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {WALLET_PROVIDERS.map((provider) => (
+                            <button
+                              key={provider}
+                              type="button"
+                              onClick={() => setWalletProvider(provider)}
+                              className={`min-h-[36px] px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                                walletProvider === provider
+                                  ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
+                                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                              }`}
+                            >
+                              {provider}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-            {/* Promo Code Input */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                  <span>كود خصم (اختياري)</span>
-                </label>
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <span className="text-slate-500 dark:text-slate-400">أكواد سريعة:</span>
-                  {['KHADAMAT15', 'DAKAHLIA10'].map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => handleApplyPromo(code)}
-                      className="px-2 py-0.5 rounded-md bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 font-bold hover:bg-orange-100 dark:hover:bg-orange-900/60 cursor-pointer tabular-nums"
-                    >
-                      {code}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={promoInput}
-                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                  placeholder="أدخل كود الخصم (مثال: KHADAMAT15)"
-                  className="flex-1 h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl font-semibold tracking-wider uppercase focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
-                />
-                {appliedPromo ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAppliedPromo(null);
-                      setPromoInput('');
-                      setPromoFeedback('');
-                    }}
-                    className="min-h-[44px] px-4 py-2 text-xs font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 cursor-pointer shrink-0"
-                  >
-                    إزالة الكود
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyPromo()}
-                    className="min-h-[44px] px-5 py-2 text-xs font-bold text-white bg-slate-900 dark:bg-orange-600 hover:bg-slate-800 dark:hover:bg-orange-500 rounded-xl cursor-pointer shrink-0"
-                  >
-                    تطبيق الخصم
-                  </button>
-                )}
-              </div>
-
-              {appliedPromo && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2">
-                  <span>
-                    تم تفعيل كود {appliedPromo.code} — خصم {appliedPromo.discountPercent}% (بحد أقصى {appliedPromo.maxDiscountEGP} ج.م)
-                  </span>
-                  <Check className="w-4 h-4 shrink-0" />
-                </div>
-              )}
-
-              {promoFeedback && (
-                <p className="text-xs text-amber-800 dark:text-amber-300">{promoFeedback}</p>
-              )}
-
-              {activeLoyaltyVouchers.length > 0 && (
-                <div className="bg-orange-50/70 dark:bg-orange-950/35 border border-orange-200 dark:border-orange-800/70 rounded-xl p-3 space-y-2">
-                  <div className="text-[11px] font-bold text-orange-950 dark:text-orange-200 flex items-center gap-1.5">
-                    <Gift className="w-3.5 h-3.5 text-[#ea580c] dark:text-orange-400 shrink-0" />
-                    <span>قسائم نقاط خدمات المتاحة لديك ({activeLoyaltyVouchers.length}):</span>
+                    )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {activeLoyaltyVouchers.map((voucher) => {
-                      const isSelected = selectedLoyaltyVoucher?.id === voucher.id;
-                      return (
+
+                  {/* Recurrence Selection */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
+                      <span>تكرار الطلب تلقائياً (اختياري)</span>
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(
+                        [
+                          { id: 'none', label: 'مرة واحدة' },
+                          { id: 'daily', label: 'يومياً' },
+                          { id: 'weekly', label: 'أسبوعياً' },
+                          { id: 'monthly', label: 'شهرياً' },
+                        ] as const
+                      ).map((opt) => (
                         <button
-                          key={voucher.id}
+                          key={opt.id}
                           type="button"
-                          onClick={() =>
-                            setSelectedLoyaltyVoucher(isSelected ? null : voucher)
-                          }
-                          aria-pressed={isSelected}
-                          className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-700 border-emerald-700 text-white dark:bg-emerald-600'
-                              : 'bg-white dark:bg-slate-900 border-orange-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-[#ea580c]'
+                          onClick={() => setRecurrenceFrequency(opt.id)}
+                          aria-pressed={recurrenceFrequency === opt.id}
+                          className={`min-h-[42px] px-3 py-2 text-xs font-semibold rounded-xl border transition-colors whitespace-nowrap cursor-pointer ${
+                            recurrenceFrequency === opt.id
+                              ? 'bg-[#FF5A00] text-white border-[#FF5A00] dark:bg-orange-600 dark:border-orange-600'
+                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                           }`}
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
-                          <span>
-                            {voucher.title} ({voucher.promoCode})
-                          </span>
+                          {opt.label}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
+
+                    {recurrenceFrequency !== 'none' && (
+                      <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              تاريخ بدء التكرار
+                            </label>
+                            <input
+                              type="date"
+                              min={getTodayISO()}
+                              value={recurrenceStartDate}
+                              onChange={(e) =>
+                                setRecurrenceStartDate(e.target.value || getTodayISO())
+                              }
+                              className="w-full h-11 px-3 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl tabular-nums focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                            />
+                          </div>
+                          <div className="text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 min-h-[44px] flex flex-col justify-center">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              الموعد التلقائي التالي:
+                            </span>
+                            <span className="font-bold text-orange-700 dark:text-orange-400 tabular-nums">
+                              {formatArabicDateLabel(
+                                recurrenceStartDate > getTodayISO()
+                                  ? recurrenceStartDate
+                                  : addRecurrenceIntervalISO(
+                                      recurrenceStartDate,
+                                      recurrenceFrequency
+                                    )
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Promo Code Input */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                        <span>كود خصم (اختياري)</span>
+                      </label>
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="text-slate-500 dark:text-slate-400">أكواد سريعة:</span>
+                        {['KHADAMAT15', 'DAKAHLIA10'].map((code) => (
+                          <button
+                            key={code}
+                            type="button"
+                            onClick={() => handleApplyPromo(code)}
+                            className="px-2 py-0.5 rounded-md bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 font-bold hover:bg-orange-100 dark:hover:bg-orange-900/60 cursor-pointer tabular-nums"
+                          >
+                            {code}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        placeholder="أدخل كود الخصم (مثال: KHADAMAT15)"
+                        className="flex-1 h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl font-semibold tracking-wider uppercase focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
+                      />
+                      {appliedPromo ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAppliedPromo(null);
+                            setPromoInput('');
+                            setPromoFeedback('');
+                          }}
+                          className="min-h-[44px] px-4 py-2 text-xs font-semibold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 cursor-pointer shrink-0"
+                        >
+                          إزالة الكود
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApplyPromo()}
+                          className="min-h-[44px] px-5 py-2 text-xs font-bold text-white bg-slate-900 dark:bg-orange-600 hover:bg-slate-800 dark:hover:bg-orange-500 rounded-xl cursor-pointer shrink-0"
+                        >
+                          تطبيق الخصم
+                        </button>
+                      )}
+                    </div>
+
+                    {appliedPromo && (
+                      <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2">
+                        <span>
+                          تم تفعيل كود {appliedPromo.code} — خصم {appliedPromo.discountPercent}%
+                          (بحد أقصى {appliedPromo.maxDiscountEGP} ج.م)
+                        </span>
+                        <Check className="w-4 h-4 shrink-0" />
+                      </div>
+                    )}
+
+                    {promoFeedback && (
+                      <p className="text-xs text-amber-800 dark:text-amber-300">{promoFeedback}</p>
+                    )}
+
+                    {activeLoyaltyVouchers.length > 0 && (
+                      <div className="bg-orange-50/70 dark:bg-orange-950/35 border border-orange-200 dark:border-orange-800/70 rounded-xl p-3 space-y-2">
+                        <div className="text-[11px] font-bold text-orange-950 dark:text-orange-200 flex items-center gap-1.5">
+                          <Gift className="w-3.5 h-3.5 text-[#ea580c] dark:text-orange-400 shrink-0" />
+                          <span>
+                            قسائم نقاط خدمات المتاحة لديك ({activeLoyaltyVouchers.length}):
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {activeLoyaltyVouchers.map((voucher) => {
+                            const isSelected = selectedLoyaltyVoucher?.id === voucher.id;
+                            return (
+                              <button
+                                key={voucher.id}
+                                type="button"
+                                onClick={() =>
+                                  setSelectedLoyaltyVoucher(isSelected ? null : voucher)
+                                }
+                                aria-pressed={isSelected}
+                                className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-emerald-700 border-emerald-700 text-white dark:bg-emerald-600'
+                                    : 'bg-white dark:bg-slate-900 border-orange-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-[#ea580c]'
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                                <span>
+                                  {voucher.title} ({voucher.promoCode})
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-            </div>
-              </div>
-            )}
 
-            {/* STEP 4: Syaanh Review & Dispatch Confirmation */}
-            {wizardStep === 4 && (
-              <div className="space-y-4">
-                <div className="bg-orange-50/75 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/80 rounded-2xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-orange-900 dark:text-orange-200">
-                    <ClipboardCheck className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                    <span>مراجعة الطلب قبل البث للفنيين ({routingPreview.notifiedCount} فني متاح)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                    بمجرد الضغط على الإرسال، يصل طلبك لأقرب الفنيين المعتمدين في نطاقك، وستصلك تنبيهات بعروض الأسعار والمواعيد للاختيار بينها والتواصل بالموبايل أو الواتساب.
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl divide-y divide-slate-200 dark:divide-slate-700 text-xs">
-                  <div className="p-3.5 flex items-start justify-between gap-2">
-                    <div className="space-y-0.5 min-w-0">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">القسم والخدمة</span>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">
-                        {activeServiceTitle || selectedCategory?.name}
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {selectedCategory?.name}
-                      </div>
+              {/* STEP 4: Syaanh Review & Dispatch Confirmation */}
+              {wizardStep === 4 && (
+                <div className="space-y-4">
+                  <div className="bg-orange-50/75 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/80 rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-orange-900 dark:text-orange-200">
+                      <ClipboardCheck className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                      <span>
+                        مراجعة الطلب قبل البث للفنيين ({routingPreview.notifiedCount} فني متاح)
+                      </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setWizardStep(1)}
-                      className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
-                    >
-                      تعديل
-                    </button>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      بمجرد الضغط على الإرسال، يصل طلبك لأقرب الفنيين المعتمدين في نطاقك، وستصلك
+                      تنبيهات بعروض الأسعار والمواعيد للاختيار بينها والتواصل بالموبايل أو الواتساب.
+                    </p>
                   </div>
 
-                  <div className="p-3.5 flex items-start justify-between gap-2">
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">تفاصيل المشكلة والمرفقات</span>
-                      <div className="text-slate-800 dark:text-slate-200 leading-relaxed">
-                        {detailedDescription}
-                      </div>
-                      {(faultPhotos.length > 0 || faultVideos.length > 0) && (
-                        <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                          مرفق: {faultPhotos.length} صورة{faultVideos.length > 0 ? ` + ${faultVideos.length} فيديو` : ''}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl divide-y divide-slate-200 dark:divide-slate-700 text-xs">
+                    <div className="p-3.5 flex items-start justify-between gap-2">
+                      <div className="space-y-0.5 min-w-0">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          القسم والخدمة
+                        </span>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">
+                          {activeServiceTitle || selectedCategory?.name}
                         </div>
-                      )}
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {selectedCategory?.name}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setWizardStep(1)}
+                        className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
+                      >
+                        تعديل
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setWizardStep(2)}
-                      className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
-                    >
-                      تعديل
-                    </button>
-                  </div>
 
-                  <div className="p-3.5 flex items-start justify-between gap-2">
-                    <div className="space-y-1 min-w-0">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">الموقع والموعد والدفع</span>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">
-                        {selectedDistrict} — {addressText}
+                    <div className="p-3.5 flex items-start justify-between gap-2">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          تفاصيل المشكلة والمرفقات
+                        </span>
+                        <div className="text-slate-800 dark:text-slate-200 leading-relaxed">
+                          {detailedDescription}
+                        </div>
+                        {(faultPhotos.length > 0 || faultVideos.length > 0) && (
+                          <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                            مرفق: {faultPhotos.length} صورة
+                            {faultVideos.length > 0 ? ` + ${faultVideos.length} فيديو` : ''}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-slate-600 dark:text-slate-300 tabular-nums">
-                        {preferredDate} · {preferredTime} {urgency === 'urgent' ? '· طوارئ اليوم' : ''}
-                      </div>
-                      <div className="text-slate-700 dark:text-slate-200 font-semibold">
-                        الدفع: {getPaymentMethodLabel(paymentMethod, paymentMethod === 'wallet' ? walletProvider : undefined)}
-                        {appliedPromo ? ` · كود ${appliedPromo.code}` : ''}
-                        {selectedLoyaltyVoucher ? ` · خصم نقاط ${selectedLoyaltyVoucher.discountEGP} ج.م` : ''}
-                      </div>
-                      <div className="text-[11px] text-orange-700 dark:text-orange-400 font-semibold inline-flex items-center gap-1 tabular-nums">
-                        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                        <span>رقم التواصل ({customerPhone}) مخفي حتى توافق على العرض</span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setWizardStep(2)}
+                        className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
+                      >
+                        تعديل
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setWizardStep(3)}
-                      className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
-                    >
-                      تعديل
-                    </button>
+
+                    <div className="p-3.5 flex items-start justify-between gap-2">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          الموقع والموعد والدفع
+                        </span>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">
+                          {selectedDistrict} — {addressText}
+                        </div>
+                        <div className="text-slate-600 dark:text-slate-300 tabular-nums">
+                          {preferredDate} · {preferredTime}{' '}
+                          {urgency === 'urgent' ? '· طوارئ اليوم' : ''}
+                        </div>
+                        <div className="text-slate-700 dark:text-slate-200 font-semibold">
+                          الدفع:{' '}
+                          {getPaymentMethodLabel(
+                            paymentMethod,
+                            paymentMethod === 'wallet' ? walletProvider : undefined
+                          )}
+                          {appliedPromo ? ` · كود ${appliedPromo.code}` : ''}
+                          {selectedLoyaltyVoucher
+                            ? ` · خصم نقاط ${selectedLoyaltyVoucher.discountEGP} ج.م`
+                            : ''}
+                        </div>
+                        <div className="text-[11px] text-orange-700 dark:text-orange-400 font-semibold inline-flex items-center gap-1 tabular-nums">
+                          <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                          <span>رقم التواصل ({customerPhone}) مخفي حتى توافق على العرض</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setWizardStep(3)}
+                        className="text-orange-700 dark:text-orange-400 font-bold hover:underline shrink-0 cursor-pointer"
+                      >
+                        تعديل
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {errorMsg && (
-              <p className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2.5">
-                {errorMsg}
-              </p>
-            )}
+              {errorMsg && (
+                <p className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 rounded-xl px-4 py-2.5">
+                  {errorMsg}
+                </p>
+              )}
             </div>
 
             {/* Sticky Syaanh Wizard Navigation Footer */}

@@ -36,7 +36,10 @@ export function BundlesModal({ isOpen, onClose, onSelectBundle }: BundlesModalPr
         <div className="flex items-center justify-between px-4 md:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-            <h2 id="bundles-modal-title" className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <h2
+              id="bundles-modal-title"
+              className="text-base font-bold text-slate-900 dark:text-slate-100"
+            >
               عروض وباقات التوفير
             </h2>
           </div>
@@ -98,7 +101,10 @@ export function BundlesModal({ isOpen, onClose, onSelectBundle }: BundlesModalPr
                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 border border-orange-200/80 dark:border-orange-800/70 rounded-xl px-2.5 py-1.5 text-[11px]">
                     <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300">
                       <Tag className="w-3 h-3 text-[#FF5A00]" />
-                      <strong dir="ltr" className="font-mono font-bold text-orange-700 dark:text-orange-300">
+                      <strong
+                        dir="ltr"
+                        className="font-mono font-bold text-orange-700 dark:text-orange-300"
+                      >
                         {bundle.promoCode}
                       </strong>
                     </span>

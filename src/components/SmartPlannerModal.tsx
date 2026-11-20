@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CheckCircle2, Sparkles, Wand2, X } from 'lucide-react';
+import { Bot, Sparkles, Wand2, X } from 'lucide-react';
 import { useState } from 'react';
 import {
   PlannerHomeType,
@@ -14,16 +14,16 @@ interface SmartPlannerModalProps {
   user: UserProfile;
   onClose: () => void;
   onRequestService: (service?: ServiceItem, categoryId?: string) => void;
-  onRequestBundle: (bundle: SeasonalBundle) => void;
+  onRequestBundle?: (bundle: SeasonalBundle) => void;
 }
 
 export function SmartPlannerModal({
   isOpen,
   district,
-  user,
+  user: _user,
   onClose,
   onRequestService,
-  onRequestBundle,
+  onRequestBundle: _onRequestBundle,
 }: SmartPlannerModalProps) {
   const [homeType, setHomeType] = useState<PlannerHomeType>('apartment');
   const [acUnits, setAcUnits] = useState<number>(2);
@@ -44,9 +44,19 @@ export function SmartPlannerModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          homeType: homeType === 'apartment' ? 'شقة سكنية' : homeType === 'villa' ? 'فيلا مستقلة' : 'مكتب إداري',
+          homeType:
+            homeType === 'apartment'
+              ? 'شقة سكنية'
+              : homeType === 'villa'
+                ? 'فيلا مستقلة'
+                : 'مكتب إداري',
           acUnits,
-          seasonFocus: seasonFocus === 'summer' ? 'ذروة الصيف والحر الشديد' : seasonFocus === 'winter' ? 'موسم الشتاء والأمطار' : 'صيانة وقائية طوال العام',
+          seasonFocus:
+            seasonFocus === 'summer'
+              ? 'ذروة الصيف والحر الشديد'
+              : seasonFocus === 'winter'
+                ? 'موسم الشتاء والأمطار'
+                : 'صيانة وقائية طوال العام',
           district,
         }),
       });

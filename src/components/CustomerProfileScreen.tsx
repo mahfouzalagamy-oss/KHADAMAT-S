@@ -168,9 +168,7 @@ export function CustomerProfileScreen({
   return (
     <div className="max-w-4xl mx-auto px-3.5 md:px-6 py-4 md:py-6 space-y-4 pb-12">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50">
-          حسابي
-        </h1>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-50">حسابي</h1>
 
         <button
           type="button"
@@ -194,7 +192,8 @@ export function CustomerProfileScreen({
                 نقاط خدمات · {pointsSummary.tierName}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                +{KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة/طلب و+{KHADAMAT_BONUS_POINTS_FOR_RATING} للتقييم (100 نقطة = 10 ج.م ولا تنتهي)
+                +{KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة/طلب و+{KHADAMAT_BONUS_POINTS_FOR_RATING}{' '}
+                للتقييم (100 نقطة = 10 ج.م ولا تنتهي)
               </p>
             </div>
           </div>
@@ -294,9 +293,7 @@ export function CustomerProfileScreen({
           <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 flex items-center justify-center shrink-0">
             {isDark ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </div>
-          <div className="text-sm font-bold text-slate-900 dark:text-slate-50">
-            الوضع الداكن
-          </div>
+          <div className="text-sm font-bold text-slate-900 dark:text-slate-50">الوضع الداكن</div>
         </div>
 
         <button
@@ -490,12 +487,12 @@ export function CustomerProfileScreen({
                   <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                     {faq.q}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+                  />
                 </button>
                 {open && (
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 pb-1.5">
-                    {faq.a}
-                  </p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 pb-1.5">{faq.a}</p>
                 )}
               </div>
             );
@@ -624,9 +621,7 @@ export function CustomerProfileScreen({
             className="w-full md:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl md:rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3 shadow-2xl"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">
-                إضافة عنوان
-              </h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-50">إضافة عنوان</h3>
               <button
                 type="button"
                 onClick={() => setShowAddAddress(false)}

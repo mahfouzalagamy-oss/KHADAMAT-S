@@ -1,10 +1,10 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
-    --font-display: "Alexandria", "IBM Plex Sans Arabic", system-ui, sans-serif;
-    --font-body: "IBM Plex Sans Arabic", system-ui, sans-serif;
+    --font-display: 'Alexandria', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans Arabic', system-ui, sans-serif;
     color-scheme: light;
   }
 
@@ -22,11 +22,18 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-display);
   }
 
-  button, a, input, select, textarea {
+  button,
+  a,
+  input,
+  select,
+  textarea {
     outline-color: #ea580c;
   }
 }
@@ -90,7 +97,8 @@
 }
 
 @keyframes celebration-star-drift {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
@@ -128,11 +136,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
-

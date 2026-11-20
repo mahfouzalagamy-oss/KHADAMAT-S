@@ -73,9 +73,7 @@ export function AuthLoginScreen({
   const [custMode, setCustMode] = useState<'register' | 'login'>('register');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [selectedExistingCustId, setSelectedExistingCustId] = useState(
-    customers[0]?.id || ''
-  );
+  const [selectedExistingCustId, setSelectedExistingCustId] = useState(customers[0]?.id || '');
   const [custGeneratedOtp, setCustGeneratedOtp] = useState('');
   const [custOtpTargetPhone, setCustOtpTargetPhone] = useState('');
   const [custOtpInput, setCustOtpInput] = useState('');
@@ -759,11 +757,7 @@ export function AuthLoginScreen({
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-10 h-10 rounded-xl bg-[#FF5A00] dark:bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
-                                {tech.isCompany ? (
-                                  <Building2 className="w-5 h-5" />
-                                ) : (
-                                  tech.initials
-                                )}
+                                {tech.isCompany ? <Building2 className="w-5 h-5" /> : tech.initials}
                               </div>
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
@@ -946,12 +940,7 @@ export function AuthLoginScreen({
                               label="صورة البطاقة الضريبية *"
                               doc={taxCardDoc}
                               onSelectFile={(f) =>
-                                handleFileUpload(
-                                  f,
-                                  'tax_card',
-                                  'البطاقة الضريبية',
-                                  setTaxCardDoc
-                                )
+                                handleFileUpload(f, 'tax_card', 'البطاقة الضريبية', setTaxCardDoc)
                               }
                             />
                           </div>
@@ -1116,14 +1105,18 @@ function DocumentUploadTile({
         ) : (
           <div
             className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-              doc ? 'bg-[#FF5A00] dark:bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              doc
+                ? 'bg-[#FF5A00] dark:bg-orange-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
             }`}
           >
             {doc ? <CheckCircle2 className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
           </div>
         )}
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{label}</div>
+          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+            {label}
+          </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
             {doc ? `${doc.fileName} · ${doc.fileSizeLabel}` : 'اضغط لرفع صورة أو PDF'}
           </div>

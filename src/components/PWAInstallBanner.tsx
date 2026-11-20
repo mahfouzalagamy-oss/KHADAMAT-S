@@ -23,7 +23,8 @@ export function PWAInstallButton({ compact = false }: { compact?: boolean }) {
     }
 
     const ua = window.navigator.userAgent;
-    const iOS = /iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const iOS =
+      /iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
     setIsIOS(iOS);
 
     const handleBeforeInstall = (e: Event) => {
@@ -104,7 +105,8 @@ export function PWAInstallButton({ compact = false }: { compact?: boolean }) {
                 </span>
                 <span>
                   افتح الصفحة في متصفح <strong>Safari</strong> واضغط على أيقونة المشاركة{' '}
-                  <Share className="inline w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 mx-0.5" /> في أسفل الشاشة.
+                  <Share className="inline w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 mx-0.5" />{' '}
+                  في أسفل الشاشة.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
@@ -239,9 +241,15 @@ export function AndroidApkGuideCard() {
       {/* Clear 3-Step User Installation Flow */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1">
-          <div className="font-bold text-orange-700 dark:text-orange-400">1. الحصول على ملف APK</div>
+          <div className="font-bold text-orange-700 dark:text-orange-400">
+            1. الحصول على ملف APK
+          </div>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-            نزّل <span dir="ltr" className="font-mono font-semibold text-slate-800 dark:text-slate-200">app-debug.apk</span> من GitHub Actions أو ابنه عبر Android Studio.
+            نزّل{' '}
+            <span dir="ltr" className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+              app-debug.apk
+            </span>{' '}
+            من GitHub Actions أو ابنه عبر Android Studio.
           </p>
         </div>
         <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1">
@@ -269,7 +277,11 @@ export function AndroidApkGuideCard() {
             onClick={handleCopy}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-white cursor-pointer"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-orange-400" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
             <span>{copied ? 'تم النسخ' : 'نسخ الأوامر'}</span>
           </button>
         </div>

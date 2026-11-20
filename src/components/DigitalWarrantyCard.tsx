@@ -16,11 +16,7 @@ import {
   getWarrantyCertificateStatus,
   parseWarrantyDaysFromLabel,
 } from '../data/khadamatData';
-import {
-  ServiceQuote,
-  ServiceRequest,
-  TechnicianReview,
-} from '../types/khadamat';
+import { ServiceQuote, ServiceRequest, TechnicianReview } from '../types/khadamat';
 
 interface DigitalWarrantyCardProps {
   request: ServiceRequest;
@@ -119,34 +115,32 @@ export function DigitalWarrantyCard({
             {existingClaimRequest
               ? `تم فتح طلب متابعة ضمان (#${existingClaimRequest.referenceCode})`
               : status.isActive
-              ? 'إذا عاد نفس العطل، اطلب إعادة فحص فورية بدون رسوم معاينة.'
-              : 'يمكنك طلب صيانة جديدة في أي وقت بنفس التفاصيل.'}
+                ? 'إذا عاد نفس العطل، اطلب إعادة فحص فورية بدون رسوم معاينة.'
+                : 'يمكنك طلب صيانة جديدة في أي وقت بنفس التفاصيل.'}
           </span>
 
-          {existingClaimRequest ? (
-            onJumpToClaims && (
-              <button
-                type="button"
-                onClick={onJumpToClaims}
-                className="min-h-[40px] px-3.5 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <span>متابعة طلب الضمان</span>
-                <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-            )
-          ) : (
-            status.isActive &&
-            onRequestWarrantyCheck && (
-              <button
-                type="button"
-                onClick={() => onRequestWarrantyCheck(request, quote)}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
-              >
-                <Wrench className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>طلب إعادة فحص مجاني ضمن الضمان</span>
-              </button>
-            )
-          )}
+          {existingClaimRequest
+            ? onJumpToClaims && (
+                <button
+                  type="button"
+                  onClick={onJumpToClaims}
+                  className="min-h-[40px] px-3.5 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <span>متابعة طلب الضمان</span>
+                  <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              )
+            : status.isActive &&
+              onRequestWarrantyCheck && (
+                <button
+                  type="button"
+                  onClick={() => onRequestWarrantyCheck(request, quote)}
+                  className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                >
+                  <Wrench className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>طلب إعادة فحص مجاني ضمن الضمان</span>
+                </button>
+              )}
         </div>
       )}
     </div>
@@ -190,12 +184,7 @@ export function SmartQuoteComparisonStrip({
       reviews
     );
     const warrantyDays = parseWarrantyDaysFromLabel(q.warrantyLabel, 0);
-    const techStats = computeTechnicianStats(
-      q.technicianId,
-      reviews,
-      allQuotes,
-      allRequests
-    );
+    const techStats = computeTechnicianStats(q.technicianId, reviews, allQuotes, allRequests);
     return {
       quote: q,
       finalPriceEGP: promo.finalPriceEGP,
@@ -206,9 +195,7 @@ export function SmartQuoteComparisonStrip({
   });
 
   const lowestFinalPrice = Math.min(...enriched.map((e) => e.finalPriceEGP));
-  const highestRating = Math.max(
-    ...enriched.map((e) => e.quote.technicianRating)
-  );
+  const highestRating = Math.max(...enriched.map((e) => e.quote.technicianRating));
   const maxWarrantyDays = Math.max(...enriched.map((e) => e.warrantyDays));
 
   return (
@@ -233,16 +220,15 @@ export function SmartQuoteComparisonStrip({
         {enriched.map(({ quote, finalPriceEGP, savingsPercent, warrantyDays, criteria }) => {
           const isCheapest = finalPriceEGP === lowestFinalPrice;
           const isTopRated = quote.technicianRating === highestRating;
-          const isLongestWarranty =
-            maxWarrantyDays > 0 && warrantyDays === maxWarrantyDays;
+          const isLongestWarranty = maxWarrantyDays > 0 && warrantyDays === maxWarrantyDays;
 
           const topHighlight = isCheapest
             ? 'أفضل سعر'
             : isTopRated
-            ? 'الأعلى تقييماً'
-            : isLongestWarranty
-            ? 'أطول ضمان'
-            : null;
+              ? 'الأعلى تقييماً'
+              : isLongestWarranty
+                ? 'أطول ضمان'
+                : null;
 
           return (
             <div
@@ -302,7 +288,9 @@ export function SmartQuoteComparisonStrip({
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">الاحترافية</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        الاحترافية
+                      </div>
                       <div className="font-bold text-slate-900 dark:text-slate-100 inline-flex items-center gap-0.5">
                         <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
                         {criteria.professionalism.toFixed(1)}

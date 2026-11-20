@@ -90,19 +90,13 @@ export function CategoriesScreen({
     >();
 
     for (const cat of SERVICE_CATEGORIES) {
-      const routing = findNearestMatchingTechnicians(
-        cat.id,
-        district,
-        technicians,
-        locations
-      );
+      const routing = findNearestMatchingTechnicians(cat.id, district, technicians, locations);
       map.set(cat.id, {
         availableCount: routing.targets.length,
         minDistanceKm: routing.minDistanceKm,
         matchType: routing.matchType,
         nearestCenterName: routing.nearestCenterName,
-        isDirectLocal:
-          routing.matchType === 'exact_area' || routing.matchType === 'exact_center',
+        isDirectLocal: routing.matchType === 'exact_area' || routing.matchType === 'exact_center',
       });
     }
 
@@ -119,12 +113,7 @@ export function CategoriesScreen({
         isDirectLocal: false,
       };
 
-      const marketStats = computeServiceMarketStats(
-        service.title,
-        quotes,
-        requests,
-        reviews
-      );
+      const marketStats = computeServiceMarketStats(service.title, quotes, requests, reviews);
 
       return {
         service,
@@ -311,7 +300,9 @@ export function CategoriesScreen({
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
           }`}
         >
-          <Heart className={`w-3.5 h-3.5 shrink-0 ${onlyFavorites ? 'fill-white' : 'text-rose-500'}`} />
+          <Heart
+            className={`w-3.5 h-3.5 shrink-0 ${onlyFavorites ? 'fill-white' : 'text-rose-500'}`}
+          />
           <span className="tabular-nums">المفضلة ({favoriteServiceIds.length})</span>
         </button>
 
@@ -375,7 +366,9 @@ export function CategoriesScreen({
                         onClick={() => onToggleFavoriteService(service.id)}
                         aria-pressed={isFavorite}
                         aria-label={
-                          isFavorite ? `إزالة ${service.title} من المفضلة` : `إضافة ${service.title} للمفضلة`
+                          isFavorite
+                            ? `إزالة ${service.title} من المفضلة`
+                            : `إضافة ${service.title} للمفضلة`
                         }
                         className={`absolute top-2 left-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl border backdrop-blur-sm transition-colors cursor-pointer ${
                           isFavorite
@@ -383,7 +376,9 @@ export function CategoriesScreen({
                             : 'bg-white/90 dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                         }`}
                       >
-                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+                        <Heart
+                          className={`w-4 h-4 ${isFavorite ? 'fill-rose-500 text-rose-500' : ''}`}
+                        />
                       </button>
                     )}
                   </div>

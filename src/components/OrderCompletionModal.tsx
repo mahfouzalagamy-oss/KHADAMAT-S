@@ -26,9 +26,7 @@ interface CelebrationEmblemProps {
   variant?: 'achievement' | 'booking';
 }
 
-export function CelebrationEmblem({
-  variant = 'achievement',
-}: CelebrationEmblemProps) {
+export function CelebrationEmblem({ variant = 'achievement' }: CelebrationEmblemProps) {
   return (
     <div
       className="relative w-28 h-28 mx-auto flex items-center justify-center select-none"
@@ -101,7 +99,8 @@ export function OrderCompletionModal({
 }: OrderCompletionModalProps) {
   if (!summary) return null;
 
-  const { request, quote, rating, ratingBreakdown, review, savingsPercent, savingsAmountEGP } = summary;
+  const { request, quote, rating, ratingBreakdown, review, savingsPercent, savingsAmountEGP } =
+    summary;
   const activeBreakdown = ratingBreakdown || request.ratingBreakdown;
 
   return (
@@ -149,7 +148,9 @@ export function OrderCompletionModal({
             {activeBreakdown ? (
               <div className="grid grid-cols-3 gap-2 max-w-md mx-auto bg-amber-50/70 dark:bg-amber-950/35 border border-amber-200/80 dark:border-amber-800/70 rounded-xl p-2.5 text-center tabular-nums">
                 <div>
-                  <div className="text-[10px] text-slate-600 dark:text-slate-400">الالتزام بالموعد</div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-400">
+                    الالتزام بالموعد
+                  </div>
                   <div className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
                     {activeBreakdown.punctuality}/5
                   </div>
@@ -204,9 +205,7 @@ export function OrderCompletionModal({
 
             <div className="space-y-2.5">
               <div className="flex items-start justify-between gap-3">
-                <span className="text-slate-500 dark:text-slate-400 shrink-0">
-                  الخدمة:
-                </span>
+                <span className="text-slate-500 dark:text-slate-400 shrink-0">الخدمة:</span>
                 <span className="font-bold text-slate-900 dark:text-slate-100 text-left">
                   {request.serviceTitle} · {request.categoryName}
                 </span>
@@ -270,42 +269,44 @@ export function OrderCompletionModal({
                 </div>
               )}
 
-              {quote && (() => {
-                const { finalPriceEGP, promoDiscountEGP } = computeDiscountedPrice(
-                  quote.priceEGP,
-                  request.discountPercent,
-                  request.maxDiscountEGP,
-                  request.loyaltyDiscountEGP || 0
-                );
-                return (
-                  <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
-                    {(request.promoCode || (request.loyaltyDiscountEGP && request.loyaltyDiscountEGP > 0)) &&
-                      promoDiscountEGP > 0 && (
-                        <div className="flex items-center justify-between gap-3 text-emerald-700 dark:text-emerald-400 font-semibold">
-                          <span className="inline-flex items-center gap-1">
-                            <Tag className="w-3.5 h-3.5 shrink-0" />
-                            <span>
-                              {request.promoCode && request.loyaltyDiscountEGP
-                                ? `خصم ${request.promoCode} + نقاط خدمات:`
-                                : request.loyaltyDiscountEGP
-                                ? 'خصم نقاط خدمات:'
-                                : `خصم كود ${request.promoCode}:`}
+              {quote &&
+                (() => {
+                  const { finalPriceEGP, promoDiscountEGP } = computeDiscountedPrice(
+                    quote.priceEGP,
+                    request.discountPercent,
+                    request.maxDiscountEGP,
+                    request.loyaltyDiscountEGP || 0
+                  );
+                  return (
+                    <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+                      {(request.promoCode ||
+                        (request.loyaltyDiscountEGP && request.loyaltyDiscountEGP > 0)) &&
+                        promoDiscountEGP > 0 && (
+                          <div className="flex items-center justify-between gap-3 text-emerald-700 dark:text-emerald-400 font-semibold">
+                            <span className="inline-flex items-center gap-1">
+                              <Tag className="w-3.5 h-3.5 shrink-0" />
+                              <span>
+                                {request.promoCode && request.loyaltyDiscountEGP
+                                  ? `خصم ${request.promoCode} + نقاط خدمات:`
+                                  : request.loyaltyDiscountEGP
+                                    ? 'خصم نقاط خدمات:'
+                                    : `خصم كود ${request.promoCode}:`}
+                              </span>
                             </span>
-                          </span>
-                          <span className="tabular-nums">- {formatEGP(promoDiscountEGP)}</span>
-                        </div>
-                      )}
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
-                        التكلفة النهائية:
-                      </span>
-                      <span className="text-lg font-extrabold text-orange-700 dark:text-orange-400 tabular-nums">
-                        {formatEGP(finalPriceEGP)}
-                      </span>
+                            <span className="tabular-nums">- {formatEGP(promoDiscountEGP)}</span>
+                          </div>
+                        )}
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          التكلفة النهائية:
+                        </span>
+                        <span className="text-lg font-extrabold text-orange-700 dark:text-orange-400 tabular-nums">
+                          {formatEGP(finalPriceEGP)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               {savingsPercent >= 1 && savingsAmountEGP > 0 && (
                 <div className="bg-emerald-100/90 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/80 rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-emerald-950 dark:text-emerald-100 font-bold">
@@ -326,7 +327,8 @@ export function OrderCompletionModal({
                     <span>نقاط خدمات المكتسبة:</span>
                   </span>
                   <span className="tabular-nums text-[#ea580c] dark:text-orange-400">
-                    +{request.pointsAwarded ||
+                    +
+                    {request.pointsAwarded ||
                       KHADAMAT_POINTS_PER_COMPLETED_ORDER +
                         (rating > 0 ? KHADAMAT_BONUS_POINTS_FOR_RATING : 0)}{' '}
                     نقطة
@@ -344,11 +346,7 @@ export function OrderCompletionModal({
               )}
 
               <div className="pt-2">
-                <DigitalWarrantyCard
-                  request={request}
-                  quote={quote}
-                  compact
-                />
+                <DigitalWarrantyCard request={request} quote={quote} compact />
               </div>
             </div>
           </div>

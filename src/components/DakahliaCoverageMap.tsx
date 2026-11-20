@@ -60,7 +60,10 @@ const MAP_CENTERS = [
 ];
 
 // Slight label offsets (dx, dy) in SVG units so neighboring centers stay crisp and readable
-const LABEL_OFFSETS: Record<string, { dx: number; dy: number; anchor?: 'start' | 'end' | 'middle' }> = {
+const LABEL_OFFSETS: Record<
+  string,
+  { dx: number; dy: number; anchor?: 'start' | 'end' | 'middle' }
+> = {
   المنصورة: { dx: 12, dy: 16, anchor: 'start' },
   'المنصورة الجديدة': { dx: -10, dy: -12, anchor: 'end' },
   طلخا: { dx: -10, dy: -12, anchor: 'end' },
@@ -130,7 +133,7 @@ export function DakahliaCoverageMap({
       projectCoord(30.72, 31.26), // Meet Ghamr
       projectCoord(30.94, 31.29), // Aga
       projectCoord(31.045, 31.378), // Mansoura / Talkha
-      projectCoord(31.20, 31.52), // Shirbin
+      projectCoord(31.2, 31.52), // Shirbin
       projectCoord(31.38, 31.56), // North toward Mediterranean
     ];
     return `M ${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ')}`;
@@ -144,7 +147,7 @@ export function DakahliaCoverageMap({
       [31.25, 32.06],
       [31.12, 32.08],
       [30.92, 31.68],
-      [30.68, 31.30],
+      [30.68, 31.3],
       [30.72, 31.21],
       [31.15, 31.23],
       [31.32, 31.28],
@@ -317,8 +320,8 @@ export function DakahliaCoverageMap({
                             ? '#fb923c'
                             : '#FF5A00'
                           : isDark
-                          ? '#e2e8f0'
-                          : '#0f172a'
+                            ? '#e2e8f0'
+                            : '#0f172a'
                       }
                       strokeWidth={isFocused ? 2.2 : 1.5}
                     />
@@ -334,8 +337,8 @@ export function DakahliaCoverageMap({
                           ? '#f97316'
                           : '#FF5A00'
                         : isDark
-                        ? '#94a3b8'
-                        : '#64748b'
+                          ? '#94a3b8'
+                          : '#64748b'
                     }
                     stroke={isDark ? '#0f172a' : '#ffffff'}
                     strokeWidth="2"
@@ -348,13 +351,7 @@ export function DakahliaCoverageMap({
                     fontSize={isFocused || node.center === 'المنصورة' ? '12' : '10.5'}
                     fontWeight={isFocused || isSelectedCenter ? '700' : '600'}
                     fill={
-                      isFocused
-                        ? isDark
-                          ? '#fb923c'
-                          : '#c2410c'
-                        : isDark
-                        ? '#e2e8f0'
-                        : '#1e293b'
+                      isFocused ? (isDark ? '#fb923c' : '#c2410c') : isDark ? '#e2e8f0' : '#1e293b'
                     }
                     style={{
                       paintOrder: 'stroke',
@@ -399,9 +396,7 @@ export function DakahliaCoverageMap({
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
                   <Users className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400" />
-                  {activeNode.techsCount > 0
-                    ? `${activeNode.techsCount} فني/شركة`
-                    : 'أقرب مركز'}
+                  {activeNode.techsCount > 0 ? `${activeNode.techsCount} فني/شركة` : 'أقرب مركز'}
                 </span>
               </div>
 

@@ -24,9 +24,7 @@ export interface NotificationVisualMeta {
   svgPath: string;
 }
 
-export function getNotificationVisualMeta(
-  type: AppNotification['type']
-): NotificationVisualMeta {
+export function getNotificationVisualMeta(type: AppNotification['type']): NotificationVisualMeta {
   switch (type) {
     case 'quote_accepted':
       return {
@@ -34,7 +32,8 @@ export function getNotificationVisualMeta(
         actionLabel: 'عرض الطلب',
         colorHex: '#2563EB',
         iconBgClass: 'bg-blue-600 dark:bg-blue-500 text-white shadow-sm shadow-blue-600/25',
-        softBgClass: 'bg-blue-50/60 dark:bg-blue-950/35 hover:bg-blue-50/90 dark:hover:bg-blue-950/55',
+        softBgClass:
+          'bg-blue-50/60 dark:bg-blue-950/35 hover:bg-blue-50/90 dark:hover:bg-blue-950/55',
         badgeClass:
           'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800',
         accentBorderClass: 'border-r-4 border-r-blue-600 dark:border-r-blue-500',
@@ -82,7 +81,8 @@ export function getNotificationVisualMeta(
         label: 'تم إنهاء الخدمة',
         actionLabel: 'تقييم الخدمة',
         colorHex: '#059669',
-        iconBgClass: 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-sm shadow-emerald-600/25',
+        iconBgClass:
+          'bg-emerald-600 dark:bg-emerald-500 text-white shadow-sm shadow-emerald-600/25',
         softBgClass:
           'bg-emerald-50/60 dark:bg-emerald-950/35 hover:bg-emerald-50/90 dark:hover:bg-emerald-950/55',
         badgeClass:
@@ -90,8 +90,7 @@ export function getNotificationVisualMeta(
         accentBorderClass: 'border-r-4 border-r-emerald-600 dark:border-r-emerald-500',
         dotClass: 'bg-emerald-600 dark:bg-emerald-400',
         progressBarClass: 'bg-emerald-600 dark:bg-emerald-400',
-        svgPath:
-          'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3',
+        svgPath: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3',
       };
 
     case 'new_quote':
@@ -168,11 +167,7 @@ export function buildColoredPushIconSvgUrl(type: AppNotification['type']): strin
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-export type BrowserPushPermissionState =
-  | 'granted'
-  | 'denied'
-  | 'default'
-  | 'unsupported';
+export type BrowserPushPermissionState = 'granted' | 'denied' | 'default' | 'unsupported';
 
 export function getBrowserPushPermission(): BrowserPushPermissionState {
   if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -218,8 +213,7 @@ export function playSmartNotificationChime(type: AppNotification['type']): void 
   try {
     const AudioCtx =
       window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
 
     const ctx = new AudioCtx();

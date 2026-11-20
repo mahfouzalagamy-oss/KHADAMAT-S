@@ -200,11 +200,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     reviewsCount: 189,
     warrantyDays: 30,
     imageUrl: IMG_AC,
-    included: [
-      'فحص مواسير النحاس والصمامات',
-      'تفريغ الهواء قبل الشحن',
-      'شحن فريون R22 أو R410A',
-    ],
+    included: ['فحص مواسير النحاس والصمامات', 'تفريغ الهواء قبل الشحن', 'شحن فريون R22 أو R410A'],
   },
   {
     id: 'ac-install',
@@ -391,11 +387,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     reviewsCount: 138,
     warrantyDays: 30,
     imageUrl: IMG_CARPENTRY,
-    included: [
-      'ضبط حواف الباب والكالون',
-      'تغيير قلب كالون أو مقبض باب',
-      'تثبيت مصد أرضي للأبواب',
-    ],
+    included: ['ضبط حواف الباب والكالون', 'تغيير قلب كالون أو مقبض باب', 'تثبيت مصد أرضي للأبواب'],
   },
   {
     id: 'paint-room',
@@ -1555,8 +1547,7 @@ export function computeTechnicianStats(
   }
 
   const totalReviews = techReviews.length;
-  const averageRating =
-    totalReviews > 0 ? Number((sumRatings / totalReviews).toFixed(1)) : 5.0;
+  const averageRating = totalReviews > 0 ? Number((sumRatings / totalReviews).toFixed(1)) : 5.0;
   const criteriaAverages: RatingBreakdown =
     totalReviews > 0
       ? {
@@ -1567,17 +1558,14 @@ export function computeTechnicianStats(
       : { punctuality: 5.0, cleanliness: 5.0, professionalism: 5.0 };
 
   const positiveCount = ratingCounts[5] + ratingCounts[4];
-  const positivePercent =
-    totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100;
+  const positivePercent = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100;
 
   const techQuotes = allQuotes.filter((q) => q.technicianId === technicianId);
   const totalQuotesSent = techQuotes.length;
   const acceptedQuotes = techQuotes.filter((q) => q.status === 'accepted');
   const acceptedQuotesCount = acceptedQuotes.length;
   const acceptanceRatePercent =
-    totalQuotesSent > 0
-      ? Math.round((acceptedQuotesCount / totalQuotesSent) * 100)
-      : 0;
+    totalQuotesSent > 0 ? Math.round((acceptedQuotesCount / totalQuotesSent) * 100) : 0;
 
   // Sum completed values from historical reviews + newly completed accepted requests
   const reviewIdsFromRequests = new Set(
@@ -1692,8 +1680,7 @@ export const INITIAL_RECURRING_SCHEDULES: RecurringSchedule[] = [
     categoryId: 'cleaning',
     categoryName: 'تنظيف المنازل',
     serviceTitle: 'تنظيف شامل للشقق والفلل',
-    detailedDescription:
-      'تنظيف أسبوعي دوري للشقة (3 غرف ومطبخ وحمامين) مع تعقيم الأرضيات.',
+    detailedDescription: 'تنظيف أسبوعي دوري للشقة (3 غرف ومطبخ وحمامين) مع تعقيم الأرضيات.',
     district: DEFAULT_DAKAHLIA_DISTRICT,
     addressText: 'شارع قناة السويس، برج الصفوة، أمام مسجد النور · الدور الرابع · شقة 8',
     preferredTime: '10:00 ص – 12:00 م',
@@ -1716,14 +1703,9 @@ export const WALLET_PROVIDERS = [
   'اتصالات كاش',
 ] as const;
 
-export function getPaymentMethodLabel(
-  method?: PaymentMethod,
-  walletProvider?: string
-): string {
+export function getPaymentMethodLabel(method?: PaymentMethod, walletProvider?: string): string {
   if (method === 'wallet') {
-    return walletProvider
-      ? `محفظة إلكترونية (${walletProvider})`
-      : 'محفظة إلكترونية';
+    return walletProvider ? `محفظة إلكترونية (${walletProvider})` : 'محفظة إلكترونية';
   }
   return 'نقد عند الاستلام';
 }
@@ -1863,11 +1845,7 @@ export function computeServiceMarketStats(
   let savingsPercent = 0;
   let savingsAmountEGP = 0;
 
-  if (
-    lowestOfferEGP !== null &&
-    marketAverageEGP !== null &&
-    marketAverageEGP > lowestOfferEGP
-  ) {
+  if (lowestOfferEGP !== null && marketAverageEGP !== null && marketAverageEGP > lowestOfferEGP) {
     savingsAmountEGP = marketAverageEGP - lowestOfferEGP;
     savingsPercent = Math.round((savingsAmountEGP / marketAverageEGP) * 100);
   }
@@ -1906,11 +1884,7 @@ export function computeQuoteMarketComparison(
   let savingsPercent = 0;
   let savingsAmountEGP = 0;
 
-  if (
-    quotePriceEGP > 0 &&
-    marketAverageEGP !== null &&
-    marketAverageEGP > quotePriceEGP
-  ) {
+  if (quotePriceEGP > 0 && marketAverageEGP !== null && marketAverageEGP > quotePriceEGP) {
     savingsAmountEGP = marketAverageEGP - quotePriceEGP;
     savingsPercent = Math.round((savingsAmountEGP / marketAverageEGP) * 100);
   }
@@ -1945,9 +1919,7 @@ export function computeFeaturedTechnicians(
     const liveCompletedExtra = allRequests.filter((req) => {
       if (req.status !== 'completed' || req.id === 'req-103') return false;
       const acceptedQuote = allQuotes.find(
-        (q) =>
-          q.id === req.acceptedQuoteId ||
-          (q.requestId === req.id && q.status === 'accepted')
+        (q) => q.id === req.acceptedQuoteId || (q.requestId === req.id && q.status === 'accepted')
       );
       return acceptedQuote?.technicianId === tech.id;
     }).length;
@@ -1959,8 +1931,8 @@ export function computeFeaturedTechnicians(
       stats.totalReviews >= 5
         ? stats.averageRating
         : stats.totalReviews > 0
-        ? Number((tech.rating * 0.65 + stats.averageRating * 0.35).toFixed(1))
-        : Number(tech.rating.toFixed(1));
+          ? Number((tech.rating * 0.65 + stats.averageRating * 0.35).toFixed(1))
+          : Number(tech.rating.toFixed(1));
 
     const totalReviews = Math.max(tech.reviewsCount, stats.totalReviews);
     const trustScore = (effectiveRating - 4.0) * 600 + effectiveCompletedJobs;
@@ -2316,9 +2288,7 @@ export function computeSmartServiceHints(
     SERVICES_CATALOG.find((s) => s.categoryId === currentCategoryId);
 
   const currentId = currentService?.id || '';
-  const activeHistoryRequests = customerRequests.filter(
-    (r) => r.status !== 'cancelled'
-  );
+  const activeHistoryRequests = customerRequests.filter((r) => r.status !== 'cancelled');
   const pastServiceTitles = new Set(activeHistoryRequests.map((r) => r.serviceTitle));
 
   const hintsByTargetId = new Map<string, SmartServiceHint>();
@@ -2338,9 +2308,7 @@ export function computeSmartServiceHints(
     hintsByTargetId.set(target.id, {
       id: `hint-${target.id}`,
       service: target,
-      reason: alsoInHistory
-        ? `${rule.reason} (مرتبط بسجل طلباتك)`
-        : rule.reason,
+      reason: alsoInHistory ? `${rule.reason} (مرتبط بسجل طلباتك)` : rule.reason,
       source: alsoInHistory ? 'current_and_history' : 'current_service',
       noteAddition: rule.noteAddition,
     });
@@ -2419,19 +2387,13 @@ export function computeRequestCostSavingsSummary(
 
   // Fallback to category-level historical quotes when a custom service title is used
   if (previousPool.length < 2) {
-    const categoryTitles = SERVICES_CATALOG.filter(
-      (s) => s.categoryId === request.categoryId
-    ).map((s) => s.title);
+    const categoryTitles = SERVICES_CATALOG.filter((s) => s.categoryId === request.categoryId).map(
+      (s) => s.title
+    );
     const catPool: number[] = [];
     for (const title of categoryTitles) {
       catPool.push(
-        ...collectPreviousPricesForService(
-          title,
-          allQuotes,
-          allRequests,
-          allReviews,
-          request.id
-        )
+        ...collectPreviousPricesForService(title, allQuotes, allRequests, allReviews, request.id)
       );
     }
     if (catPool.length >= 2) {
@@ -2444,18 +2406,14 @@ export function computeRequestCostSavingsSummary(
       ? Math.round(previousPool.reduce((sum, p) => sum + p, 0) / previousPool.length)
       : null;
 
-  const activeQuotes = requestQuotes.filter(
-    (q) => q.status !== 'rejected' && q.priceEGP > 0
-  );
+  const activeQuotes = requestQuotes.filter((q) => q.status !== 'rejected' && q.priceEGP > 0);
   const acceptedQuote = activeQuotes.find(
     (q) => q.id === request.acceptedQuoteId || q.status === 'accepted'
   );
 
   if (acceptedQuote) {
     const expectedSavingsAmountEGP =
-      marketAverageEGP !== null
-        ? Math.max(0, marketAverageEGP - acceptedQuote.priceEGP)
-        : 0;
+      marketAverageEGP !== null ? Math.max(0, marketAverageEGP - acceptedQuote.priceEGP) : 0;
     const expectedSavingsPercent =
       marketAverageEGP !== null && marketAverageEGP > acceptedQuote.priceEGP
         ? Math.round((expectedSavingsAmountEGP / marketAverageEGP) * 100)
@@ -2497,9 +2455,7 @@ export function computeRequestCostSavingsSummary(
       ? Math.max(0, marketAverageEGP - historicalMin)
       : 0;
   const expectedSavingsPercent =
-    marketAverageEGP !== null &&
-    historicalMin !== null &&
-    marketAverageEGP > historicalMin
+    marketAverageEGP !== null && historicalMin !== null && marketAverageEGP > historicalMin
       ? Math.round((expectedSavingsAmountEGP / marketAverageEGP) * 100)
       : 0;
 
@@ -2638,9 +2594,7 @@ export function computeDiscountedPrice(
   if (discountPercent && discountPercent > 0) {
     const rawDiscount = Math.round((originalPriceEGP * discountPercent) / 100);
     pctDiscount =
-      maxDiscountEGP && maxDiscountEGP > 0
-        ? Math.min(rawDiscount, maxDiscountEGP)
-        : rawDiscount;
+      maxDiscountEGP && maxDiscountEGP > 0 ? Math.min(rawDiscount, maxDiscountEGP) : rawDiscount;
   }
   const extraFlat = flatDiscountEGP > 0 ? Math.round(flatDiscountEGP) : 0;
   const totalDiscount = Math.min(originalPriceEGP, pctDiscount + extraFlat);
@@ -2665,20 +2619,11 @@ export function getFastQuoteWindowStatus(
       remainingMinutes: quotesCount > 0 ? 18 : 26,
       elapsedMinutes: quotesCount > 0 ? 12 : 4,
       isWithinWindow: true,
-      headline:
-        quotesCount > 0
-          ? 'عروض سريعة خلال 30 دقيقة'
-          : 'جاري تجميع عروض خلال 30 دقيقة',
+      headline: quotesCount > 0 ? 'عروض سريعة خلال 30 دقيقة' : 'جاري تجميع عروض خلال 30 دقيقة',
     };
   }
-  const elapsedMinutes = Math.max(
-    0,
-    Math.floor((nowMs - createdAtTimestamp) / 60000)
-  );
-  const remainingMinutes = Math.max(
-    0,
-    FAST_QUOTE_WINDOW_MINUTES - elapsedMinutes
-  );
+  const elapsedMinutes = Math.max(0, Math.floor((nowMs - createdAtTimestamp) / 60000));
+  const remainingMinutes = Math.max(0, FAST_QUOTE_WINDOW_MINUTES - elapsedMinutes);
   const isWithinWindow = remainingMinutes > 0;
 
   return {
@@ -2691,10 +2636,7 @@ export function getFastQuoteWindowStatus(
   };
 }
 
-export function parseWarrantyDaysFromLabel(
-  label?: string,
-  fallbackDays = 30
-): number {
+export function parseWarrantyDaysFromLabel(label?: string, fallbackDays = 30): number {
   if (!label) return fallbackDays;
   const match = label.match(/(\d+)/);
   if (match) {
@@ -2722,13 +2664,10 @@ export function getWarrantyCertificateStatus(
 ): WarrantyCertificateStatus {
   const catalogMatch = SERVICES_CATALOG.find((s) => s.title === req.serviceTitle);
   const totalDays =
-    req.warrantyDays ||
-    parseWarrantyDaysFromLabel(warrantyLabel, catalogMatch?.warrantyDays || 30);
+    req.warrantyDays || parseWarrantyDaysFromLabel(warrantyLabel, catalogMatch?.warrantyDays || 30);
 
   const baseTimestamp =
-    req.completedAtTimestamp ||
-    req.createdAtTimestamp ||
-    nowMs - 4 * 24 * 60 * 60 * 1000;
+    req.completedAtTimestamp || req.createdAtTimestamp || nowMs - 4 * 24 * 60 * 60 * 1000;
 
   const dayMs = 24 * 60 * 60 * 1000;
   const elapsedDays = Math.max(0, Math.floor((nowMs - baseTimestamp) / dayMs));
@@ -2739,9 +2678,10 @@ export function getWarrantyCertificateStatus(
   );
 
   const expiryDate = new Date(baseTimestamp + totalDays * dayMs);
-  const expiryISO = `${expiryDate.getFullYear()}-${String(
-    expiryDate.getMonth() + 1
-  ).padStart(2, '0')}-${String(expiryDate.getDate()).padStart(2, '0')}`;
+  const expiryISO = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}-${String(expiryDate.getDate()).padStart(2, '0')}`;
 
   return {
     certificateCode: `WR-${req.referenceCode}`,
@@ -2801,23 +2741,15 @@ export function computeOrderEarnedPoints(req: ServiceRequest): number {
   if (typeof req.pointsAwarded === 'number' && req.pointsAwarded > 0) {
     return req.pointsAwarded;
   }
-  return (
-    KHADAMAT_POINTS_PER_COMPLETED_ORDER +
-    (req.rating ? KHADAMAT_BONUS_POINTS_FOR_RATING : 0)
-  );
+  return KHADAMAT_POINTS_PER_COMPLETED_ORDER + (req.rating ? KHADAMAT_BONUS_POINTS_FOR_RATING : 0);
 }
 
 export function computeCustomerPointsSummary(
   requests: ServiceRequest[],
   redemptions: LoyaltyRedemption[]
 ): CustomerPointsSummary {
-  const completedOrders = requests.filter(
-    (r) => r.status === 'completed' && !r.isWarrantyClaim
-  );
-  const earnedPoints = completedOrders.reduce(
-    (sum, req) => sum + computeOrderEarnedPoints(req),
-    0
-  );
+  const completedOrders = requests.filter((r) => r.status === 'completed' && !r.isWarrantyClaim);
+  const earnedPoints = completedOrders.reduce((sum, req) => sum + computeOrderEarnedPoints(req), 0);
   const spentPoints = redemptions.reduce((sum, r) => sum + r.pointsSpent, 0);
   const availablePoints = Math.max(0, earnedPoints - spentPoints);
 
@@ -2924,8 +2856,7 @@ export const EMERGENCY_SCENARIOS: EmergencyScenario[] = [
       'ضع منشفة أو وعاء أسفل الوحدة الداخلية إذا كان هناك تنقيط مستمر.',
       'صوّر شاشة التكييف إذا ظهر عليها كود خطأ (Error Code).',
     ],
-    prefillDescription:
-      'بلاغ طوارئ تكييف: توقف التبريد أو ظهور عطل/تنقيط عاجل يحتاج فحصاً سريعاً.',
+    prefillDescription: 'بلاغ طوارئ تكييف: توقف التبريد أو ظهور عطل/تنقيط عاجل يحتاج فحصاً سريعاً.',
     iconKey: 'ac',
   },
   {
@@ -2979,12 +2910,7 @@ export function computeEmergencyStandbyTechnicians(
   technicians: Technician[],
   allLocations: LocationEntry[] = EGYPT_LOCATIONS
 ): EmergencyStandbyResult {
-  const routing = findNearestMatchingTechnicians(
-    categoryId,
-    district,
-    technicians,
-    allLocations
-  );
+  const routing = findNearestMatchingTechnicians(categoryId, district, technicians, allLocations);
 
   const enriched = routing.targets
     .map((entry) => {
@@ -2992,8 +2918,8 @@ export function computeEmergencyStandbyTechnicians(
         entry.matchType === 'exact_area'
           ? 16
           : entry.matchType === 'exact_center'
-          ? 24
-          : Math.min(55, 22 + Math.round(entry.distanceKm * 1.4));
+            ? 24
+            : Math.min(55, 22 + Math.round(entry.distanceKm * 1.4));
       return {
         technician: entry.technician,
         distanceKm: entry.distanceKm,
@@ -3051,9 +2977,7 @@ export function generateSmartMaintenancePlan(
     });
 
   const isServiceScheduled = (serviceTitle: string, categoryId: string) =>
-    activeSchedules.some(
-      (s) => s.serviceTitle === serviceTitle || s.categoryId === categoryId
-    );
+    activeSchedules.some((s) => s.serviceTitle === serviceTitle || s.categoryId === categoryId);
 
   const candidateIds: {
     serviceId: string;
@@ -3200,8 +3124,8 @@ export function generateSmartMaintenancePlan(
       reason: warrantyUntil
         ? `مغطى حالياً بشهادة ضمان سارية حتى ${warrantyUntil} — لا حاجة لصيانة مدفوعة الآن.`
         : scheduled
-        ? 'هذه الخدمة مجدولة تلقائياً بالفعل ضمن طلباتك الدورية النشطة.'
-        : item.reason,
+          ? 'هذه الخدمة مجدولة تلقائياً بالفعل ضمن طلباتك الدورية النشطة.'
+          : item.reason,
       recommendedFrequency: item.frequency,
       recommendedPromoCode: item.promoCode,
       estimatedSavingLabel: item.savingLabel,
@@ -3233,8 +3157,3 @@ export function generateSmartMaintenancePlan(
     recommendations: recommendations.slice(0, 4),
   };
 }
-
-
-
-
-

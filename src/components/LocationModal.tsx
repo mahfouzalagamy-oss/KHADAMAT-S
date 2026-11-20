@@ -40,11 +40,7 @@ export function LocationModal({
         return false;
       }
       if (!q) return true;
-      return (
-        loc.name.includes(q) ||
-        loc.center.includes(q) ||
-        loc.displayLabel.includes(q)
-      );
+      return loc.name.includes(q) || loc.center.includes(q) || loc.displayLabel.includes(q);
     });
   }, [locations, search, dakahliaCenter]);
 
@@ -78,7 +74,10 @@ export function LocationModal({
 
         <div className="flex items-center justify-between gap-3 px-5 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div>
-            <h2 id="location-modal-title" className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h2
+              id="location-modal-title"
+              className="text-lg font-bold text-slate-900 dark:text-slate-100"
+            >
               اختر المنطقة في الدقهلية
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -307,7 +306,9 @@ export function LocationModal({
                     <div className="flex items-center gap-3 min-w-0">
                       <MapPin
                         className={`w-4 h-4 shrink-0 ${
-                          selected ? 'text-[#FF5A00] dark:text-orange-400' : 'text-slate-400 dark:text-slate-500'
+                          selected
+                            ? 'text-[#FF5A00] dark:text-orange-400'
+                            : 'text-slate-400 dark:text-slate-500'
                         }`}
                       />
                       <div className="min-w-0">
@@ -319,7 +320,9 @@ export function LocationModal({
                         </div>
                       </div>
                     </div>
-                    {selected && <Check className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />}
+                    {selected && (
+                      <Check className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                    )}
                   </button>
                 );
               })

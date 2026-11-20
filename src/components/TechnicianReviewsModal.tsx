@@ -1,11 +1,6 @@
 import { Building2, ShieldCheck, Star, X } from 'lucide-react';
 import { computeTechnicianStats, formatEGP } from '../data/khadamatData';
-import {
-  ServiceQuote,
-  ServiceRequest,
-  Technician,
-  TechnicianReview,
-} from '../types/khadamat';
+import { ServiceQuote, ServiceRequest, Technician, TechnicianReview } from '../types/khadamat';
 
 interface TechnicianReviewsModalProps {
   technician: Technician | null;
@@ -25,7 +20,6 @@ export function TechnicianReviewsModal({
   if (!technician) return null;
 
   const stats = computeTechnicianStats(technician.id, reviews, quotes, requests);
-  const starLevels: (5 | 4 | 3 | 2 | 1)[] = [5, 4, 3, 2, 1];
 
   return (
     <div
@@ -44,10 +38,15 @@ export function TechnicianReviewsModal({
               {technician.isCompany ? <Building2 className="w-5 h-5" /> : technician.initials}
             </div>
             <div className="min-w-0">
-              <h2 id="tech-reviews-title" className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+              <h2
+                id="tech-reviews-title"
+                className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100 truncate"
+              >
                 {technician.name}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{technician.specialty}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {technician.specialty}
+              </p>
             </div>
           </div>
 
@@ -124,7 +123,9 @@ export function TechnicianReviewsModal({
                 <div key={rev.id} className="p-4 space-y-1.5 bg-white dark:bg-slate-900">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      <strong className="text-slate-900 dark:text-slate-100 font-semibold">{rev.customerName}</strong>
+                      <strong className="text-slate-900 dark:text-slate-100 font-semibold">
+                        {rev.customerName}
+                      </strong>
                       <span className="mx-1.5">·</span>
                       <span>{rev.area}</span>
                     </div>
@@ -152,7 +153,9 @@ export function TechnicianReviewsModal({
                       </span>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">«{rev.review}»</p>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    «{rev.review}»
+                  </p>
                   <div className="text-[11px] text-slate-400 dark:text-slate-500">
                     {rev.serviceTitle} · {rev.dateLabel}
                   </div>

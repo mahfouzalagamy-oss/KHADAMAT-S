@@ -41,10 +41,7 @@ export function TopBar({
     },
     {
       id: 'notifications',
-      label:
-        unreadNotificationsCount > 0
-          ? `التنبيهات (${unreadNotificationsCount})`
-          : 'التنبيهات',
+      label: unreadNotificationsCount > 0 ? `التنبيهات (${unreadNotificationsCount})` : 'التنبيهات',
     },
     { id: 'profile', label: 'حسابي' },
   ];
@@ -53,18 +50,12 @@ export function TopBar({
     { id: 'open_requests', label: 'الطلبات الجديدة' },
     {
       id: 'accepted_jobs',
-      label:
-        acceptedTechJobsCount > 0
-          ? `طلبات مقبولة (${acceptedTechJobsCount})`
-          : 'طلبات مقبولة',
+      label: acceptedTechJobsCount > 0 ? `طلبات مقبولة (${acceptedTechJobsCount})` : 'طلبات مقبولة',
     },
     { id: 'tech_stats', label: 'الإحصائيات' },
     {
       id: 'notifications',
-      label:
-        unreadNotificationsCount > 0
-          ? `التنبيهات (${unreadNotificationsCount})`
-          : 'التنبيهات',
+      label: unreadNotificationsCount > 0 ? `التنبيهات (${unreadNotificationsCount})` : 'التنبيهات',
     },
     { id: 'tech_profile', label: 'حسابي' },
   ];
@@ -77,9 +68,7 @@ export function TopBar({
         <button
           type="button"
           onClick={() =>
-            role === 'customer'
-              ? onSelectCustomerTab('home')
-              : onSelectTechTab('open_requests')
+            role === 'customer' ? onSelectCustomerTab('home') : onSelectTechTab('open_requests')
           }
           className="whitespace-nowrap shrink-0 cursor-pointer hover:opacity-95 transition-opacity"
           aria-label="خدمات"
@@ -158,9 +147,7 @@ export function TopBar({
         <button
           type="button"
           onClick={() =>
-            role === 'customer'
-              ? onSelectCustomerTab('home')
-              : onSelectTechTab('open_requests')
+            role === 'customer' ? onSelectCustomerTab('home') : onSelectTechTab('open_requests')
           }
           className="whitespace-nowrap shrink-0 cursor-pointer"
           aria-label="خدمات"

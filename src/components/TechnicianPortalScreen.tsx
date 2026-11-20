@@ -76,12 +76,7 @@ interface TechnicianPortalScreenProps {
   onSwitchAccount: () => void;
 }
 
-const WARRANTY_PRESETS = [
-  'ضمان 30 يوماً',
-  'ضمان 14 يوماً',
-  'ضمان 7 أيام',
-  'حسب الفحص',
-];
+const WARRANTY_PRESETS = ['ضمان 30 يوماً', 'ضمان 14 يوماً', 'ضمان 7 أيام', 'حسب الفحص'];
 
 export function TechnicianPortalScreen({
   activeTab,
@@ -182,10 +177,7 @@ export function TechnicianPortalScreen({
     setNotesInput('');
   };
 
-  const buildFaultMediaItems = (
-    photos?: string[],
-    videos?: FaultVideoAttachment[]
-  ) => {
+  const buildFaultMediaItems = (photos?: string[], videos?: FaultVideoAttachment[]) => {
     const items: Array<{
       kind: 'image' | 'video';
       url: string;
@@ -228,8 +220,7 @@ export function TechnicianPortalScreen({
               <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
             )}
             <span className="tabular-nums">
-              معاينة العطل من العميل (
-              {videoCount > 0 ? `${videoCount} فيديو` : ''}
+              معاينة العطل من العميل ({videoCount > 0 ? `${videoCount} فيديو` : ''}
               {videoCount > 0 && photoCount > 0 ? ' · ' : ''}
               {photoCount > 0 ? `${photoCount} صور` : ''})
             </span>
@@ -270,9 +261,7 @@ export function TechnicianPortalScreen({
                       <Video className="w-3 h-3" />
                       <span>فيديو العطل</span>
                     </span>
-                    {item.durationSec && (
-                      <span className="tabular-nums">{item.durationSec} ث</span>
-                    )}
+                    {item.durationSec && <span className="tabular-nums">{item.durationSec} ث</span>}
                   </div>
                 </>
               ) : (
@@ -321,7 +310,8 @@ export function TechnicianPortalScreen({
                 معاينة العطل — {previewGallery.serviceTitle}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                {activePreviewItem.kind === 'video' ? 'فيديو العطل' : 'صورة العطل'} ({previewGallery.index + 1} من {previewGallery.items.length}) لتحديد التكلفة بدقة
+                {activePreviewItem.kind === 'video' ? 'فيديو العطل' : 'صورة العطل'} (
+                {previewGallery.index + 1} من {previewGallery.items.length}) لتحديد التكلفة بدقة
               </div>
             </div>
             <button
@@ -360,8 +350,7 @@ export function TechnicianPortalScreen({
                     prev
                       ? {
                           ...prev,
-                          index:
-                            (prev.index - 1 + prev.items.length) % prev.items.length,
+                          index: (prev.index - 1 + prev.items.length) % prev.items.length,
                         }
                       : null
                   )
@@ -408,12 +397,16 @@ export function TechnicianPortalScreen({
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{technician.name}</h1>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                    {technician.name}
+                  </h1>
                   {technician.isVerifiedDocs && (
                     <ShieldCheck className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
                   )}
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">{technician.specialty}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                  {technician.specialty}
+                </p>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1.5 tabular-nums">
                   <span className="inline-flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
@@ -453,7 +446,8 @@ export function TechnicianPortalScreen({
                   المستندات الرسمية والتوثيق
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  رقم الموبايل ({technician.phone}) موثق برمز OTP · مركز العمل الأساسي: {technician.primaryCenter}
+                  رقم الموبايل ({technician.phone}) موثق برمز OTP · مركز العمل الأساسي:{' '}
+                  {technician.primaryCenter}
                 </p>
               </div>
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700 dark:text-orange-400">
@@ -481,7 +475,9 @@ export function TechnicianPortalScreen({
                       </div>
                     )}
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{doc.label}</div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {doc.label}
+                      </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {doc.fileName} · {doc.fileSizeLabel}
                       </div>
@@ -490,7 +486,9 @@ export function TechnicianPortalScreen({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">تم التحقق من بيانات الحساب الأساسية.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                تم التحقق من بيانات الحساب الأساسية.
+              </p>
             )}
           </section>
 
@@ -517,7 +515,9 @@ export function TechnicianPortalScreen({
                           <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                             #{job.referenceCode} · {job.district}
                           </span>
-                          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{job.serviceTitle}</h3>
+                          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                            {job.serviceTitle}
+                          </h3>
                         </div>
                         {acceptedQuote && (
                           <span className="text-base font-bold text-orange-700 dark:text-orange-400 tabular-nums">
@@ -536,10 +536,14 @@ export function TechnicianPortalScreen({
                               ))}
                             </span>
                           </div>
-                          {job.review && <p className="text-slate-600 dark:text-slate-400">«{job.review}»</p>}
+                          {job.review && (
+                            <p className="text-slate-600 dark:text-slate-400">«{job.review}»</p>
+                          )}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-400 dark:text-slate-500">بانتظار تقييم العميل للخدمة</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          بانتظار تقييم العميل للخدمة
+                        </p>
                       )}
                     </div>
                   );
@@ -581,7 +585,9 @@ export function TechnicianPortalScreen({
             <div className="space-y-4">
               {acceptedJobs.map((job) => {
                 const myQuote = quotes.find(
-                  (q) => q.id === job.acceptedQuoteId || (q.requestId === job.id && q.status === 'accepted')
+                  (q) =>
+                    q.id === job.acceptedQuoteId ||
+                    (q.requestId === job.id && q.status === 'accepted')
                 );
                 const promoCalc = myQuote
                   ? computeDiscountedPrice(
@@ -608,15 +614,17 @@ export function TechnicianPortalScreen({
                             {job.status === 'en_route'
                               ? 'في الطريق للعميل حالياً'
                               : job.status === 'in_progress'
-                              ? 'جاري تنفيذ الخدمة في الموقع'
-                              : 'تمت موافقة العميل على عرضك'}
+                                ? 'جاري تنفيذ الخدمة في الموقع'
+                                : 'تمت موافقة العميل على عرضك'}
                           </span>
                           <span>·</span>
                           <span className="tabular-nums">#{job.referenceCode}</span>
                           {job.bundleTitle && (
                             <>
                               <span>·</span>
-                              <span className="text-slate-700 dark:text-slate-300">{job.bundleTitle}</span>
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {job.bundleTitle}
+                              </span>
                             </>
                           )}
                         </div>
@@ -626,16 +634,16 @@ export function TechnicianPortalScreen({
                         {job.isWarrantyClaim && job.warrantyClaimForRef && (
                           <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                             <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>
-                              إعادة فحص ضمان مجاني لطلب #{job.warrantyClaimForRef}
-                            </span>
+                            <span>إعادة فحص ضمان مجاني لطلب #{job.warrantyClaimForRef}</span>
                           </div>
                         )}
                       </div>
 
                       {myQuote && promoCalc && (
                         <div className="text-right sm:text-left shrink-0">
-                          <span className="text-xs text-slate-500 dark:text-slate-400 block">قيمة العرض المقبول</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                            قيمة العرض المقبول
+                          </span>
                           <span className="text-xl font-bold text-orange-700 dark:text-orange-400 tabular-nums block">
                             {formatEGP(myQuote.priceEGP)}
                           </span>
@@ -735,8 +743,8 @@ export function TechnicianPortalScreen({
                         {job.status === 'quote_accepted'
                           ? 'أبلغ العميل عند تحركك للزيارة لتفعيل التتبع اللحظي'
                           : job.status === 'en_route'
-                          ? 'تم إشعار العميل أنك في الطريق إليه الآن'
-                          : 'العمل قيد التنفيذ — اضغط «تم إنهاء الخدمة» فور الانتهاء'}
+                            ? 'تم إشعار العميل أنك في الطريق إليه الآن'
+                            : 'العمل قيد التنفيذ — اضغط «تم إنهاء الخدمة» فور الانتهاء'}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2.5">
@@ -871,7 +879,9 @@ export function TechnicianPortalScreen({
                         {req.urgency === 'urgent' && (
                           <>
                             <span>·</span>
-                            <span className="font-bold text-amber-700 dark:text-amber-400">طلب طوارئ</span>
+                            <span className="font-bold text-amber-700 dark:text-amber-400">
+                              طلب طوارئ
+                            </span>
                           </>
                         )}
                         {req.recurrenceFrequency && (
@@ -879,9 +889,7 @@ export function TechnicianPortalScreen({
                             <span>·</span>
                             <span className="inline-flex items-center gap-1 font-semibold text-orange-700 dark:text-orange-400">
                               <Repeat className="w-3 h-3" />
-                              <span>
-                                طلب دوري ({getRecurrenceLabel(req.recurrenceFrequency)})
-                              </span>
+                              <span>طلب دوري ({getRecurrenceLabel(req.recurrenceFrequency)})</span>
                             </span>
                           </>
                         )}
@@ -902,7 +910,9 @@ export function TechnicianPortalScreen({
                           <Tag className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {req.bundleTitle ? `${req.bundleTitle}` : 'طلب بكود خصم'}
-                            {req.promoCode ? ` (${req.promoCode} - خصم ${req.discountPercent || 0}%)` : ''}
+                            {req.promoCode
+                              ? ` (${req.promoCode} - خصم ${req.discountPercent || 0}%)`
+                              : ''}
                           </span>
                         </div>
                       )}
@@ -956,7 +966,9 @@ export function TechnicianPortalScreen({
                             ? ` · ${mySubmittedQuote.warrantyLabel}`
                             : ''}
                         </div>
-                        <p className="text-xs text-slate-700 dark:text-slate-300">{mySubmittedQuote.notes}</p>
+                        <p className="text-xs text-slate-700 dark:text-slate-300">
+                          {mySubmittedQuote.notes}
+                        </p>
                       </div>
                       <span className="text-lg font-bold text-orange-800 dark:text-orange-300 tabular-nums shrink-0">
                         {formatEGP(mySubmittedQuote.priceEGP)}
@@ -1081,7 +1093,9 @@ export function TechnicianPortalScreen({
                       </div>
 
                       {formError && (
-                        <p className="text-xs text-red-700 dark:text-red-400 font-medium">{formError}</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+                          {formError}
+                        </p>
                       )}
 
                       <div className="flex items-center justify-end gap-2">
@@ -1163,9 +1177,7 @@ export function TechnicianPortalScreen({
                                   <div
                                     key={msg.id}
                                     className={`flex flex-col ${
-                                      msg.senderRole === 'technician'
-                                        ? 'items-start'
-                                        : 'items-end'
+                                      msg.senderRole === 'technician' ? 'items-start' : 'items-end'
                                     }`}
                                   >
                                     <div

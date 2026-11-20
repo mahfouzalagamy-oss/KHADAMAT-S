@@ -10,19 +10,11 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AppNotification, PushPreferences, UserRole } from '../types/khadamat';
-import {
-  BrowserPushPermissionState,
-  getNotificationVisualMeta,
-} from '../utils/pushNotifications';
+import { BrowserPushPermissionState, getNotificationVisualMeta } from '../utils/pushNotifications';
 import { NotificationStatusIcon } from './NotificationStatusIcon';
 
 type NotificationFilter =
-  | 'all'
-  | 'quote_accepted'
-  | 'tech_en_route'
-  | 'job_in_progress'
-  | 'job_completed'
-  | 'new_quote';
+  'all' | 'quote_accepted' | 'tech_en_route' | 'job_in_progress' | 'job_completed' | 'new_quote';
 
 interface NotificationsScreenProps {
   role?: UserRole;
@@ -31,9 +23,7 @@ interface NotificationsScreenProps {
   browserPermission?: BrowserPushPermissionState;
   onRequestBrowserPermission?: () => Promise<void> | void;
   onUpdatePushPrefs?: (next: PushPreferences) => void;
-  onSimulatePush?: (
-    statusType: 'quote_accepted' | 'tech_en_route' | 'job_completed'
-  ) => void;
+  onSimulatePush?: (statusType: 'quote_accepted' | 'tech_en_route' | 'job_completed') => void;
   onMarkAllRead: () => void;
   onSelectNotification: (notification: AppNotification) => void;
 }
@@ -323,9 +313,7 @@ export function NotificationsScreen({
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-slate-400 shrink-0">
-                      {notif.createdAt}
-                    </span>
+                    <span className="text-[10px] text-slate-400 shrink-0">{notif.createdAt}</span>
                   </div>
 
                   <h2 className="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">

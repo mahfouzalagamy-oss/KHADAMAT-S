@@ -1,12 +1,7 @@
 import { Building2, CheckCircle2, ShieldCheck, Star, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { computeTechnicianStats, formatEGP } from '../data/khadamatData';
-import {
-  ServiceQuote,
-  ServiceRequest,
-  Technician,
-  TechnicianReview,
-} from '../types/khadamat';
+import { ServiceQuote, ServiceRequest, Technician, TechnicianReview } from '../types/khadamat';
 
 interface TechnicianStatsScreenProps {
   technician: Technician;
@@ -36,8 +31,6 @@ export function TechnicianStatsScreen({
     if (starFilter === '3_or_less') return stats.reviews.filter((r) => r.rating <= 3);
     return stats.reviews;
   }, [stats.reviews, starFilter]);
-
-  const starLevels: (5 | 4 | 3 | 2 | 1)[] = [5, 4, 3, 2, 1];
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6 pb-14">
@@ -121,7 +114,9 @@ export function TechnicianStatsScreen({
           <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {stats.totalQuotesSent}
           </div>
-          <div className="text-[11px] text-slate-400 dark:text-slate-500">إجمالي العروض النشطة والسابقة</div>
+          <div className="text-[11px] text-slate-400 dark:text-slate-500">
+            إجمالي العروض النشطة والسابقة
+          </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-1">
@@ -140,11 +135,15 @@ export function TechnicianStatsScreen({
           <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {technician.completedJobs}
           </div>
-          <div className="text-[11px] text-slate-400 dark:text-slate-500">خبرة {technician.yearsExp} سنوات</div>
+          <div className="text-[11px] text-slate-400 dark:text-slate-500">
+            خبرة {technician.yearsExp} سنوات
+          </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-1">
-          <div className="text-xs text-slate-500 dark:text-slate-400">إجمالي قيمة الأعمال المقيّمة</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            إجمالي قيمة الأعمال المقيّمة
+          </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
             {formatEGP(stats.totalCompletedValueEGP)}
           </div>
@@ -162,9 +161,7 @@ export function TechnicianStatsScreen({
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               تقييمات العملاء ({filteredReviews.length})
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              آراء عملاء الدقهلية
-            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">آراء عملاء الدقهلية</p>
           </div>
 
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
@@ -234,9 +231,13 @@ export function TechnicianStatsScreen({
                   </div>
                 </div>
 
-                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">«{item.review}»</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  «{item.review}»
+                </p>
 
-                <div className="text-[11px] text-slate-400 dark:text-slate-500">{item.dateLabel}</div>
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                  {item.dateLabel}
+                </div>
               </article>
             ))}
           </div>

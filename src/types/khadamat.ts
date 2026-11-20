@@ -2,19 +2,10 @@ export type UserRole = 'customer' | 'technician';
 
 export type CustomerTab = 'home' | 'categories' | 'requests' | 'notifications' | 'profile';
 export type TechnicianTab =
-  | 'open_requests'
-  | 'accepted_jobs'
-  | 'tech_stats'
-  | 'notifications'
-  | 'tech_profile';
+  'open_requests' | 'accepted_jobs' | 'tech_stats' | 'notifications' | 'tech_profile';
 
 export type ServiceRequestStatus =
-  | 'open_for_quotes'
-  | 'quote_accepted'
-  | 'en_route'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled';
+  'open_for_quotes' | 'quote_accepted' | 'en_route' | 'in_progress' | 'completed' | 'cancelled';
 
 export type QuoteStatus = 'pending' | 'accepted' | 'rejected';
 

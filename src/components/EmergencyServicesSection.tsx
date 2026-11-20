@@ -140,7 +140,9 @@ export function EmergencyServicesSection({
             : 'min-h-[38px] px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 whitespace-nowrap'
         }
       >
-        <Siren className={`w-4 h-4 shrink-0 ${compactTile ? 'text-rose-600 dark:text-rose-400' : ''}`} />
+        <Siren
+          className={`w-4 h-4 shrink-0 ${compactTile ? 'text-rose-600 dark:text-rose-400' : ''}`}
+        />
         <span>خدمة طوارئ</span>
       </button>
 
@@ -279,9 +281,15 @@ export function EmergencyServicesSection({
                                 {formatEGP(quote.priceEGP)} · {quote.estimatedArrival}
                               </div>
                               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
-                                <span>الموعد {techStats.criteriaAverages.punctuality.toFixed(1)}</span>
-                                <span>النظافة {techStats.criteriaAverages.cleanliness.toFixed(1)}</span>
-                                <span>الاحترافية {techStats.criteriaAverages.professionalism.toFixed(1)}</span>
+                                <span>
+                                  الموعد {techStats.criteriaAverages.punctuality.toFixed(1)}
+                                </span>
+                                <span>
+                                  النظافة {techStats.criteriaAverages.cleanliness.toFixed(1)}
+                                </span>
+                                <span>
+                                  الاحترافية {techStats.criteriaAverages.professionalism.toFixed(1)}
+                                </span>
                               </div>
                             </div>
 

@@ -108,12 +108,7 @@ export function PushNotificationBanner({
       className="fixed top-3 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md space-y-2 pointer-events-none"
     >
       {toasts.slice(0, 2).map((notif) => (
-        <PushToastItem
-          key={notif.id}
-          notif={notif}
-          onDismiss={onDismiss}
-          onSelect={onSelect}
-        />
+        <PushToastItem key={notif.id} notif={notif} onDismiss={onDismiss} onSelect={onSelect} />
       ))}
     </div>
   );
