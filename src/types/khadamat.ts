@@ -17,7 +17,7 @@ export type RequestUrgency = 'normal' | 'urgent';
 
 export interface LocationEntry {
   id: string;
-  governorate: 'الدقهلية';
+  governorate: string;
   center: string;
   name: string;
   displayLabel: string;
@@ -81,6 +81,7 @@ export interface ServiceItem {
   imageUrl?: string;
   included: string[];
   isPopular?: boolean;
+  averagePriceEGP?: number;
 }
 
 export interface SeasonalBundle {
@@ -115,6 +116,7 @@ export interface Technician {
   primaryCenter: string;
   coveredCenters: string[];
   coveredAreas: string[];
+  governorate?: string;
   documents?: OfficialDocument[];
   isVerifiedDocs?: boolean;
   isPhoneVerified?: boolean;
@@ -123,6 +125,7 @@ export interface Technician {
   completedJobs: number;
   yearsExp: number;
   phone: string;
+  whatsappNumber?: string;
   initials: string;
 }
 
