@@ -238,6 +238,20 @@ export const useAppStore = create<AppStore>()(
         return technicians.find((t) => t.id === session.technicianId) || technicians[0] || null;
       },
 
+      // Get quotes for a specific request
+      getQuotesForRequest: (requestId: string) => {
+        const { quotes } = get();
+        return quotes.filter((q) => q.requestId === requestId);
+      },
+
+      // Get pending quotes for a technician (not yet accepted/rejected)
+      getPendingQuotesForTech: (technicianId: string) => {
+        const { quotes } = get();
+        return quotes.filter(
+          (q) => q.technicianId === technicianId && q.status === 'pending'
+        );
+      },
+
       visibleNotifications: () => {
         const { session, notifications } = get();
         if (!session) return [];
