@@ -102,6 +102,8 @@ interface AppStore {
 
   // ===== Computed =====
   activeTechnician: () => Technician | null;
+  getQuotesForRequest: (requestId: string) => ServiceQuote[];
+  getPendingQuotesForTech: (technicianId: string) => ServiceQuote[];
   visibleNotifications: () => AppNotification[];
   unreadNotificationsCount: () => number;
   openCustomerRequestsCount: () => number;
