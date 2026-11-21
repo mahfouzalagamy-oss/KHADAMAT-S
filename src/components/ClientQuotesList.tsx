@@ -22,7 +22,7 @@ export function ClientQuotesList({
   onWhatsApp,
   onCall,
 }: ClientQuotesListProps) {
-  const { quotes, setQuotes, setRequests, getQuotesForRequest } = useAppStore();
+  const { setQuotes, setRequests, getQuotesForRequest } = useAppStore();
 
   // Filter quotes for this request
   const requestQuotes = useMemo(() => getQuotesForRequest(request.id), [
@@ -34,7 +34,7 @@ export function ClientQuotesList({
   const pendingQuotes = requestQuotes.filter((q) => q.status === 'pending');
 
   const handleAcceptQuote = useCallback(
-    (quoteId: string, technicianId: string) => {
+    (quoteId: string) => {
       // Accept the quote
       setQuotes((prev) =>
         prev.map((q) =>

@@ -33,7 +33,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   FAST_QUOTE_WINDOW_MINUTES,
   WALLET_PROVIDERS,
-  buildWhatsAppLink,
   computeDiscountedPrice,
   computeQuoteMarketComparison,
   computeRatingBreakdownAverage,
@@ -96,6 +95,8 @@ interface CustomerRequestsScreenProps {
   onCancelRecurringSchedule: (scheduleId: string) => void;
   onNewRequest: () => void;
   onRequestWarrantyCheck?: (request: ServiceRequest, quote?: ServiceQuote) => void;
+  onWhatsApp?: (phone: string, technicianName: string) => void;
+  onCall?: (phone: string) => void;
   technicians?: Technician[];
   initialTab?: RequestsTab;
   isDark?: boolean;
@@ -168,6 +169,8 @@ export function CustomerRequestsScreen({
   onCancelRecurringSchedule,
   onNewRequest,
   onRequestWarrantyCheck,
+  onWhatsApp,
+  onCall,
   technicians = [],
   initialTab,
   isDark = false,
@@ -1447,28 +1450,30 @@ export function CustomerRequestsScreen({
                         {/* Contact & Completion Controls */}
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2">
-                            <a
-                              href={`tel:${acceptedQuote.technicianPhone}`}
+                            <button
+                              type="button"
+                              onClick={() => onCall(acceptedQuote.technicianPhone)}
                               className="inline-flex items-center gap-1.5 min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
                             >
                               <Phone className="w-4 h-4 text-[#FF5A00] dark:text-orange-400" />
                               <span className="tabular-nums">
                                 اتصال ({acceptedQuote.technicianPhone})
                               </span>
-                            </a>
+                            </button>
 
-                            <a
-                              href={buildWhatsAppLink(
-                                acceptedQuote.technicianPhone,
-                                `أهلاً ${acceptedQuote.technicianName}، بخصوص طلب #${req.referenceCode} (${req.serviceTitle}) على تطبيق خدمات.`
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onWhatsApp(
+                                  acceptedQuote.technicianPhone,
+                                  acceptedQuote.technicianName
+                                )
+                              }
                               className="inline-flex items-center gap-1.5 min-h-[42px] px-4 py-2 text-xs font-semibold text-orange-800 dark:text-orange-200 bg-orange-50 dark:bg-orange-950/60 hover:bg-orange-100 dark:hover:bg-orange-900/60 rounded-xl transition-colors"
                             >
                               <MessageCircle className="w-4 h-4 text-[#FF5A00] dark:text-orange-400" />
                               <span>واتساب</span>
-                            </a>
+                            </button>
                           </div>
 
                           {(req.status === 'quote_accepted' ||
@@ -2078,26 +2083,28 @@ export function CustomerRequestsScreen({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <a
-                href={`tel:${contactUnlockedOrder.quote.technicianPhone}`}
+              <button
+                type="button"
+                onClick={() => onCall(contactUnlockedOrder.quote.technicianPhone)}
                 className="min-h-[48px] px-4 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs md:text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 transition-colors"
               >
                 <Phone className="w-4 h-4 shrink-0" />
                 <span>اتصال بالموبايل الآن</span>
-              </a>
+              </button>
 
-              <a
-                href={buildWhatsAppLink(
-                  contactUnlockedOrder.quote.technicianPhone,
-                  `أهلاً ${contactUnlockedOrder.quote.technicianName}، وافقت على عرضك (${formatEGP(contactUnlockedOrder.finalPriceEGP)}) لطلب #${contactUnlockedOrder.request.referenceCode} (${contactUnlockedOrder.request.serviceTitle}) على تطبيق خدمات.`
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() =>
+                  onWhatsApp(
+                    contactUnlockedOrder.quote.technicianPhone,
+                    contactUnlockedOrder.quote.technicianName
+                  )
+                }
                 className="min-h-[48px] px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 transition-colors"
               >
                 <MessageCircle className="w-4 h-4 shrink-0" />
                 <span>مراسلة واتساب مباشرة</span>
-              </a>
+              </button>
             </div>
 
             <button

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { ServiceRequest, Technician } from '../types/khadamat';
+import { Technician } from '../types/khadamat';
 import { useAppStore } from '../store/useAppStore';
-import { Clock, MapPin, Phone, PlusCircle } from 'lucide-react';
+import { Clock, MapPin, PlusCircle } from 'lucide-react';
 
 interface TechnicianOpenRequestsProps {
   technician: Technician;
@@ -16,7 +16,7 @@ export function TechnicianOpenRequests({
   technician,
   onSubmitQuote,
 }: TechnicianOpenRequestsProps) {
-  const { requests, quotes, getPendingQuotesForTech } = useAppStore();
+  const { requests, getPendingQuotesForTech } = useAppStore();
 
   // Filter open requests that match technician's category
   const openRequests = useMemo(() => {

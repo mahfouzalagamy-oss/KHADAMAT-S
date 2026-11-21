@@ -1,5 +1,5 @@
 import { ServiceQuote, Technician } from '../types/khadamat';
-import { Star, Phone, Clock, MapPin, ShieldCheck } from 'lucide-react';
+import { Phone, Clock, MapPin, ShieldCheck } from 'lucide-react';
 
 interface QuoteCardProps {
   quote: ServiceQuote;

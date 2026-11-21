@@ -12,6 +12,7 @@ import { PushNotificationBanner } from './components/PushNotificationBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
 import { SmartPlannerModal } from './components/SmartPlannerModal';
 import { TechnicianPortalScreen } from './components/TechnicianPortalScreen';
+import { openWhatsApp, openPhoneCall, createAcceptQuoteMessage } from './utils/whatsapp';
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
 import { TopBar } from './components/TopBar';
@@ -200,6 +201,77 @@ function App() {
     setSession(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [setSession]);
+
+  /* ======================
+     HANDLERS: QUOTE SUBMISSION
+     ====================== */
+  const handleSubmitQuote = useCallback(
+    (
+      requestId: string,
+      priceEGP: number,
+      estimatedArrival: string,
+      notes: string,
+      warrantyLabel?: string,
+    ) => {
+      const tech = activeTechnician();
+      if (!tech) return;
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return;
+
+      const newQuote: ServiceQuote = {
+        id: `quote-${Date.now()}`,
+        requestId,
+        technicianId: tech.id,
+        technicianName: tech.name,
+        isCompany: tech.isCompany,
+        technicianRating: tech.rating,
+        technicianCompletedJobs: tech.completedJobs,
+        technicianPhone: tech.phone,
+        priceEGP,
+        estimatedArrival,
+        warrantyLabel,
+        notes: notes || '',
+        createdAt: getTodayISO(),
+        status: 'pending',
+      };
+
+      setQuotes((prev) => [...prev, newQuote]);
+
+      setNotifications((prev) => [
+        ...prev,
+        {
+          id: `notif-${Date.now()}`,
+          recipientRole: 'customer',
+          type: 'new_quote',
+          title: 'عرض سعر جديد',
+          body: `وصلتك عرض سعر جديد لطلب "${request.serviceTitle}" من ${tech.name}`,
+          requestId,
+          createdAt: newQuote.createdAt,
+          isRead: false,
+        },
+      ]);
+    },
+    [activeTechnician, requests, setQuotes, setNotifications]
+  );
+
+  /* ======================
+     HANDLERS: WHATSAPP & PHONE
+     ====================== */
+  const handleWhatsApp = useCallback(
+    (phone: string, technicianName: string) => {
+      const targetReq = requests.find((r) => r.acceptedQuoteId);
+      const requestTitle = targetReq ? targetReq.serviceTitle : 'الخدمة';
+      const chosenQuote = quotes.find((q) => q.status === 'accepted');
+      const priceEGP = chosenQuote?.priceEGP || 0;
+      const message = createAcceptQuoteMessage(technicianName, requestTitle, priceEGP);
+      openWhatsApp(phone, message);
+    },
+    [requests, quotes]
+  );
+
+  const handlePhoneCall = useCallback((phone: string) => {
+    openPhoneCall(phone);
+  }, []);
 
   /* ======================
      HANDLERS: DISTRICT & LOCATION
@@ -1160,6 +1232,8 @@ function App() {
                   onToggleRecurringStatus={handleToggleRecurringStatus}
                   onCancelRecurringSchedule={handleCancelRecurringSchedule}
                   onNewRequest={() => handleRequestService()}
+                  onWhatsApp={handleWhatsApp}
+                  onCall={handlePhoneCall}
                   onRequestWarrantyCheck={(originalRequest, quote) => {
                     const matchedService =
                       SERVICES_CATALOG.find(
@@ -1259,7 +1333,7 @@ function App() {
                     quotes={quotes}
                     messages={messages}
                     isDark={theme === 'dark'}
-                    onSubmitQuote={() => {}}
+                    onSubmitQuote={handleSubmitQuote}
                     onUpdateJobStatus={handleUpdateJobStatus}
                     onSendMessage={handleSendRequestMessage}
                     onOpenLocation={() => setIsLocationModalOpen(true)}
