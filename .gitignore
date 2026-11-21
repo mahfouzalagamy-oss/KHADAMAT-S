@@ -9,5 +9,10 @@ coverage/
 .env*
 !.env.example
 
+node_modules/
+.env
+
+# local / generated
 .aistudio/
+data/state.json
 server.js

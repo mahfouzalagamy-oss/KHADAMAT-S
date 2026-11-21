@@ -1,6 +1,5 @@
 import {
   AppNotification,
-  EmergencyScenario,
   HomePlannerProfile,
   LocationEntry,
   LoyaltyRedemption,
@@ -8,7 +7,6 @@ import {
   PaymentMethod,
   PlannerRecommendation,
   PromoCode,
-  RatingBreakdown,
   RecurrenceFrequency,
   RecurringSchedule,
   RequestMessage,
@@ -28,145 +26,121 @@ import {
   findNearestMatchingTechnicians,
 } from './dakahliaLocations';
 
-export const HERO_IMAGE_PATH = '/src/assets/images/cartoon_hero_khadamat_1794956209485.jpg';
+export const HERO_IMAGE_PATH = '/src/assets/images/cartoon_hero_khadamat_1794956209485.webp';
 
-const IMG_AC = '/src/assets/images/cartoon_ac_service_1794956210988.jpg';
-const IMG_PLUMBING = '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg';
-const IMG_ELECTRICAL = '/src/assets/images/cartoon_electrical_service_1794956211565.jpg';
-const IMG_CLEANING = '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg';
-const IMG_SMART_HOME = '/src/assets/images/cartoon_smart_home_1794956211324.jpg';
-const IMG_PAINT_WOOD = '/src/assets/images/cartoon_paint_wood_1794956232344.jpg';
-const IMG_GARDEN_CARE = '/src/assets/images/cartoon_garden_care_1794956232380.jpg';
-const IMG_APPLIANCES = '/src/assets/images/cartoon_appliances_repair_1795096236305.jpg';
-const IMG_CARPENTRY = '/src/assets/images/cartoon_carpentry_service_1795096235821.jpg';
-const IMG_MOVING = '/src/assets/images/cartoon_furniture_moving_1795096236066.jpg';
-const IMG_PEST = '/src/assets/images/cartoon_pest_control_1795096236101.jpg';
-const IMG_CARWASH = '/src/assets/images/cartoon_carwash_steam_1795096236983.jpg';
-const IMG_ELECTRONICS = '/src/assets/images/cartoon_electronics_laptop_1795096236834.jpg';
-const IMG_NETWORKS = '/src/assets/images/cartoon_networks_wifi_1795096235883.jpg';
-const IMG_WATER_TANK = '/src/assets/images/cartoon_water_tank_1795096236051.jpg';
-const IMG_ALUM_GYPSUM = '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.jpg';
+const IMG_AC = '/src/assets/images/cartoon_ac_service_1794956210988.webp';
+const IMG_PLUMBING = '/src/assets/images/cartoon_plumbing_service_1794956210605.webp';
+const IMG_ELECTRICAL = '/src/assets/images/cartoon_electrical_service_1794956211565.webp';
+const IMG_CLEANING = '/src/assets/images/cartoon_cleaning_service_1794956212778.webp';
+const IMG_SMART_HOME = '/src/assets/images/cartoon_smart_home_1794956211324.webp';
+const IMG_PAINT_WOOD = '/src/assets/images/cartoon_paint_wood_1794956232344.webp';
+const IMG_GARDEN_CARE = '/src/assets/images/cartoon_garden_care_1794956232380.webp';
 
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
   {
     id: 'ac',
     name: 'التكييف والتبريد',
-    shortDesc: 'غسيل، فريون، صيانة وتركيب',
+    shortDesc: 'غسيل، شحن فريون، صيانة وتركيب',
     iconKey: 'ac',
     servicesCount: 3,
-    imageUrl: IMG_AC,
   },
   {
     id: 'plumbing',
     name: 'السباكة',
-    shortDesc: 'خلاطات، تسريب وسخانات',
+    shortDesc: 'خلاطات، تسريب مياه، سخانات وصرف',
     iconKey: 'plumbing',
     servicesCount: 3,
-    imageUrl: IMG_PLUMBING,
   },
   {
     id: 'electrical',
     name: 'الكهرباء',
-    shortDesc: 'لوحات، إنارة ومفاتيح',
+    shortDesc: 'لوحات توزيع، إنارة، مفاتيح وأعطال',
     iconKey: 'electrical',
     servicesCount: 2,
-    imageUrl: IMG_ELECTRICAL,
   },
   {
     id: 'cleaning',
     name: 'تنظيف المنازل',
-    shortDesc: 'شقق، سجاد وأنتريهات',
+    shortDesc: 'تنظيف عميق، سجاد، أنتريهات ومطابخ',
     iconKey: 'cleaning',
     servicesCount: 3,
-    imageUrl: IMG_CLEANING,
   },
   {
     id: 'carpentry',
     name: 'النجارة والأثاث',
-    shortDesc: 'تركيب غرف، أبواب وكوالين',
+    shortDesc: 'فك وتركيب غرف، أبواب ومفصلات',
     iconKey: 'carpentry',
     servicesCount: 2,
-    imageUrl: IMG_CARPENTRY,
   },
   {
     id: 'painting',
     name: 'الدهانات والديكور',
-    shortDesc: 'دهان شقق ومعالجة رطوبة',
+    shortDesc: 'دهان غرف، معالجة رطوبة وورق حائط',
     iconKey: 'painting',
     servicesCount: 1,
-    imageUrl: IMG_PAINT_WOOD,
   },
   {
     id: 'appliances',
     name: 'الأجهزة المنزلية',
-    shortDesc: 'غسالات، ثلاجات وبوتاجازات',
+    shortDesc: 'غسالات، ثلاجات، بوتاجازات وميكروويف',
     iconKey: 'appliances',
     servicesCount: 1,
-    imageUrl: IMG_APPLIANCES,
   },
   {
     id: 'pest_control',
     name: 'مكافحة الحشرات',
-    shortDesc: 'رش آمن بدون رائحة',
+    shortDesc: 'رش آمن بدون رائحة للمنازل والفلل',
     iconKey: 'pest_control',
     servicesCount: 2,
-    imageUrl: IMG_PEST,
   },
   {
     id: 'security_tech',
-    name: 'الكاميرات والدش',
-    shortDesc: 'كاميرات مراقبة وإنتركم',
+    name: 'الكاميرات والشبكات والدش',
+    shortDesc: 'كاميرات مراقبة، دش مركزي، إنتركم وواي فاي',
     iconKey: 'security_tech',
     servicesCount: 2,
-    imageUrl: IMG_SMART_HOME,
   },
   {
     id: 'moving',
-    name: 'نقل الأثاث',
-    shortDesc: 'تغليف، نقل وونش رفع',
+    name: 'نقل وتغليف الأثاث',
+    shortDesc: 'نقل عفش، تغليف احترافي وونش رفع',
     iconKey: 'moving',
     servicesCount: 1,
-    imageUrl: IMG_MOVING,
   },
   {
     id: 'tanks_garden',
     name: 'الخزانات والحدائق',
-    shortDesc: 'تعقيم خزانات وقص حدائق',
+    shortDesc: 'غسيل خزانات المياه وتنسيق حدائق الفلل',
     iconKey: 'tanks_garden',
     servicesCount: 2,
-    imageUrl: IMG_WATER_TANK,
   },
   {
     id: 'aluminum_gypsum',
-    name: 'الألوميتال والجبس',
-    shortDesc: 'شبابيك، سلك وجبس بورد',
+    name: 'الألوميتال والجبس والحدادة',
+    shortDesc: 'شبابيك ألوميتال، سلك بليسيه وجبس بورد',
     iconKey: 'aluminum_gypsum',
     servicesCount: 1,
-    imageUrl: IMG_ALUM_GYPSUM,
   },
   {
     id: 'carwash',
-    name: 'غسيل السيارات',
-    shortDesc: 'غسيل بالبخار أمام بيتك',
+    name: 'غسيل السيارات بالمنزل',
+    shortDesc: 'غسيل بالبخار وتلميع أمام منزلك',
     iconKey: 'carwash',
     servicesCount: 1,
-    imageUrl: IMG_CARWASH,
   },
   {
     id: 'electronics',
-    name: 'الإلكترونيات',
-    shortDesc: 'لابتوب، شاشات وبلايستيشن',
+    name: 'الإلكترونيات والكمبيوتر',
+    shortDesc: 'صيانة لابتوب، شاشات سمارت، بلايستيشن وطابعات',
     iconKey: 'electronics',
     servicesCount: 2,
-    imageUrl: IMG_ELECTRONICS,
   },
   {
     id: 'networks',
     name: 'الشبكات والواي فاي',
-    shortDesc: 'Mesh، راوتر وكابلات CAT6',
+    shortDesc: 'شبكات Mesh، تمديد CAT6، راوتر وفايبر منزلي',
     iconKey: 'networks',
     servicesCount: 2,
-    imageUrl: IMG_NETWORKS,
   },
 ];
 
@@ -174,10 +148,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'ac-clean-split',
     categoryId: 'ac',
-    title: 'غسيل وصيانة تكييف سبليت',
+    title: 'غسيل وصيانة تكييف سبليت شامل',
     summary: 'تنظيف الوحدتين بالضغط وفحص الفريون',
     description: 'صيانة وتنظيف للتكييف السبليت.',
-    estimatedDuration: '60 – 90 د',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.9,
     reviewsCount: 412,
     warrantyDays: 30,
@@ -193,22 +167,26 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     id: 'ac-freon-full',
     categoryId: 'ac',
     title: 'كشف تسريب وشحن فريون',
-    summary: 'معالجة التسريب وشحن الفريون',
+    summary: 'فحص الدائرة ومعالجة التسريب وشحن الفريون',
     description: 'كشف تسريب وشحن فريون للتكييف.',
-    estimatedDuration: '90 د',
+    estimatedDuration: '90 دقيقة',
     rating: 4.8,
     reviewsCount: 189,
     warrantyDays: 30,
     imageUrl: IMG_AC,
-    included: ['فحص مواسير النحاس والصمامات', 'تفريغ الهواء قبل الشحن', 'شحن فريون R22 أو R410A'],
+    included: [
+      'فحص مواسير النحاس والصمامات',
+      'تفريغ الهواء قبل الشحن',
+      'شحن فريون R22 أو R410A',
+    ],
   },
   {
     id: 'ac-install',
     categoryId: 'ac',
     title: 'فك وتركيب ونقل تكييف',
-    summary: 'فك مع حبس الفريون وإعادة التركيب',
+    summary: 'فك مع حبس الفريون وإعادة التركيب بالوزن',
     description: 'نقل وتركيب أجهزة التكييف السبليت.',
-    estimatedDuration: '120 د',
+    estimatedDuration: '120 – 150 دقيقة',
     rating: 4.9,
     reviewsCount: 143,
     warrantyDays: 30,
@@ -222,10 +200,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'plumb-faucet',
     categoryId: 'plumbing',
-    title: 'تركيب وتغيير خلاطات صحية',
-    summary: 'فك الخلاط وتركيب الجديد بدون تسريب',
+    title: 'تركيب أو تغيير خلاطات ومستلزمات صحية',
+    summary: 'فك الخلاط القديم وتركيب الجديد مع اختبار مانع التسريب',
     description: 'تركيب خلاطات المطبخ والحمام والأحواض.',
-    estimatedDuration: '45 – 60 د',
+    estimatedDuration: '45 – 60 دقيقة',
     rating: 4.9,
     reviewsCount: 325,
     warrantyDays: 30,
@@ -240,10 +218,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'plumb-leak',
     categoryId: 'plumbing',
-    title: 'كشف وإصلاح تسريب المياه',
-    summary: 'علاج التسريب وإصلاح الوصلات والمواتير',
+    title: 'كشف ومعالجة تسريب المياه والصرف',
+    summary: 'تحديد مصدر التسريب وإصلاح الوصلات ومواتير المياه',
     description: 'فحص ومعالجة تسريبات التغذية والصرف.',
-    estimatedDuration: '60 – 90 د',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.7,
     reviewsCount: 214,
     warrantyDays: 30,
@@ -257,10 +235,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'plumb-heater',
     categoryId: 'plumbing',
-    title: 'تركيب وصيانة سخان مياه',
-    summary: 'تركيب آمن للسخان وتنظيف الشمعات',
+    title: 'تركيب وصيانة سخان مياه كهرباء أو غاز',
+    summary: 'تركيب آمن للسخان مع صمام الأمان وتنظيف الشمعات',
     description: 'تركيب وصيانة السخانات وتغيير الثرموستات.',
-    estimatedDuration: '75 د',
+    estimatedDuration: '75 دقيقة',
     rating: 4.8,
     reviewsCount: 162,
     warrantyDays: 30,
@@ -274,10 +252,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'elec-panel',
     categoryId: 'electrical',
-    title: 'فحص لوحة الكهرباء والقواطع',
-    summary: 'علاج الفصل المتكرر واختبار الأحمال',
+    title: 'فحص لوحة الكهرباء وتغيير القواطع',
+    summary: 'تشخيص أعطال الفصل المتكرر واختبار الأحمال بالأجهزة الرقمية',
     description: 'فحص لوحة التوزيع وتأمين الأسلاك والقواطع.',
-    estimatedDuration: '60 د',
+    estimatedDuration: '60 دقيقة',
     rating: 4.9,
     reviewsCount: 278,
     warrantyDays: 30,
@@ -292,10 +270,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'elec-lighting',
     categoryId: 'electrical',
-    title: 'تركيب نجف، سبوتات ومفاتيح',
-    summary: 'تثبيت وحدات الإضاءة والبرايز والمراوح',
+    title: 'تركيب نجف، سبوتات ومفاتيح إنارة',
+    summary: 'تثبيت وحدات الإضاءة الحديثة وتبديل البرايز والمراوح',
     description: 'تركيب النجف والسبوتات والمفاتيح والبرايز.',
-    estimatedDuration: '60 – 90 د',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.8,
     reviewsCount: 301,
     warrantyDays: 30,
@@ -310,7 +288,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     id: 'clean-home-deep',
     categoryId: 'cleaning',
     title: 'تنظيف شامل للشقق والفلل',
-    summary: 'تنظيف الأرضيات والحمامات والمطبخ',
+    summary: 'تنظيف الأرضيات والحمامات والمطبخ بالتعقيم',
     description: 'تنظيف شامل وتعقيم للشقق والفلل.',
     estimatedDuration: '3 – 5 ساعات',
     rating: 4.9,
@@ -327,10 +305,10 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'clean-sofa-carpet',
     categoryId: 'cleaning',
-    title: 'غسيل أنتريه وسجاد بالبخار',
-    summary: 'إزالة البقع والروائح والتجفيف السريع',
+    title: 'غسيل أنتريه وسجاد بالبخار في المنزل',
+    summary: 'إزالة البقع والروائح بالماكينات والتجفيف السريع',
     description: 'غسيل وتعقيم الأنتريهات والركن والسجاد بالمنزل.',
-    estimatedDuration: '90 – 120 د',
+    estimatedDuration: '90 – 120 دقيقة',
     rating: 4.8,
     reviewsCount: 247,
     warrantyDays: 7,
@@ -344,8 +322,8 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'clean-post-renovation',
     categoryId: 'cleaning',
-    title: 'تنظيف ما بعد التشطيب',
-    summary: 'إزالة بقايا الأسمنت والدهانات بأمان',
+    title: 'تنظيف ما بعد التشطيب والدهان',
+    summary: 'إزالة بقايا الأسمنت والدهانات من الأرضيات والألوميتال',
     description: 'تجهيز الشقق الجديدة للسكن بدون خدش السيراميك.',
     estimatedDuration: '4 – 6 ساعات',
     rating: 4.9,
@@ -362,14 +340,13 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     id: 'carp-furniture-assembly',
     categoryId: 'carpentry',
     title: 'فك وتركيب أثاث وغرف نوم',
-    summary: 'تركيب الأثاث وضبط المفصلات والمجاري',
+    summary: 'تركيب الأثاث المودرن وإصلاح المفصلات والمجاري',
     description: 'فك وتركيب الدواليب والأسرة والمطابخ بدقة.',
-    estimatedDuration: '120 د',
+    estimatedDuration: '120 دقيقة',
     rating: 4.8,
     reviewsCount: 175,
     warrantyDays: 30,
-    imageUrl: IMG_CARPENTRY,
-    isPopular: true,
+    imageUrl: IMG_PAINT_WOOD,
     included: [
       'فك أو تركيب غرف النوم والمطابخ',
       'ضبط مفصلات الأبواب ومجاري الأدراج',
@@ -379,23 +356,27 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'carp-doors-locks',
     categoryId: 'carpentry',
-    title: 'إصلاح أبواب خشب وكوالين',
-    summary: 'ضبط الأبواب وتبديل الكوالين والمقابض',
+    title: 'إصلاح أبواب خشب وتغيير كوالين',
+    summary: 'ضبط احتكاك الأبواب وتبديل الكوالين والمقابض',
     description: 'معالجة الأبواب الخشبية أو المصفحة وتغيير الكالون.',
-    estimatedDuration: '60 د',
+    estimatedDuration: '60 دقيقة',
     rating: 4.7,
     reviewsCount: 138,
     warrantyDays: 30,
-    imageUrl: IMG_CARPENTRY,
-    included: ['ضبط حواف الباب والكالون', 'تغيير قلب كالون أو مقبض باب', 'تثبيت مصد أرضي للأبواب'],
+    imageUrl: IMG_PAINT_WOOD,
+    included: [
+      'ضبط حواف الباب والكالون',
+      'تغيير قلب كالون أو مقبض باب',
+      'تثبيت مصد أرضي للأبواب',
+    ],
   },
   {
     id: 'paint-room',
     categoryId: 'painting',
-    title: 'دهان شقق ومعالجة الرطوبة',
-    summary: 'معجنة، صنفرة ودهان قابل للغسيل',
+    title: 'دهان شقق وغرف ومعالجة الرطوبة',
+    summary: 'معجنة، صنفرة، ودهان بلاستيك قابل للغسيل وديكورات حديثة',
     description: 'تجديد ألوان الغرف والشقق ومعالجة الرطوبة.',
-    estimatedDuration: 'يوم – يومين',
+    estimatedDuration: 'يوم – يومين حسب المساحة',
     rating: 4.8,
     reviewsCount: 112,
     warrantyDays: 30,
@@ -409,15 +390,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'app-washing-fridge',
     categoryId: 'appliances',
-    title: 'صيانة غسالات وثلاجات',
-    summary: 'إصلاح الطلمبة والثرموستات والبوردة بالمنزل',
+    title: 'صيانة غسالات وثلاجات وبوتاجازات',
+    summary: 'كشف الأعطال بالمنزل وإصلاح الطلمبة أو الثرموستات أو البوردة',
     description: 'فحص وإصلاح أجهزة المطبخ بالمنزل.',
-    estimatedDuration: '60 – 90 د',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.8,
     reviewsCount: 263,
     warrantyDays: 30,
-    imageUrl: IMG_APPLIANCES,
-    isPopular: true,
+    imageUrl: IMG_ELECTRICAL,
     included: [
       'فحص تشخيصي كامل للجهاز بالمنزل',
       'تنظيف الفلاتر وصرف الغسالة أو الثلاجة',
@@ -428,13 +408,13 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     id: 'pest-home-spray',
     categoryId: 'pest_control',
     title: 'رش ومكافحة الحشرات بدون رائحة',
-    summary: 'مبيدات آمنة على الأطفال مع ضمان 3 شهور',
+    summary: 'مكافحة الصراصير والنمل والبق بمبيدات آمنة على الأطفال',
     description: 'رش وقائي وعلاجي آمن بدون مغادرة المنزل.',
-    estimatedDuration: '45 – 75 د',
+    estimatedDuration: '45 – 75 دقيقة',
     rating: 4.9,
     reviewsCount: 219,
     warrantyDays: 90,
-    imageUrl: IMG_PEST,
+    imageUrl: IMG_GARDEN_CARE,
     isPopular: true,
     included: [
       'حقن الجل في المطبخ ومناطق الاختباء',
@@ -445,14 +425,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'pest-garden-villa',
     categoryId: 'pest_control',
-    title: 'مكافحة حشرات الفلل والمداخل',
-    summary: 'تطهير الحدائق والأدوار الأرضية',
+    title: 'تعقيم ومكافحة حشرات الفلل والمداخل',
+    summary: 'تطهير الحدائق والأدوار الأرضية ضد الزواحف والقوارض والناموس',
     description: 'حماية شاملة للفلل وحدائق المنصورة الجديدة.',
-    estimatedDuration: '90 د',
+    estimatedDuration: '90 دقيقة',
     rating: 4.8,
     reviewsCount: 84,
     warrantyDays: 90,
-    imageUrl: IMG_PEST,
+    imageUrl: IMG_GARDEN_CARE,
     included: [
       'رش محيط السور والحديقة والبيارات',
       'تأمين فتحات التهوية ومصائد مخصصة',
@@ -462,8 +442,8 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'sec-cctv-install',
     categoryId: 'security_tech',
-    title: 'تركيب كاميرات مراقبة وإنتركم',
-    summary: 'تركيب كاميرات HD وربطها بالموبايل',
+    title: 'تركيب كاميرات مراقبة وإنتركم منزلي',
+    summary: 'تركيب كاميرات HD وربط المشاهدة على الموبايل بالإنترنت',
     description: 'توريد وتركيب كاميرات المراقبة والإنتركم.',
     estimatedDuration: '2 – 3 ساعات',
     rating: 4.9,
@@ -480,31 +460,31 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'sec-wifi-dish',
     categoryId: 'security_tech',
-    title: 'دش مركزي وإنتركم منزلي',
-    summary: 'توجيه الأطباق وضبط الإشارة الداخلية',
-    description: 'إصلاح إشارة الدش المركزي وتوصيلات الشقق.',
-    estimatedDuration: '60 – 90 د',
+    title: 'ضبط شبكة الواي فاي وتركيب الدش المركزي',
+    summary: 'تمديد نقاط إنترنت وأكسس بوينت وتوجيه أطباق الدش',
+    description: 'تقوية شبكة الواي فاي وإصلاح إشارة الدش.',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.8,
     reviewsCount: 142,
     warrantyDays: 30,
     imageUrl: IMG_SMART_HOME,
     included: [
-      'تمديد السلك وتثبيت مقسمات الإشارة',
+      'تمديد سلك CAT6 وتثبيت مقوي الإشارة',
       'ضبط إشارة الدش وقنوات الاستقبال',
-      'اختبار الجودة في جميع الغرف',
+      'اختبار السرعة في جميع الغرف',
     ],
   },
   {
     id: 'move-furniture-winch',
     categoryId: 'moving',
-    title: 'نقل وتغليف الأثاث بونش',
-    summary: 'فك وتغليف ونقل بسيارة مغلقة',
+    title: 'نقل وتغليف الأثاث مع ونش رفع',
+    summary: 'فك وتغليف ونقل العفش بسيارة مغلقة داخل الدقهلية',
     description: 'نقل عفش آمن بالكرتون والاسترتش وونش هيدروليك.',
     estimatedDuration: '3 – 6 ساعات',
     rating: 4.9,
     reviewsCount: 192,
     warrantyDays: 14,
-    imageUrl: IMG_MOVING,
+    imageUrl: IMG_PAINT_WOOD,
     included: [
       'تغليف قطع الأثاث والأجهزة الحساسة',
       'فك وإعادة تركيب الغرف والنجف',
@@ -515,13 +495,13 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     id: 'tanks-clean',
     categoryId: 'tanks_garden',
     title: 'غسيل وتعقيم خزانات المياه',
-    summary: 'إزالة الرواسب والطحالب بمواد معتمدة',
+    summary: 'تنظيف الرواسب والطحالب وتعقيم الخزان بمواد آمنة معتمدة',
     description: 'تنظيف وتطهير خزانات المياه العلوية والأرضية.',
-    estimatedDuration: '90 د',
+    estimatedDuration: '90 دقيقة',
     rating: 4.9,
     reviewsCount: 118,
     warrantyDays: 30,
-    imageUrl: IMG_WATER_TANK,
+    imageUrl: IMG_PLUMBING,
     included: [
       'تفريغ الخزان وإزالة الرواسب المترسبة',
       'غسيل الجدران الداخلية بالفرش والمعقمات',
@@ -531,8 +511,8 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'garden-landscaping',
     categoryId: 'tanks_garden',
-    title: 'تنسيق وقص حدائق الفلل',
-    summary: 'تهذيب الأشجار وقص النجيل وشبكة الري',
+    title: 'تنسيق وقص حدائق الفلل والمداخل',
+    summary: 'تهذيب الأشجار وقص النجيل وصيانة شبكة الري',
     description: 'رعاية دورية وتنسيق حدائق المنازل والفلل.',
     estimatedDuration: '2 – 3 ساعات',
     rating: 4.8,
@@ -548,14 +528,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'alum-screen-gypsum',
     categoryId: 'aluminum_gypsum',
-    title: 'صيانة ألوميتال وسلك وجبس',
-    summary: 'عجل ومقابض الألوميتال وسلك البليسيه',
+    title: 'صيانة ألوميتال وتركيب سلك بليسيه وجبس',
+    summary: 'تغيير عجل ومقابض الألوميتال وتركيب سلك الناموس وإصلاح الجبس',
     description: 'إصلاح الشبابيك والأبواب الألوميتال والجبس بورد.',
-    estimatedDuration: '60 – 120 د',
+    estimatedDuration: '60 – 120 دقيقة',
     rating: 4.8,
     reviewsCount: 109,
     warrantyDays: 30,
-    imageUrl: IMG_ALUM_GYPSUM,
+    imageUrl: IMG_PAINT_WOOD,
     included: [
       'ضبط مفصلات ومفاتيح شبابيك الألوميتال',
       'تركيب أو تغيير سلك بليسيه مانع للحشرات',
@@ -565,14 +545,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'car-steam-wash',
     categoryId: 'carwash',
-    title: 'غسيل السيارة بالبخار بالمنزل',
-    summary: 'تنظيف خارجي وداخلي وتلميع أمام بيتك',
+    title: 'غسيل وتلميع السيارة بالبخار أمام منزلك',
+    summary: 'تنظيف خارجي وداخلي للصالون وتلميع الإطارات أمام بيتك',
     description: 'وحدة متنقلة لغسيل وتعقيم سيارتك أمام المنزل.',
-    estimatedDuration: '60 د',
+    estimatedDuration: '60 دقيقة',
     rating: 4.9,
     reviewsCount: 204,
     warrantyDays: 7,
-    imageUrl: IMG_CARWASH,
+    imageUrl: IMG_CLEANING,
     included: [
       'غسيل الهيكل الخارجي بشمع الحماية',
       'تنظيف وشفط الفرش الأرضي والشنطة',
@@ -582,14 +562,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'elec-tv-laptop',
     categoryId: 'electronics',
-    title: 'صيانة لابتوب وشاشات سمارت',
-    summary: 'كشف أعطال الشاشات وتبريد وتحديث اللابتوب',
-    description: 'فحص وإصلاح أجهزة اللابتوب والشاشات الذكية بالمنزل.',
-    estimatedDuration: '60 – 90 د',
+    title: 'صيانة لابتوب وشاشات سمارت بالمنزل',
+    summary: 'كشف أعطال الشاشات، تنظيف وتبريد اللابتوب، وتحديث الهارد SSD',
+    description: 'فحص وإصلاح أجهزة اللابتوب والشاشات الذكية أمامك بالمنزل.',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.9,
     reviewsCount: 156,
     warrantyDays: 30,
-    imageUrl: IMG_ELECTRONICS,
+    imageUrl: IMG_SMART_HOME,
     isPopular: true,
     included: [
       'فحص بوردة الباور والإضاءة الخلفية للشاشة',
@@ -600,14 +580,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'elec-console-ups',
     categoryId: 'electronics',
-    title: 'صيانة بلايستيشن وطابعات وUPS',
-    summary: 'تنظيف الأجهزة وإصلاح HDMI والبطاريات',
+    title: 'صيانة بلايستيشن، طابعات وأجهزة UPS',
+    summary: 'تنظيف أجهزة الألعاب، إصلاح الذراع، وضبط الطابعات ومانع الانقطاع',
     description: 'صيانة الأجهزة الإلكترونية المنزلية ومزودات الطاقة.',
-    estimatedDuration: '60 د',
+    estimatedDuration: '60 دقيقة',
     rating: 4.8,
     reviewsCount: 92,
     warrantyDays: 30,
-    imageUrl: IMG_ELECTRONICS,
+    imageUrl: IMG_SMART_HOME,
     included: [
       'تنظيف داخلي ومعجون حراري لأجهزة الألعاب',
       'صيانة مداخل HDMI وتبديل بطاريات UPS',
@@ -617,14 +597,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'net-mesh-wifi',
     categoryId: 'networks',
-    title: 'تقوية الواي فاي وأنظمة Mesh',
-    summary: 'تغطية كل الغرف بدون تقطيع وضبط الراوتر',
+    title: 'تأسيس وتقوية شبكة الواي فاي وMesh',
+    summary: 'تغطية كل غرف الشقة أو الفيلا بدون تقطيع مع ضبط الراوتر وأمن الشبكة',
     description: 'حل مشكلة ضعف إشارة الواي فاي في الغرف البعيدة.',
-    estimatedDuration: '60 – 90 د',
+    estimatedDuration: '60 – 90 دقيقة',
     rating: 4.9,
     reviewsCount: 174,
     warrantyDays: 30,
-    imageUrl: IMG_NETWORKS,
+    imageUrl: IMG_SMART_HOME,
     isPopular: true,
     included: [
       'قياس نقاط ضعف الإشارة داخل الشقة أو الفيلا',
@@ -635,14 +615,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
   {
     id: 'net-fiber-cabling',
     categoryId: 'networks',
-    title: 'تمديد شبكة CAT6 وتنظيم الراك',
-    summary: 'سحب كابلات إنترنت وتثبيت مخارج الحائط',
+    title: 'تمديد نقاط شبكة CAT6 وتنظيم الراك المنزلي',
+    summary: 'سحب كابلات إنترنت أصلية، تأريج السويتش، وتثبيت مخارج الحائط',
     description: 'تمديد وتنظيم كابلات الشبكة والإنترنت المنزلي والمكتبي.',
-    estimatedDuration: '90 – 150 د',
+    estimatedDuration: '90 – 150 دقيقة',
     rating: 4.8,
     reviewsCount: 108,
     warrantyDays: 90,
-    imageUrl: IMG_NETWORKS,
+    imageUrl: IMG_SMART_HOME,
     included: [
       'تمديد وتأريج كابلات CAT6 نقية النحاس',
       'اختبار سرعة الخط واستقرار البنغ للألعاب والعمل',
@@ -1120,22 +1100,6 @@ export const INITIAL_QUOTES: ServiceQuote[] = [
     status: 'pending',
   },
   {
-    id: 'q-103',
-    requestId: 'req-101',
-    technicianId: 'tech-5',
-    technicianName: 'م. مصطفى السعيد',
-    isCompany: false,
-    technicianRating: 4.9,
-    technicianCompletedJobs: 430,
-    technicianPhone: '01556677889',
-    priceEGP: 490,
-    estimatedArrival: 'اليوم الساعة 2:45 عصراً',
-    warrantyLabel: 'ضمان 60 يوماً',
-    notes: 'فحص الدائرة الكهربائية والكمبريسور مع غسيل بالضغط وشهادة ضمان 60 يوماً.',
-    createdAt: 'منذ 4 دقائق',
-    status: 'pending',
-  },
-  {
     id: 'q-201',
     requestId: 'req-102',
     technicianId: 'tech-3',
@@ -1263,7 +1227,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · توريل',
     serviceTitle: 'غسيل وصيانة تكييف سبليت شامل',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'شغل ممتاز جداً، البشمهندس نظف التكييفين بغطاء عزل وبدون نقطة مياه على الحيطة.',
     dateLabel: 'منذ يومين',
     priceEGP: 420,
@@ -1275,7 +1238,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'طلخا · تقسيم عمرو بن العاص',
     serviceTitle: 'كشف تسريب وشحن فريون',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'التزم بالموعد والسعر المقدم في العرض، والتبريد رجع ممتاز من أول يوم.',
     dateLabel: 'منذ 5 أيام',
     priceEGP: 680,
@@ -1286,8 +1248,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'إيهاب مصطفى',
     area: 'أجا · ميت العامل',
     serviceTitle: 'صيانة غسالات وثلاجات وبوتاجازات',
-    rating: 4.3,
-    ratingBreakdown: { punctuality: 3, cleanliness: 5, professionalism: 5 },
+    rating: 4,
     review: 'أداء جيد واحترام في التعامل، وصل متأخر ربع ساعة فقط بسبب الزحمة واعتذر بذوق.',
     dateLabel: 'منذ أسبوع',
     priceEGP: 320,
@@ -1299,7 +1260,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · حي الجامعة',
     serviceTitle: 'فك وتركيب ونقل تكييف',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'دقة عالية في حبس الفريون وتركيب الحامل بميزان المياه.',
     dateLabel: 'منذ أسبوعين',
     priceEGP: 800,
@@ -1311,7 +1271,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'دكرنس · مدينة دكرنس',
     serviceTitle: 'غسيل وصيانة تكييف سبليت شامل',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'فريق محترف وملتزم بالضمان وسعرهم مناسب مقارنة بجودة الخدمة.',
     dateLabel: 'منذ 3 أيام',
     priceEGP: 500,
@@ -1322,8 +1281,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'مها سليم',
     area: 'السنبلاوين · المقاطعة',
     serviceTitle: 'فحص لوحة الكهرباء وتغيير القواطع',
-    rating: 4.3,
-    ratingBreakdown: { punctuality: 4, cleanliness: 4, professionalism: 5 },
+    rating: 4,
     review: 'حلوا مشكلة فصل الكهرباء بسرعة مع شرح سبب العطل بوضوح.',
     dateLabel: 'منذ أسبوع',
     priceEGP: 350,
@@ -1335,7 +1293,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'بلقاس · مدينة بلقاس',
     serviceTitle: 'صيانة تكييفات شركة',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'شركة منظمة وفنيون مدربون والتزام كامل بالموعد.',
     dateLabel: 'منذ 10 أيام',
     priceEGP: 950,
@@ -1347,7 +1304,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · شاوة',
     serviceTitle: 'كشف ومعالجة تسريب المياه والصرف',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'أسطى أمين وشغله نظيف جداً، عالج التسريب بدون تكسير.',
     dateLabel: 'منذ 3 أيام',
     priceEGP: 260,
@@ -1358,8 +1314,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'سعاد حلمي',
     area: 'ميت غمر · دقادوس',
     serviceTitle: 'تركيب أو تغيير خلاطات ومستلزمات صحية',
-    rating: 4.7,
-    ratingBreakdown: { punctuality: 5, cleanliness: 4, professionalism: 5 },
+    rating: 5,
     review: 'ركب خلاط المطبخ والسخان بسرعة ودقة ممتازة.',
     dateLabel: 'منذ 6 أيام',
     priceEGP: 300,
@@ -1370,8 +1325,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'ياسر المنصور',
     area: 'المنصورة · سندوب',
     serviceTitle: 'تركيب وصيانة سخان مياه كهرباء أو غاز',
-    rating: 4.3,
-    ratingBreakdown: { punctuality: 4, cleanliness: 4, professionalism: 5 },
+    rating: 4,
     review: 'شغل مضبوط وسعر عادل جداً.',
     dateLabel: 'منذ أسبوعين',
     priceEGP: 280,
@@ -1383,7 +1337,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · حي الجامعة',
     serviceTitle: 'تنظيف شامل للشقق والفلل',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'فريق شركة النيل الذهبي التزم بالموعد والسعر المتفق عليه والشغل ممتاز جداً.',
     dateLabel: 'منذ 4 أيام',
     priceEGP: 750,
@@ -1395,7 +1348,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · المشاية السفلية',
     serviceTitle: 'غسيل أنتريه وسجاد بالبخار في المنزل',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'البقع اختفت تماماً والأنتريه نشف في نفس اليوم برائحة جميلة.',
     dateLabel: 'منذ 9 أيام',
     priceEGP: 550,
@@ -1407,7 +1359,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'شربين · بساط كريم الدين',
     serviceTitle: 'فحص لوحة الكهرباء وتغيير القواطع',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'مهندس شاطر جداً وفاهم في الأحمال وأمّن اللوحة بالكامل.',
     dateLabel: 'منذ 4 أيام',
     priceEGP: 300,
@@ -1418,8 +1369,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'نرمين عادل',
     area: 'نبروه · بهوت',
     serviceTitle: 'تركيب نجف، سبوتات ومفاتيح إنارة',
-    rating: 4.7,
-    ratingBreakdown: { punctuality: 4, cleanliness: 5, professionalism: 5 },
+    rating: 5,
     review: 'ركب 3 نجفات و6 سبوتات في ساعة واحدة بنظافة تامة.',
     dateLabel: 'منذ أسبوعين',
     priceEGP: 280,
@@ -1431,7 +1381,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'منية النصر · برمبال الجديدة',
     serviceTitle: 'فك وتركيب أثاث وغرف نوم',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'فك وركب غرفة النوم كاملة وضبط جميع المفصلات والأدراج.',
     dateLabel: 'منذ 5 أيام',
     priceEGP: 450,
@@ -1442,8 +1391,7 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     customerName: 'وليد عبد الرازق',
     area: 'طلخا · ميت عنتر',
     serviceTitle: 'إصلاح أبواب خشب وتغيير كوالين',
-    rating: 4.3,
-    ratingBreakdown: { punctuality: 4, cleanliness: 4, professionalism: 5 },
+    rating: 4,
     review: 'شغل جيد جداً وضبط باب الشقة المصفح باحترافية.',
     dateLabel: 'منذ 12 يوماً',
     priceEGP: 250,
@@ -1455,7 +1403,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة الجديدة · جنة 1',
     serviceTitle: 'رش ومكافحة الحشرات بدون رائحة',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'مبيد آمن بدون رائحة فعلاً والتزموا بالمتابعة بعد الرش.',
     dateLabel: 'منذ 4 أيام',
     priceEGP: 420,
@@ -1467,7 +1414,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · حي غرب',
     serviceTitle: 'تركيب كاميرات مراقبة وإنتركم منزلي',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'تمديد احترافي للأسلاك وربط الكاميرات بالموبايل في نفس الزيارة.',
     dateLabel: 'منذ 6 أيام',
     priceEGP: 1050,
@@ -1479,7 +1425,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة · توريل',
     serviceTitle: 'تأسيس وتقوية شبكة الواي فاي وMesh',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'الإشارة أصبحت كاملة في كل الغرف وسرعة التحميل مستقرة جداً.',
     dateLabel: 'منذ 3 أيام',
     priceEGP: 380,
@@ -1491,7 +1436,6 @@ export const INITIAL_TECHNICIAN_REVIEWS: TechnicianReview[] = [
     area: 'المنصورة الجديدة · جنة 1',
     serviceTitle: 'صيانة لابتوب وشاشات سمارت بالمنزل',
     rating: 5,
-    ratingBreakdown: { punctuality: 5, cleanliness: 5, professionalism: 5 },
     review: 'فحص الشاشة في البيت وصلّح عطل الإضاءة في نفس الساعة بأمانة تامة.',
     dateLabel: 'منذ أسبوع',
     priceEGP: 460,
@@ -1502,17 +1446,12 @@ export interface TechnicianComputedStats {
   averageRating: number;
   totalReviews: number;
   ratingCounts: Record<1 | 2 | 3 | 4 | 5, number>;
-  criteriaAverages: RatingBreakdown;
   positivePercent: number;
   totalQuotesSent: number;
   acceptedQuotesCount: number;
   acceptanceRatePercent: number;
   totalCompletedValueEGP: number;
   reviews: TechnicianReview[];
-}
-
-export function computeRatingBreakdownAverage(b: RatingBreakdown): number {
-  return Number(((b.punctuality + b.cleanliness + b.professionalism) / 3).toFixed(1));
 }
 
 export function computeTechnicianStats(
@@ -1531,41 +1470,27 @@ export function computeTechnicianStats(
   };
 
   let sumRatings = 0;
-  let sumPunctuality = 0;
-  let sumCleanliness = 0;
-  let sumProfessionalism = 0;
-
   for (const r of techReviews) {
-    const breakdown = r.ratingBreakdown;
-    const itemRating = breakdown ? computeRatingBreakdownAverage(breakdown) : r.rating;
-    const clamped = Math.min(5, Math.max(1, Math.round(itemRating))) as 1 | 2 | 3 | 4 | 5;
+    const clamped = Math.min(5, Math.max(1, Math.round(r.rating))) as 1 | 2 | 3 | 4 | 5;
     ratingCounts[clamped] += 1;
-    sumRatings += itemRating;
-    sumPunctuality += breakdown?.punctuality ?? r.rating;
-    sumCleanliness += breakdown?.cleanliness ?? r.rating;
-    sumProfessionalism += breakdown?.professionalism ?? r.rating;
+    sumRatings += r.rating;
   }
 
   const totalReviews = techReviews.length;
-  const averageRating = totalReviews > 0 ? Number((sumRatings / totalReviews).toFixed(1)) : 5.0;
-  const criteriaAverages: RatingBreakdown =
-    totalReviews > 0
-      ? {
-          punctuality: Number((sumPunctuality / totalReviews).toFixed(1)),
-          cleanliness: Number((sumCleanliness / totalReviews).toFixed(1)),
-          professionalism: Number((sumProfessionalism / totalReviews).toFixed(1)),
-        }
-      : { punctuality: 5.0, cleanliness: 5.0, professionalism: 5.0 };
-
+  const averageRating =
+    totalReviews > 0 ? Number((sumRatings / totalReviews).toFixed(1)) : 5.0;
   const positiveCount = ratingCounts[5] + ratingCounts[4];
-  const positivePercent = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100;
+  const positivePercent =
+    totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 100;
 
   const techQuotes = allQuotes.filter((q) => q.technicianId === technicianId);
   const totalQuotesSent = techQuotes.length;
   const acceptedQuotes = techQuotes.filter((q) => q.status === 'accepted');
   const acceptedQuotesCount = acceptedQuotes.length;
   const acceptanceRatePercent =
-    totalQuotesSent > 0 ? Math.round((acceptedQuotesCount / totalQuotesSent) * 100) : 0;
+    totalQuotesSent > 0
+      ? Math.round((acceptedQuotesCount / totalQuotesSent) * 100)
+      : 0;
 
   // Sum completed values from historical reviews + newly completed accepted requests
   const reviewIdsFromRequests = new Set(
@@ -1587,7 +1512,6 @@ export function computeTechnicianStats(
     averageRating,
     totalReviews,
     ratingCounts,
-    criteriaAverages,
     positivePercent,
     totalQuotesSent,
     acceptedQuotesCount,
@@ -1680,7 +1604,8 @@ export const INITIAL_RECURRING_SCHEDULES: RecurringSchedule[] = [
     categoryId: 'cleaning',
     categoryName: 'تنظيف المنازل',
     serviceTitle: 'تنظيف شامل للشقق والفلل',
-    detailedDescription: 'تنظيف أسبوعي دوري للشقة (3 غرف ومطبخ وحمامين) مع تعقيم الأرضيات.',
+    detailedDescription:
+      'تنظيف أسبوعي دوري للشقة (3 غرف ومطبخ وحمامين) مع تعقيم الأرضيات.',
     district: DEFAULT_DAKAHLIA_DISTRICT,
     addressText: 'شارع قناة السويس، برج الصفوة، أمام مسجد النور · الدور الرابع · شقة 8',
     preferredTime: '10:00 ص – 12:00 م',
@@ -1703,9 +1628,14 @@ export const WALLET_PROVIDERS = [
   'اتصالات كاش',
 ] as const;
 
-export function getPaymentMethodLabel(method?: PaymentMethod, walletProvider?: string): string {
+export function getPaymentMethodLabel(
+  method?: PaymentMethod,
+  walletProvider?: string
+): string {
   if (method === 'wallet') {
-    return walletProvider ? `محفظة إلكترونية (${walletProvider})` : 'محفظة إلكترونية';
+    return walletProvider
+      ? `محفظة إلكترونية (${walletProvider})`
+      : 'محفظة إلكترونية';
   }
   return 'نقد عند الاستلام';
 }
@@ -1845,7 +1775,11 @@ export function computeServiceMarketStats(
   let savingsPercent = 0;
   let savingsAmountEGP = 0;
 
-  if (lowestOfferEGP !== null && marketAverageEGP !== null && marketAverageEGP > lowestOfferEGP) {
+  if (
+    lowestOfferEGP !== null &&
+    marketAverageEGP !== null &&
+    marketAverageEGP > lowestOfferEGP
+  ) {
     savingsAmountEGP = marketAverageEGP - lowestOfferEGP;
     savingsPercent = Math.round((savingsAmountEGP / marketAverageEGP) * 100);
   }
@@ -1884,7 +1818,11 @@ export function computeQuoteMarketComparison(
   let savingsPercent = 0;
   let savingsAmountEGP = 0;
 
-  if (quotePriceEGP > 0 && marketAverageEGP !== null && marketAverageEGP > quotePriceEGP) {
+  if (
+    quotePriceEGP > 0 &&
+    marketAverageEGP !== null &&
+    marketAverageEGP > quotePriceEGP
+  ) {
     savingsAmountEGP = marketAverageEGP - quotePriceEGP;
     savingsPercent = Math.round((savingsAmountEGP / marketAverageEGP) * 100);
   }
@@ -1919,7 +1857,9 @@ export function computeFeaturedTechnicians(
     const liveCompletedExtra = allRequests.filter((req) => {
       if (req.status !== 'completed' || req.id === 'req-103') return false;
       const acceptedQuote = allQuotes.find(
-        (q) => q.id === req.acceptedQuoteId || (q.requestId === req.id && q.status === 'accepted')
+        (q) =>
+          q.id === req.acceptedQuoteId ||
+          (q.requestId === req.id && q.status === 'accepted')
       );
       return acceptedQuote?.technicianId === tech.id;
     }).length;
@@ -1931,8 +1871,8 @@ export function computeFeaturedTechnicians(
       stats.totalReviews >= 5
         ? stats.averageRating
         : stats.totalReviews > 0
-          ? Number((tech.rating * 0.65 + stats.averageRating * 0.35).toFixed(1))
-          : Number(tech.rating.toFixed(1));
+        ? Number((tech.rating * 0.65 + stats.averageRating * 0.35).toFixed(1))
+        : Number(tech.rating.toFixed(1));
 
     const totalReviews = Math.max(tech.reviewsCount, stats.totalReviews);
     const trustScore = (effectiveRating - 4.0) * 600 + effectiveCompletedJobs;
@@ -2288,7 +2228,9 @@ export function computeSmartServiceHints(
     SERVICES_CATALOG.find((s) => s.categoryId === currentCategoryId);
 
   const currentId = currentService?.id || '';
-  const activeHistoryRequests = customerRequests.filter((r) => r.status !== 'cancelled');
+  const activeHistoryRequests = customerRequests.filter(
+    (r) => r.status !== 'cancelled'
+  );
   const pastServiceTitles = new Set(activeHistoryRequests.map((r) => r.serviceTitle));
 
   const hintsByTargetId = new Map<string, SmartServiceHint>();
@@ -2308,7 +2250,9 @@ export function computeSmartServiceHints(
     hintsByTargetId.set(target.id, {
       id: `hint-${target.id}`,
       service: target,
-      reason: alsoInHistory ? `${rule.reason} (مرتبط بسجل طلباتك)` : rule.reason,
+      reason: alsoInHistory
+        ? `${rule.reason} (مرتبط بسجل طلباتك)`
+        : rule.reason,
       source: alsoInHistory ? 'current_and_history' : 'current_service',
       noteAddition: rule.noteAddition,
     });
@@ -2387,13 +2331,19 @@ export function computeRequestCostSavingsSummary(
 
   // Fallback to category-level historical quotes when a custom service title is used
   if (previousPool.length < 2) {
-    const categoryTitles = SERVICES_CATALOG.filter((s) => s.categoryId === request.categoryId).map(
-      (s) => s.title
-    );
+    const categoryTitles = SERVICES_CATALOG.filter(
+      (s) => s.categoryId === request.categoryId
+    ).map((s) => s.title);
     const catPool: number[] = [];
     for (const title of categoryTitles) {
       catPool.push(
-        ...collectPreviousPricesForService(title, allQuotes, allRequests, allReviews, request.id)
+        ...collectPreviousPricesForService(
+          title,
+          allQuotes,
+          allRequests,
+          allReviews,
+          request.id
+        )
       );
     }
     if (catPool.length >= 2) {
@@ -2406,14 +2356,18 @@ export function computeRequestCostSavingsSummary(
       ? Math.round(previousPool.reduce((sum, p) => sum + p, 0) / previousPool.length)
       : null;
 
-  const activeQuotes = requestQuotes.filter((q) => q.status !== 'rejected' && q.priceEGP > 0);
+  const activeQuotes = requestQuotes.filter(
+    (q) => q.status !== 'rejected' && q.priceEGP > 0
+  );
   const acceptedQuote = activeQuotes.find(
     (q) => q.id === request.acceptedQuoteId || q.status === 'accepted'
   );
 
   if (acceptedQuote) {
     const expectedSavingsAmountEGP =
-      marketAverageEGP !== null ? Math.max(0, marketAverageEGP - acceptedQuote.priceEGP) : 0;
+      marketAverageEGP !== null
+        ? Math.max(0, marketAverageEGP - acceptedQuote.priceEGP)
+        : 0;
     const expectedSavingsPercent =
       marketAverageEGP !== null && marketAverageEGP > acceptedQuote.priceEGP
         ? Math.round((expectedSavingsAmountEGP / marketAverageEGP) * 100)
@@ -2455,7 +2409,9 @@ export function computeRequestCostSavingsSummary(
       ? Math.max(0, marketAverageEGP - historicalMin)
       : 0;
   const expectedSavingsPercent =
-    marketAverageEGP !== null && historicalMin !== null && marketAverageEGP > historicalMin
+    marketAverageEGP !== null &&
+    historicalMin !== null &&
+    marketAverageEGP > historicalMin
       ? Math.round((expectedSavingsAmountEGP / marketAverageEGP) * 100)
       : 0;
 
@@ -2594,7 +2550,9 @@ export function computeDiscountedPrice(
   if (discountPercent && discountPercent > 0) {
     const rawDiscount = Math.round((originalPriceEGP * discountPercent) / 100);
     pctDiscount =
-      maxDiscountEGP && maxDiscountEGP > 0 ? Math.min(rawDiscount, maxDiscountEGP) : rawDiscount;
+      maxDiscountEGP && maxDiscountEGP > 0
+        ? Math.min(rawDiscount, maxDiscountEGP)
+        : rawDiscount;
   }
   const extraFlat = flatDiscountEGP > 0 ? Math.round(flatDiscountEGP) : 0;
   const totalDiscount = Math.min(originalPriceEGP, pctDiscount + extraFlat);
@@ -2619,11 +2577,20 @@ export function getFastQuoteWindowStatus(
       remainingMinutes: quotesCount > 0 ? 18 : 26,
       elapsedMinutes: quotesCount > 0 ? 12 : 4,
       isWithinWindow: true,
-      headline: quotesCount > 0 ? 'عروض سريعة خلال 30 دقيقة' : 'جاري تجميع عروض خلال 30 دقيقة',
+      headline:
+        quotesCount > 0
+          ? 'عروض سريعة خلال 30 دقيقة'
+          : 'جاري تجميع عروض خلال 30 دقيقة',
     };
   }
-  const elapsedMinutes = Math.max(0, Math.floor((nowMs - createdAtTimestamp) / 60000));
-  const remainingMinutes = Math.max(0, FAST_QUOTE_WINDOW_MINUTES - elapsedMinutes);
+  const elapsedMinutes = Math.max(
+    0,
+    Math.floor((nowMs - createdAtTimestamp) / 60000)
+  );
+  const remainingMinutes = Math.max(
+    0,
+    FAST_QUOTE_WINDOW_MINUTES - elapsedMinutes
+  );
   const isWithinWindow = remainingMinutes > 0;
 
   return {
@@ -2636,7 +2603,10 @@ export function getFastQuoteWindowStatus(
   };
 }
 
-export function parseWarrantyDaysFromLabel(label?: string, fallbackDays = 30): number {
+export function parseWarrantyDaysFromLabel(
+  label?: string,
+  fallbackDays = 30
+): number {
   if (!label) return fallbackDays;
   const match = label.match(/(\d+)/);
   if (match) {
@@ -2664,10 +2634,13 @@ export function getWarrantyCertificateStatus(
 ): WarrantyCertificateStatus {
   const catalogMatch = SERVICES_CATALOG.find((s) => s.title === req.serviceTitle);
   const totalDays =
-    req.warrantyDays || parseWarrantyDaysFromLabel(warrantyLabel, catalogMatch?.warrantyDays || 30);
+    req.warrantyDays ||
+    parseWarrantyDaysFromLabel(warrantyLabel, catalogMatch?.warrantyDays || 30);
 
   const baseTimestamp =
-    req.completedAtTimestamp || req.createdAtTimestamp || nowMs - 4 * 24 * 60 * 60 * 1000;
+    req.completedAtTimestamp ||
+    req.createdAtTimestamp ||
+    nowMs - 4 * 24 * 60 * 60 * 1000;
 
   const dayMs = 24 * 60 * 60 * 1000;
   const elapsedDays = Math.max(0, Math.floor((nowMs - baseTimestamp) / dayMs));
@@ -2678,10 +2651,9 @@ export function getWarrantyCertificateStatus(
   );
 
   const expiryDate = new Date(baseTimestamp + totalDays * dayMs);
-  const expiryISO = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(
-    2,
-    '0'
-  )}-${String(expiryDate.getDate()).padStart(2, '0')}`;
+  const expiryISO = `${expiryDate.getFullYear()}-${String(
+    expiryDate.getMonth() + 1
+  ).padStart(2, '0')}-${String(expiryDate.getDate()).padStart(2, '0')}`;
 
   return {
     certificateCode: `WR-${req.referenceCode}`,
@@ -2741,15 +2713,23 @@ export function computeOrderEarnedPoints(req: ServiceRequest): number {
   if (typeof req.pointsAwarded === 'number' && req.pointsAwarded > 0) {
     return req.pointsAwarded;
   }
-  return KHADAMAT_POINTS_PER_COMPLETED_ORDER + (req.rating ? KHADAMAT_BONUS_POINTS_FOR_RATING : 0);
+  return (
+    KHADAMAT_POINTS_PER_COMPLETED_ORDER +
+    (req.rating ? KHADAMAT_BONUS_POINTS_FOR_RATING : 0)
+  );
 }
 
 export function computeCustomerPointsSummary(
   requests: ServiceRequest[],
   redemptions: LoyaltyRedemption[]
 ): CustomerPointsSummary {
-  const completedOrders = requests.filter((r) => r.status === 'completed' && !r.isWarrantyClaim);
-  const earnedPoints = completedOrders.reduce((sum, req) => sum + computeOrderEarnedPoints(req), 0);
+  const completedOrders = requests.filter(
+    (r) => r.status === 'completed' && !r.isWarrantyClaim
+  );
+  const earnedPoints = completedOrders.reduce(
+    (sum, req) => sum + computeOrderEarnedPoints(req),
+    0
+  );
   const spentPoints = redemptions.reduce((sum, r) => sum + r.pointsSpent, 0);
   const availablePoints = Math.max(0, earnedPoints - spentPoints);
 
@@ -2795,149 +2775,6 @@ export function computeCustomerPointsSummary(
   };
 }
 
-export const EMERGENCY_SCENARIOS: EmergencyScenario[] = [
-  {
-    id: 'emg-electrical',
-    title: 'التماس أو فصل مفاجئ بالكهرباء',
-    subtitle: 'لوحة التوزيع، قواطع رئيسية، أو رائحة احتراق أسلاك',
-    categoryId: 'electrical',
-    serviceId: 'elec-panel',
-    responseEtaLabel: 'وصول سريع ~15–25 دقيقة',
-    safetyTips: [
-      'افصل المفتاح العمومي من لوحة التوزيع فوراً إذا شممت رائحة احتراق أو لاحظت شرارة.',
-      'لا تلمس أي جهاز أو مفتاح كهربائي بيد مبللة.',
-      'أبعد الأجهزة الحساسة (الثلاجة والراوتر واللابتوب) عن القوابس المتأثرة لحين الفحص.',
-    ],
-    prefillDescription:
-      'بلاغ طوارئ كهرباء: فصل متكرر / التماس في لوحة التوزيع أو أحد القواطع ويحتاج فحصاً فورياً بأولوية قصوى.',
-    iconKey: 'electrical',
-  },
-  {
-    id: 'emg-plumbing',
-    title: 'تسريب مياه غزير أو انفجار وصلة',
-    subtitle: 'ماسورة تغذية، خلاط، موتور مياه، أو صرف مسدود بالكامل',
-    categoryId: 'plumbing',
-    serviceId: 'plumb-leak',
-    responseEtaLabel: 'وصول سريع ~20–30 دقيقة',
-    safetyTips: [
-      'أغلق محبس المياه العمومي للشقة ومحبس موتور المياه فوراً.',
-      'افصل كهرباء السخان أو الموتور إذا وصلت المياه بالقرب منه.',
-      'التقط صورة لمكان التسريب أو الصمام للمساعدة في تجهيز القطع المناسبة قبل الوصول.',
-    ],
-    prefillDescription:
-      'بلاغ طوارئ سباكة: تسريب مياه مستمر أو انسداد عاجل يتطلب تدخلاً فورياً لوقف التسريب وحماية الأرضيات.',
-    iconKey: 'plumbing',
-  },
-  {
-    id: 'emg-heater',
-    title: 'عطل مفاجئ في سخان المياه أو الموتور',
-    subtitle: 'تسريب سخان غاز/كهرباء، عدم فصل حراري، أو توقف ضخ المياه',
-    categoryId: 'plumbing',
-    serviceId: 'plumb-heater',
-    responseEtaLabel: 'وصول سريع ~20–30 دقيقة',
-    safetyTips: [
-      'في حال سخان الغاز، أغلق محبس الغاز وافتح نافذة التهوية مباشرة.',
-      'في سخان الكهرباء، افصل قاطع السخان من اللوحة عند سماع غليان أو تنقيط حول جسم السخان.',
-      'أغلق صمام التغذية البارد لحين وصول الفني.',
-    ],
-    prefillDescription:
-      'بلاغ طوارئ سخان / موتور مياه: توقف أو تنقيط غير طبيعي يحتاج معالجة أمان فورية.',
-    iconKey: 'plumbing',
-  },
-  {
-    id: 'emg-ac',
-    title: 'توقف التكييف أو تنقيط مياه داخل الغرفة',
-    subtitle: 'توقف التبريد في ذروة الحر، صوت ضاغط غير طبيعي، أو تسريب صرف',
-    categoryId: 'ac',
-    serviceId: 'ac-freon-full',
-    responseEtaLabel: 'وصول سريع ~25–35 دقيقة',
-    safetyTips: [
-      'أوقف تشغيل التكييف من الريموت وافصل مفتاح التكييف الرئيسي لحماية الكمبريسور.',
-      'ضع منشفة أو وعاء أسفل الوحدة الداخلية إذا كان هناك تنقيط مستمر.',
-      'صوّر شاشة التكييف إذا ظهر عليها كود خطأ (Error Code).',
-    ],
-    prefillDescription: 'بلاغ طوارئ تكييف: توقف التبريد أو ظهور عطل/تنقيط عاجل يحتاج فحصاً سريعاً.',
-    iconKey: 'ac',
-  },
-  {
-    id: 'emg-networks',
-    title: 'انقطاع الإنترنت والراوتر المنزلي',
-    subtitle: 'فقدان إشارة الفايبر، عطل نقاط الشبكة، أو توقف واي فاي العمل',
-    categoryId: 'networks',
-    serviceId: 'net-mesh-wifi',
-    responseEtaLabel: 'وصول سريع ~25–35 دقيقة',
-    safetyTips: [
-      'صوّر لمبات الراوتر الأمامية (LOS / Internet / DSL) لإرسالها مع الطلب لتشخيص أدق.',
-      'تأكد من ثبات سلك الألياف الضوئية أو التليفون بدون ثني حاد.',
-      'احتفظ باسم الشبكة المطلوب ضبطها.',
-    ],
-    prefillDescription:
-      'بلاغ طوارئ شبكات وإنترنت: انقطاع مفاجئ في الاتصال أو ضعف شديد يعيق العمل بالمنزل ويحتاج إعادة ضبط فورية.',
-    iconKey: 'networks',
-  },
-  {
-    id: 'emg-appliances',
-    title: 'توقف الثلاجة أو الغسالة أثناء التشغيل',
-    subtitle: 'توقف التبريد المفاجئ، عدم تصريف المياه، أو قفل الباب بالملابس',
-    categoryId: 'appliances',
-    serviceId: 'app-washing-fridge',
-    responseEtaLabel: 'وصول سريع ~30–40 دقيقة',
-    safetyTips: [
-      'أبقِ باب الثلاجة مغلقاً للحفاظ على برودة الطعام أطول فترة ممكنة.',
-      'افصل فيشة الغسالة فوراً إذا كان هناك تسريب مياه حول الهيكل.',
-      'صوّر لوحة الغسالة أو ملصق الموديل لتجهيز قطعة الغيار المناسبة.',
-    ],
-    prefillDescription:
-      'بلاغ طوارئ أجهزة منزلية: توقف مفاجئ للثلاجة أو الغسالة مع حاجة لفحص سريع اليوم.',
-    iconKey: 'appliances',
-  },
-];
-
-export interface EmergencyStandbyResult {
-  readyCount: number;
-  estimatedEtaMinutes: number;
-  nearestCenterName: string;
-  topTechnicians: {
-    technician: Technician;
-    distanceKm: number;
-    etaMinutes: number;
-  }[];
-}
-
-export function computeEmergencyStandbyTechnicians(
-  categoryId: string,
-  district: string,
-  technicians: Technician[],
-  allLocations: LocationEntry[] = EGYPT_LOCATIONS
-): EmergencyStandbyResult {
-  const routing = findNearestMatchingTechnicians(categoryId, district, technicians, allLocations);
-
-  const enriched = routing.targets
-    .map((entry) => {
-      const baseEta =
-        entry.matchType === 'exact_area'
-          ? 16
-          : entry.matchType === 'exact_center'
-            ? 24
-            : Math.min(55, 22 + Math.round(entry.distanceKm * 1.4));
-      return {
-        technician: entry.technician,
-        distanceKm: entry.distanceKm,
-        etaMinutes: baseEta,
-      };
-    })
-    .sort((a, b) => a.etaMinutes - b.etaMinutes || b.technician.rating - a.technician.rating);
-
-  const estimatedEtaMinutes = enriched[0]?.etaMinutes ?? 25;
-
-  return {
-    readyCount: enriched.length,
-    estimatedEtaMinutes,
-    nearestCenterName: routing.nearestCenterName,
-    topTechnicians: enriched.slice(0, 3),
-  };
-}
-
 export const DEFAULT_HOME_PLANNER_PROFILE: HomePlannerProfile = {
   homeType: 'apartment',
   acUnits: 2,
@@ -2977,7 +2814,9 @@ export function generateSmartMaintenancePlan(
     });
 
   const isServiceScheduled = (serviceTitle: string, categoryId: string) =>
-    activeSchedules.some((s) => s.serviceTitle === serviceTitle || s.categoryId === categoryId);
+    activeSchedules.some(
+      (s) => s.serviceTitle === serviceTitle || s.categoryId === categoryId
+    );
 
   const candidateIds: {
     serviceId: string;
@@ -3124,8 +2963,8 @@ export function generateSmartMaintenancePlan(
       reason: warrantyUntil
         ? `مغطى حالياً بشهادة ضمان سارية حتى ${warrantyUntil} — لا حاجة لصيانة مدفوعة الآن.`
         : scheduled
-          ? 'هذه الخدمة مجدولة تلقائياً بالفعل ضمن طلباتك الدورية النشطة.'
-          : item.reason,
+        ? 'هذه الخدمة مجدولة تلقائياً بالفعل ضمن طلباتك الدورية النشطة.'
+        : item.reason,
       recommendedFrequency: item.frequency,
       recommendedPromoCode: item.promoCode,
       estimatedSavingLabel: item.savingLabel,
@@ -3157,3 +2996,8 @@ export function generateSmartMaintenancePlan(
     recommendations: recommendations.slice(0, 4),
   };
 }
+
+
+
+
+
