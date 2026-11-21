@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import { ServiceQuote, ServiceRequest, Technician } from '../types/khadamat';
+import { ServiceRequest, Technician } from '../types/khadamat';
 import { useAppStore } from '../store/useAppStore';
 import { QuoteCard } from './QuoteCard';
-import { Clock, Phone, MessageCircle, AlertCircle } from 'lucide-react';
+import { Phone, MessageCircle, AlertCircle } from 'lucide-react';
 
 interface ClientQuotesListProps {
   request: ServiceRequest;
