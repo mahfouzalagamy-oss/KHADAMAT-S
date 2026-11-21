@@ -25,6 +25,7 @@ import {
 } from '../types/khadamat';
 import { CategoryIcon } from './CategoryIcon';
 import { computeLiveTripMetrics } from './LiveTechnicianRouteMap';
+import { applyLiveLocation, type LiveLocation } from '../lib/liveTracking';
 import { ServiceImage } from './ServiceImage';
 
 interface HomeScreenProps {
@@ -32,6 +33,7 @@ interface HomeScreenProps {
   technicians: Technician[];
   quotes: ServiceQuote[];
   requests: ServiceRequest[];
+  liveLocations?: Record<string, LiveLocation>;
   onOpenLocation: () => void;
   onSelectCategory: (categoryId: string) => void;
   onRequestService: (service?: ServiceItem, categoryId?: string) => void;
@@ -56,6 +58,7 @@ export function HomeScreen({
   technicians,
   quotes,
   requests,
+  liveLocations,
   onOpenLocation,
   onSelectCategory,
   onRequestService,
@@ -130,10 +133,15 @@ export function HomeScreen({
         );
         const liveTrip =
           activeTrackingRequest.status === 'en_route' && acceptedQuote
-            ? computeLiveTripMetrics(
+            ? applyLiveLocation(
+                computeLiveTripMetrics(
+                  activeTrackingRequest,
+                  acceptedQuote,
+                  technicians,
+                  nowMs
+                ),
+                liveLocations?.[activeTrackingRequest.id],
                 activeTrackingRequest,
-                acceptedQuote,
-                technicians,
                 nowMs
               )
             : null;

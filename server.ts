@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import dotenv from 'dotenv';
 import express from 'express';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { WebSocketServer, WebSocket } from 'ws';
+import { mergeById } from './src/lib/mergeById';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 
@@ -20,9 +25,89 @@ function getAI(): GoogleGenAI | null {
 const NO_KEY_MESSAGE =
   'خدمة الذكاء الاصطناعي غير مفعّلة: أضف GEMINI_API_KEY في ملف .env.local ثم أعد تشغيل الخادم.';
 
+// ---------- حالة مشتركة لحظية (طلبات/عروض/رسائل/تنبيهات/فنيون) ----------
+const STATE_FILE = path.resolve(process.cwd(), 'data', 'state.json');
+const SYNC_KEYS = new Set(['requests', 'quotes', 'messages', 'notifications', 'technicians', 'reviews']);
+const sharedState: Record<string, any[]> = {};
+const liveLocations: Record<string, any> = {};
+
+try {
+  Object.assign(sharedState, JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8')));
+} catch {
+  /* أول تشغيل */
+}
+
+let saveTimer: NodeJS.Timeout | null = null;
+function scheduleSave() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    try {
+      fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+      fs.writeFileSync(STATE_FILE, JSON.stringify(sharedState));
+    } catch (e) {
+      console.error('تعذّر حفظ الحالة:', e);
+    }
+  }, 1000);
+}
+
+function attachRealtime(server: http.Server) {
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 25 * 1024 * 1024 });
+  const broadcast = (payload: unknown, except?: WebSocket) => {
+    const data = JSON.stringify(payload);
+    wss.clients.forEach((c) => {
+      if (c !== except && c.readyState === WebSocket.OPEN) c.send(data);
+    });
+  };
+
+  wss.on('connection', (ws) => {
+    (ws as any).alive = true;
+    ws.on('pong', () => ((ws as any).alive = true));
+    ws.send(JSON.stringify({ type: 'snapshot', state: sharedState, locations: liveLocations }));
+
+    ws.on('message', (raw) => {
+      let msg: any;
+      try {
+        msg = JSON.parse(raw.toString());
+      } catch {
+        return;
+      }
+      if (msg.type === 'sync' && SYNC_KEYS.has(msg.key) && Array.isArray(msg.value)) {
+        sharedState[msg.key] = mergeById(sharedState[msg.key] ?? [], msg.value);
+        scheduleSave();
+        broadcast({ type: 'sync', key: msg.key, value: sharedState[msg.key] });
+      } else if (msg.type === 'location' && msg.location?.requestId) {
+        liveLocations[msg.location.requestId] = msg.location;
+        broadcast({ type: 'location', location: msg.location }, ws);
+      } else if (msg.type === 'location_end' && msg.requestId) {
+        delete liveLocations[msg.requestId];
+        broadcast({ type: 'location_end', requestId: msg.requestId }, ws);
+      }
+    });
+  });
+
+  setInterval(() => {
+    wss.clients.forEach((c) => {
+      if ((c as any).alive === false) return c.terminate();
+      (c as any).alive = false;
+      c.ping();
+    });
+  }, 30000);
+}
+
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
+
+  // بوابة لوحة الإدارة: كلمة المرور من متغير البيئة ADMIN_PASSWORD
+  app.post('/api/admin/login', (req, res) => {
+    const expected = process.env.ADMIN_PASSWORD;
+    if (!expected) {
+      return res.status(503).json({ success: false, error: 'لوحة الإدارة غير مفعّلة: ضع ADMIN_PASSWORD في .env.local' });
+    }
+    if (req.body?.password === expected) return res.json({ success: true });
+    res.status(401).json({ success: false, error: 'كلمة المرور غير صحيحة' });
+  });
 
   app.post('/api/ai/smart-plan', async (req, res) => {
     const ai = getAI();
@@ -85,7 +170,6 @@ async function startServer() {
   });
 
   if (process.env.NODE_ENV === 'production') {
-    const path = await import('node:path');
     const dist = path.resolve(process.cwd(), 'dist');
     app.use(express.static(dist));
     app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
@@ -95,7 +179,9 @@ async function startServer() {
   }
 
   const port = Number(process.env.PORT) || 3000;
-  app.listen(port, '0.0.0.0', () => console.log(`Server running on port ${port}`));
+  const server = http.createServer(app);
+  attachRealtime(server);
+  server.listen(port, '0.0.0.0', () => console.log(`Server running on port ${port}`));
 }
 
 startServer();

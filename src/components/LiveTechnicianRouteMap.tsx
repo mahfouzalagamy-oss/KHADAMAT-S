@@ -14,6 +14,7 @@ import {
   getLocationMeta,
   haversineKm,
 } from '../data/dakahliaLocations';
+import { applyLiveLocation, type LiveLocation } from '../lib/liveTracking';
 import {
   ServiceQuote,
   ServiceRequest,
@@ -163,6 +164,7 @@ interface LiveTechnicianRouteMapProps {
   quote: ServiceQuote;
   technicians?: Technician[];
   isDark?: boolean;
+  liveLocation?: LiveLocation;
 }
 
 export function LiveTechnicianRouteMap({
@@ -170,6 +172,7 @@ export function LiveTechnicianRouteMap({
   quote,
   technicians = [],
   isDark = false,
+  liveLocation,
 }: LiveTechnicianRouteMapProps) {
   const [fallbackAnchorMs] = useState<number>(() => Date.now() - 2 * 60 * 1000);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
@@ -187,14 +190,13 @@ export function LiveTechnicianRouteMap({
 
   const trip = useMemo(
     () =>
-      computeLiveTripMetrics(
+      applyLiveLocation(
+        computeLiveTripMetrics(request, quote, technicians, nowMs, fallbackAnchorMs),
+        liveLocation,
         request,
-        quote,
-        technicians,
-        nowMs,
-        fallbackAnchorMs
+        nowMs
       ),
-    [request, quote, technicians, nowMs, fallbackAnchorMs]
+    [request, quote, technicians, nowMs, fallbackAnchorMs, liveLocation]
   );
 
   const techPos = useMemo(
@@ -294,7 +296,11 @@ export function LiveTechnicianRouteMap({
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>
-              {lastPingSecondsAgo === 0 ? 'محدّث الآن' : 'تحديث المسار'}
+              {trip.isLive
+                ? 'GPS مباشر'
+                : lastPingSecondsAgo === 0
+                ? 'محدّث الآن'
+                : 'تحديث المسار'}
             </span>
           </button>
         </div>

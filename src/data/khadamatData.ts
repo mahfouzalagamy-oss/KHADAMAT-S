@@ -26,15 +26,15 @@ import {
   findNearestMatchingTechnicians,
 } from './dakahliaLocations';
 
-export const HERO_IMAGE_PATH = '/src/assets/images/cartoon_hero_khadamat_1794956209485.jpg';
+export const HERO_IMAGE_PATH = '/src/assets/images/cartoon_hero_khadamat_1794956209485.webp';
 
-const IMG_AC = '/src/assets/images/cartoon_ac_service_1794956210988.jpg';
-const IMG_PLUMBING = '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg';
-const IMG_ELECTRICAL = '/src/assets/images/cartoon_electrical_service_1794956211565.jpg';
-const IMG_CLEANING = '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg';
-const IMG_SMART_HOME = '/src/assets/images/cartoon_smart_home_1794956211324.jpg';
-const IMG_PAINT_WOOD = '/src/assets/images/cartoon_paint_wood_1794956232344.jpg';
-const IMG_GARDEN_CARE = '/src/assets/images/cartoon_garden_care_1794956232380.jpg';
+const IMG_AC = '/src/assets/images/cartoon_ac_service_1794956210988.webp';
+const IMG_PLUMBING = '/src/assets/images/cartoon_plumbing_service_1794956210605.webp';
+const IMG_ELECTRICAL = '/src/assets/images/cartoon_electrical_service_1794956211565.webp';
+const IMG_CLEANING = '/src/assets/images/cartoon_cleaning_service_1794956212778.webp';
+const IMG_SMART_HOME = '/src/assets/images/cartoon_smart_home_1794956211324.webp';
+const IMG_PAINT_WOOD = '/src/assets/images/cartoon_paint_wood_1794956232344.webp';
+const IMG_GARDEN_CARE = '/src/assets/images/cartoon_garden_care_1794956232380.webp';
 
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
   {

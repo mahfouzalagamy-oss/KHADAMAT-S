@@ -59,6 +59,7 @@ import {
   SmartQuoteComparisonStrip,
 } from './DigitalWarrantyCard';
 import { LiveTechnicianRouteMap } from './LiveTechnicianRouteMap';
+import type { LiveLocation } from '../lib/liveTracking';
 import {
   CompletedOrderSummaryData,
   OrderCompletionModal,
@@ -96,6 +97,7 @@ interface CustomerRequestsScreenProps {
   technicians?: Technician[];
   initialTab?: RequestsTab;
   focusRequestId?: string | null;
+  liveLocations?: Record<string, LiveLocation>;
   onFocusConsumed?: () => void;
   isDark?: boolean;
 }
@@ -137,6 +139,7 @@ export function CustomerRequestsScreen({
   technicians = [],
   initialTab,
   focusRequestId,
+  liveLocations,
   onFocusConsumed,
   isDark = false,
 }: CustomerRequestsScreenProps) {
@@ -679,6 +682,7 @@ export function CustomerRequestsScreen({
                     quote={acceptedQuote}
                     technicians={technicians}
                     isDark={isDark}
+                    liveLocation={liveLocations?.[req.id]}
                   />
                 )}
 

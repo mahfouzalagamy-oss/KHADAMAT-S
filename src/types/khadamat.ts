@@ -189,6 +189,9 @@ export interface ServiceRequest {
   createdAt: string;
   createdAtTimestamp?: number;
   enRouteStartedAt?: number;
+  /** إحداثيات العميل الحقيقية (اختيارية) لدقة التتبع */
+  customerLat?: number;
+  customerLng?: number;
   completedAtTimestamp?: number;
   warrantyDays?: number;
   warrantyClaimForRef?: string;

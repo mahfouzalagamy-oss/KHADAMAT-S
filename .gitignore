@@ -11,3 +11,8 @@ coverage/
 
 node_modules/
 .env
+
+# local / generated
+.aistudio/
+data/state.json
+server.js

@@ -1,17 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AuthLoginScreen } from './components/AuthLoginScreen';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { BrandWordmark } from './components/BrandWordmark';
 import { CategoriesScreen } from './components/CategoriesScreen';
 import { CustomerProfileScreen } from './components/CustomerProfileScreen';
-import { CustomerRequestsScreen } from './components/CustomerRequestsScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { LocationModal } from './components/LocationModal';
 import { NotificationsScreen } from './components/NotificationsScreen';
 import { OfflineIndicator } from './components/PWAInstallBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
-import { SmartPlannerModal } from './components/SmartPlannerModal';
-import { TechnicianPortalScreen } from './components/TechnicianPortalScreen';
+import { getRequestsTabForStatus } from './lib/requestFlow';
+import { connectRealtime, useRealtimeStatus } from './lib/realtime';
+import { useRealtimeSync } from './lib/useRealtimeSync';
+import { useLiveLocations, useTechnicianGps } from './lib/liveTracking';
+import { useSystemNotifications } from './lib/systemNotifications';
+
+// تحميل كسول للشاشات الثقيلة لتسريع أول فتح للتطبيق
+const AuthLoginScreen = lazy(() => import('./components/AuthLoginScreen').then((m) => ({ default: m.AuthLoginScreen })));
+const CustomerRequestsScreen = lazy(() => import('./components/CustomerRequestsScreen').then((m) => ({ default: m.CustomerRequestsScreen })));
+const SmartPlannerModal = lazy(() => import('./components/SmartPlannerModal').then((m) => ({ default: m.SmartPlannerModal })));
+const TechnicianPortalScreen = lazy(() => import('./components/TechnicianPortalScreen').then((m) => ({ default: m.TechnicianPortalScreen })));
+const AdminDashboardScreen = lazy(() => import('./components/AdminDashboardScreen').then((m) => ({ default: m.AdminDashboardScreen })));
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
 import { TopBar } from './components/TopBar';
@@ -95,17 +103,6 @@ function loadStored<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
-}
-
-import type { ServiceRequestStatus } from './types/khadamat';
-
-type RequestsTabId = 'open' | 'active' | 'history';
-
-/** أي تبويب في «طلباتي» يعرض الطلب حسب حالته الفعلية */
-function getRequestsTabForStatus(status: ServiceRequestStatus): RequestsTabId {
-  if (status === 'open_for_quotes') return 'open';
-  if (status === 'completed' || status === 'cancelled') return 'history';
-  return 'active';
 }
 
 export default function App() {
@@ -369,6 +366,39 @@ export default function App() {
         (!n.recipientTechId || n.recipientTechId === session.technicianId)
     );
   }, [notifications, session]);
+
+  // ---------- الوقت الحقيقي: مزامنة الحالة + تتبع GPS + التنبيهات ----------
+  useEffect(() => connectRealtime(), []);
+  const realtimeStatus = useRealtimeStatus();
+  useRealtimeSync('requests', requests, setRequests);
+  useRealtimeSync('quotes', quotes, setQuotes);
+  useRealtimeSync('messages', messages, setMessages);
+  useRealtimeSync('notifications', notifications, setNotifications);
+  useRealtimeSync('technicians', technicians, setTechnicians);
+  useRealtimeSync('reviews', reviews, setReviews);
+  const liveLocations = useLiveLocations();
+
+  const myEnRouteRequestIds = useMemo(() => {
+    if (session?.role !== 'technician') return [];
+    return requests
+      .filter(
+        (r) =>
+          r.status === 'en_route' &&
+          quotes.some(
+            (q) => q.requestId === r.id && q.status === 'accepted' && q.technicianId === session.technicianId
+          )
+      )
+      .map((r) => r.id);
+  }, [requests, quotes, session]);
+  const gpsStatus = useTechnicianGps(myEnRouteRequestIds);
+  const { toast, dismissToast } = useSystemNotifications(visibleNotifications);
+
+  const [isAdminRoute, setIsAdminRoute] = useState(() => window.location.hash === '#admin');
+  useEffect(() => {
+    const onHash = () => setIsAdminRoute(window.location.hash === '#admin');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   const unreadNotificationsCount = visibleNotifications.filter((n) => !n.isRead).length;
 
@@ -1237,6 +1267,22 @@ export default function App() {
   };
 
   // Separate Entry / Login Screen when not logged in
+  if (isAdminRoute) {
+    return (
+      <AdminDashboardScreen
+        requests={requests}
+        quotes={quotes}
+        technicians={technicians}
+        liveLocations={liveLocations}
+        realtimeStatus={realtimeStatus}
+        onCancelRequest={handleCancelRequest}
+        onExit={() => {
+          window.location.hash = '';
+        }}
+      />
+    );
+  }
+
   if (!session) {
     return (
       <>
@@ -1271,6 +1317,36 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 md:pb-0 transition-colors duration-200">
+      {toast && (
+        <button
+          type="button"
+          onClick={() => {
+            handleSelectNotification(toast);
+            dismissToast();
+          }}
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-[70] w-[92%] max-w-md text-right bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl px-4 py-3 shadow-lg cursor-pointer"
+        >
+          <div className="text-sm font-bold">{toast.title}</div>
+          <div className="text-xs opacity-80 mt-0.5 line-clamp-2">{toast.body}</div>
+        </button>
+      )}
+      {session.role === 'technician' && myEnRouteRequestIds.length > 0 && (
+        <div
+          className={`text-center text-xs font-semibold py-2 px-3 ${
+            gpsStatus === 'sharing'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-amber-500 text-white'
+          }`}
+        >
+          {gpsStatus === 'sharing'
+            ? 'موقعك الحي يُشارَك الآن مع العميل'
+            : gpsStatus === 'denied'
+            ? 'فعّل صلاحية الموقع في المتصفح ليرى العميل مسارك'
+            : gpsStatus === 'unsupported'
+            ? 'جهازك لا يدعم تحديد الموقع'
+            : 'جارٍ تحديد موقعك...'}
+        </div>
+      )}
       <TopBar
         role={session.role}
         activeCustomerTab={customerTab}
@@ -1306,6 +1382,7 @@ export default function App() {
                 technicians={technicians}
                 quotes={quotes}
                 requests={requests}
+                liveLocations={liveLocations}
                 onOpenLocation={() => setIsLocationModalOpen(true)}
                 onSelectCategory={(catId) => {
                   setSelectedCategoryId(catId);
@@ -1359,6 +1436,7 @@ export default function App() {
                 technicians={technicians}
                 initialTab={requestsInitialTab}
                 focusRequestId={focusRequestId}
+                liveLocations={liveLocations}
                 onFocusConsumed={() => setFocusRequestId(null)}
                 isDark={theme === 'dark'}
                 onAcceptQuote={handleAcceptQuote}

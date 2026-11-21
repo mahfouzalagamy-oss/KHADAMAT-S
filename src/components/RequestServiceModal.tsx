@@ -246,6 +246,20 @@ export function RequestServiceModal({
   const [preferredTime, setPreferredTime] = useState<string>(TIME_WINDOWS[2]);
 
   const defaultAddr = savedAddresses.find((a) => a.isDefault) || savedAddresses[0];
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordsState, setCoordsState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const handleUseMyLocation = () => {
+    if (!('geolocation' in navigator)) return setCoordsState('error');
+    setCoordsState('loading');
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        setCoords({ lat: p.coords.latitude, lng: p.coords.longitude });
+        setCoordsState('idle');
+      },
+      () => setCoordsState('error'),
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
   const [addressText, setAddressText] = useState<string>(
     warrantyClaimTarget?.originalRequest.addressText ||
       (defaultAddr ? `${defaultAddr.streetDetails} · ${defaultAddr.buildingFloor}` : '')
@@ -527,6 +541,8 @@ export function RequestServiceModal({
       bundleTitle: initialBundle?.title,
       district,
       addressText: addressText.trim(),
+      customerLat: coords?.lat,
+      customerLng: coords?.lng,
       preferredDate,
       preferredTime,
       customerName: user.name,
@@ -1323,6 +1339,19 @@ export function RequestServiceModal({
                   placeholder="الشارع، رقم العمارة، الدور والشقة"
                   className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={handleUseMyLocation}
+                  className="mt-2 text-xs font-semibold text-[#FF5A00] dark:text-orange-400 hover:underline cursor-pointer"
+                >
+                  {coords
+                    ? 'تم تحديد موقعك بدقة ✓ (يظهر للفني لتتبع أدق)'
+                    : coordsState === 'loading'
+                    ? 'جارٍ تحديد موقعك...'
+                    : coordsState === 'error'
+                    ? 'تعذّر تحديد الموقع — تأكد من السماح بالوصول للموقع'
+                    : 'استخدم موقعي الحالي لتتبع أدق (اختياري)'}
+                </button>
               </div>
             </div>
 
