@@ -228,6 +228,8 @@ export function playSmartNotificationChime(type: AppNotification['type']): void 
       recurring_generated: [493.88, 739.99],
       new_message: [698.46, 880],
       new_request: [523.25, 698.46],
+      job_started: [493.88, 783.99],
+      request_cancelled: [329.63, 493.88],
     };
 
     const [f1, f2] = freqPairs[type] || [587.33, 880];

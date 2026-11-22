@@ -196,6 +196,7 @@ export interface ServiceRequest {
   customerLat?: number;
   customerLng?: number;
   completedAtTimestamp?: number;
+  urgency?: 'urgent' | 'normal';
   warrantyDays?: number;
   warrantyClaimForRef?: string;
   isWarrantyClaim?: boolean;

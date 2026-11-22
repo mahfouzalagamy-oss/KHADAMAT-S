@@ -1365,7 +1365,6 @@ export default function App() {
             : handleSwitchAccount()
         }
         onSwitchAccount={handleSwitchAccount}
-        district={district}
         technicianDisplayName={activeTechnician?.name}
         onOpenLocation={() => setIsLocationModalOpen(true)}
         unreadNotificationsCount={unreadNotificationsCount}

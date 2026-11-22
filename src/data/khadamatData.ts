@@ -1452,6 +1452,11 @@ export interface TechnicianComputedStats {
   acceptanceRatePercent: number;
   totalCompletedValueEGP: number;
   reviews: TechnicianReview[];
+  criteriaAverages: {
+    punctuality: number;
+    cleanliness: number;
+    professionalism: number;
+  };
 }
 
 export function computeTechnicianStats(
@@ -1508,6 +1513,37 @@ export function computeTechnicianStats(
     return sum;
   }, 0);
 
+  const withBreakdown = techReviews.filter((r) => r.ratingBreakdown);
+  const criteriaAverages = {
+    punctuality:
+      withBreakdown.length > 0
+        ? Number(
+            (
+              withBreakdown.reduce((s, r) => s + (r.ratingBreakdown!.punctuality || 0), 0) /
+              withBreakdown.length
+            ).toFixed(1)
+          )
+        : 5.0,
+    cleanliness:
+      withBreakdown.length > 0
+        ? Number(
+            (
+              withBreakdown.reduce((s, r) => s + (r.ratingBreakdown!.cleanliness || 0), 0) /
+              withBreakdown.length
+            ).toFixed(1)
+          )
+        : 5.0,
+    professionalism:
+      withBreakdown.length > 0
+        ? Number(
+            (
+              withBreakdown.reduce((s, r) => s + (r.ratingBreakdown!.professionalism || 0), 0) /
+              withBreakdown.length
+            ).toFixed(1)
+          )
+        : 5.0,
+  };
+
   return {
     averageRating,
     totalReviews,
@@ -1518,6 +1554,7 @@ export function computeTechnicianStats(
     acceptanceRatePercent,
     totalCompletedValueEGP: historicalValue + liveCompletedValue,
     reviews: techReviews,
+    criteriaAverages,
   };
 }
 
