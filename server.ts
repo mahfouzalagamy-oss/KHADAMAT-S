@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
+dotenvConfig({ path: '.env.local' });
 import fs from 'node:fs';
 import path from 'node:path';
 import { createServer as createHttpServer } from 'http';
@@ -8,6 +10,7 @@ import { mergeById } from './src/lib/mergeById';
 import type { Response as ExpressResponse } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { getSupabaseAdmin } from './server/lib/supabase';
 
 /**
  * Sanitize user-provided input before embedding into AI prompts.
@@ -58,30 +61,83 @@ function requireApiKey(res: ExpressResponse, geminiApiKey: string | undefined): 
 }
 
 // ---------- حالة مشتركة لحظية (طلبات/عروض/رسائل/تنبيهات/فنيون) ----------
-const STATE_FILE = path.resolve(process.cwd(), 'data', 'state.json');
 const SYNC_KEYS = new Set(['requests', 'quotes', 'messages', 'notifications', 'technicians', 'reviews']);
 const sharedState: Record<string, any[]> = {};
 const liveLocations: Record<string, any> = {};
 
-try {
-  Object.assign(sharedState, JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8')));
-} catch {
-  /* أول تشغيل */
+// Table name mapping: app key -> Supabase table
+const TABLE_MAP: Record<string, string> = {
+  requests: 'service_requests',
+  quotes: 'service_quotes',
+  messages: 'messages',
+  notifications: 'notifications',
+  technicians: 'technicians',
+  reviews: 'reviews',
+};
+
+// Load state from Supabase on startup
+async function loadStateFromSupabase() {
+  if (!process.env.SUPABASE_SECRET_KEY) {
+    // Fallback to local file if Supabase not configured
+    try {
+      const STATE_FILE = path.resolve(process.cwd(), 'data', 'state.json');
+      Object.assign(sharedState, JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8')));
+    } catch {
+      /* أول تشغيل */
+    }
+    return;
+  }
+  for (const key of SYNC_KEYS) {
+    const table = TABLE_MAP[key];
+    if (!table) continue;
+    try {
+      const { data, error } = await getSupabaseAdmin().from(table).select('*');
+      if (error) {
+        console.error(`Failed to load ${key} from Supabase:`, error.message);
+        sharedState[key] = [];
+      } else {
+        sharedState[key] = data || [];
+      }
+    } catch (e) {
+      console.error(`Error loading ${key}:`, e);
+      sharedState[key] = [];
+    }
+  }
+  console.log('✅ State loaded from Supabase');
 }
 
 let saveTimer: NodeJS.Timeout | null = null;
+
+// Save to Supabase (fire-and-forget)
 function scheduleSave() {
+  // Debounced save to Supabase
   if (saveTimer) return;
-  saveTimer = setTimeout(() => {
+  saveTimer = setTimeout(async () => {
     saveTimer = null;
-    try {
-      fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
-      fs.writeFileSync(STATE_FILE, JSON.stringify(sharedState));
-    } catch (e) {
-      console.error('تعذّر حفظ الحالة:', e);
+    if (!process.env.SUPABASE_SECRET_KEY) {
+      // Fallback to local file
+      try {
+        const STATE_FILE = path.resolve(process.cwd(), 'data', 'state.json');
+        fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+        fs.writeFileSync(STATE_FILE, JSON.stringify(sharedState));
+      } catch (e) {
+        console.error('تعذّر حفظ الحالة:', e);
+      }
+      return;
+    }
+    // Upsert to Supabase
+    for (const key of SYNC_KEYS) {
+      const table = TABLE_MAP[key];
+      if (!table || !sharedState[key]) continue;
+      try {
+        await getSupabaseAdmin().from(table).upsert(sharedState[key], { onConflict: 'id' });
+      } catch (e) {
+        console.error(`Failed to save ${key} to Supabase:`, e);
+      }
     }
   }, 1000);
 }
+
 
 function attachRealtime(server: ReturnType<typeof createHttpServer>) {
   // noServer: نعالج مسار /ws فقط حتى لا نتعارض مع websocket الخاص بـ Vite (HMR)
@@ -117,9 +173,31 @@ function attachRealtime(server: ReturnType<typeof createHttpServer>) {
       } else if (msg.type === 'location' && msg.location?.requestId) {
         liveLocations[msg.location.requestId] = msg.location;
         broadcast({ type: 'location', location: msg.location }, ws);
+        // Persist to Supabase (fire-and-forget)
+        if (process.env.SUPABASE_SECRET_KEY) {
+          void (async () => {
+            try {
+              await getSupabaseAdmin().from('technician_locations').upsert({
+                request_id: msg.location.requestId,
+                technician_id: msg.location.technicianId,
+                lat: msg.location.lat,
+                lng: msg.location.lng,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'request_id' });
+            } catch { /* ignore */ }
+          })();
+        }
       } else if (msg.type === 'location_end' && msg.requestId) {
         delete liveLocations[msg.requestId];
         broadcast({ type: 'location_end', requestId: msg.requestId }, ws);
+        // Remove from Supabase (fire-and-forget)
+        if (process.env.SUPABASE_SECRET_KEY) {
+          void (async () => {
+            try {
+              await getSupabaseAdmin().from('technician_locations').delete().eq('request_id', msg.requestId);
+            } catch { /* ignore */ }
+          })();
+        }
       }
     });
   });
@@ -134,6 +212,9 @@ function attachRealtime(server: ReturnType<typeof createHttpServer>) {
 }
 
 async function startServer() {
+  // Load state from Supabase on startup
+  await loadStateFromSupabase();
+
   const app = express();
   const httpServer = createHttpServer(app);
   app.use(express.json({ limit: '2mb' }));
