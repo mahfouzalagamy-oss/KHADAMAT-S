@@ -74,7 +74,7 @@ export function AuthLoginScreen({
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [selectedExistingCustId, setSelectedExistingCustId] = useState(customers[0]?.id || '');
-  const [custGeneratedOtp, setCustGeneratedOtp] = useState('');
+  const [custOtpSent, setCustOtpSent] = useState(false);
   const [custOtpTargetPhone, setCustOtpTargetPhone] = useState('');
   const [custOtpInput, setCustOtpInput] = useState('');
   const [custCooldown, setCustCooldown] = useState(0);
@@ -95,7 +95,7 @@ export function AuthLoginScreen({
   const [commercialRegDoc, setCommercialRegDoc] = useState<OfficialDocument | null>(null);
   const [taxCardDoc, setTaxCardDoc] = useState<OfficialDocument | null>(null);
 
-  const [techGeneratedOtp, setTechGeneratedOtp] = useState('');
+  const [techOtpSent, setTechOtpSent] = useState(false);
   const [techOtpTargetPhone, setTechOtpTargetPhone] = useState('');
   const [techOtpInput, setTechOtpInput] = useState('');
   const [techCooldown, setTechCooldown] = useState(0);
@@ -119,14 +119,14 @@ export function AuthLoginScreen({
   }, [techCooldown]);
 
   const resetCustomerOtp = () => {
-    setCustGeneratedOtp('');
+    setCustOtpSent(false);
     setCustOtpTargetPhone('');
     setCustOtpInput('');
     setCustCooldown(0);
   };
 
   const resetTechOtp = () => {
-    setTechGeneratedOtp('');
+    setTechOtpSent(false);
     setTechOtpTargetPhone('');
     setTechOtpInput('');
     setTechCooldown(0);
@@ -184,8 +184,8 @@ export function AuthLoginScreen({
     setTechError('');
   };
 
-  // Customer: Send 4-digit random OTP + show floating alert
-  const handleSendCustomerOtp = () => {
+  // Customer: Send OTP via server (real SMS)
+  const handleSendCustomerOtp = async () => {
     let targetPhone = '';
     if (custMode === 'register') {
       if (customerName.trim().length < 2) {
@@ -207,20 +207,28 @@ export function AuthLoginScreen({
     }
 
     setCustomerError('');
-    const randomCode = String(Math.floor(1000 + Math.random() * 9000));
-    setCustGeneratedOtp(randomCode);
-    setCustOtpTargetPhone(targetPhone);
-    setCustOtpInput('');
-    setCustCooldown(30);
-    setFloatingAlert({
-      code: randomCode,
-      phone: targetPhone,
-      targetRole: 'customer',
-    });
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: targetPhone }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setCustomerError(data.error || 'تعذّر إرسال الرمز.');
+        return;
+      }
+      setCustOtpSent(true);
+      setCustOtpTargetPhone(targetPhone);
+      setCustOtpInput('');
+      setCustCooldown(30);
+    } catch {
+      setCustomerError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+    }
   };
 
   // Customer: Verify OTP & Create/Enter Account
-  const handleCustomerSubmit = (e: React.FormEvent) => {
+  const handleCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (custMode === 'register') {
@@ -234,18 +242,27 @@ export function AuthLoginScreen({
       }
     }
 
-    if (!custGeneratedOtp) {
+    if (!custOtpSent) {
       setCustomerError('يرجى الضغط على زر «إرسال الرمز» أولاً لإصدار رمز التحقق OTP.');
       return;
     }
 
-    if (custOtpInput.trim() !== custGeneratedOtp) {
-      setCustomerError('رمز التأكيد (OTP) غير صحيح. يرجى إدخال الأرقام الـ 4 الظاهرة في التنبيه.');
+    setCustomerError('');
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: custOtpTargetPhone, otp: custOtpInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setCustomerError(data.error || 'رمز التأكيد (OTP) غير صحيح.');
+        return;
+      }
+    } catch {
+      setCustomerError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
       return;
     }
-
-    setCustomerError('');
-    setFloatingAlert(null);
 
     if (custMode === 'login') {
       const existing = customers.find((c) => c.id === selectedExistingCustId);
@@ -285,8 +302,8 @@ export function AuthLoginScreen({
     );
   };
 
-  // Technician / Company: Send 4-digit random OTP + show floating alert
-  const handleSendTechOtp = () => {
+  // Technician / Company: Send OTP via server (real SMS)
+  const handleSendTechOtp = async () => {
     let targetPhone = '';
     if (techMode === 'register') {
       if (newTechName.trim().length < 3 || newTechPhone.trim().length < 10) {
@@ -312,20 +329,28 @@ export function AuthLoginScreen({
     }
 
     setTechError('');
-    const randomCode = String(Math.floor(1000 + Math.random() * 9000));
-    setTechGeneratedOtp(randomCode);
-    setTechOtpTargetPhone(targetPhone);
-    setTechOtpInput('');
-    setTechCooldown(30);
-    setFloatingAlert({
-      code: randomCode,
-      phone: targetPhone,
-      targetRole: 'technician',
-    });
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: targetPhone }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setTechError(data.error || 'تعذّر إرسال الرمز.');
+        return;
+      }
+      setTechOtpSent(true);
+      setTechOtpTargetPhone(targetPhone);
+      setTechOtpInput('');
+      setTechCooldown(30);
+    } catch {
+      setTechError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+    }
   };
 
   // Technician / Company: Verify OTP & Create/Enter Account
-  const handleTechnicianSubmit = (e: React.FormEvent) => {
+  const handleTechnicianSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (techMode === 'register') {
@@ -343,18 +368,27 @@ export function AuthLoginScreen({
       }
     }
 
-    if (!techGeneratedOtp) {
+    if (!techOtpSent) {
       setTechError('يرجى الضغط على زر «إرسال الرمز» أولاً لإصدار رمز التحقق OTP.');
       return;
     }
 
-    if (techOtpInput.trim() !== techGeneratedOtp) {
-      setTechError('رمز التأكيد (OTP) غير صحيح. يرجى إدخال الأرقام الـ 4 الظاهرة في التنبيه.');
+    setTechError('');
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: techOtpTargetPhone, otp: techOtpInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setTechError(data.error || 'رمز التأكيد (OTP) غير صحيح.');
+        return;
+      }
+    } catch {
+      setTechError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
       return;
     }
-
-    setTechError('');
-    setFloatingAlert(null);
 
     if (techMode === 'existing') {
       if (!selectedTechId) return;
@@ -597,7 +631,7 @@ export function AuthLoginScreen({
                           value={customerPhone}
                           onChange={(e) => {
                             setCustomerPhone(e.target.value);
-                            if (custGeneratedOtp) resetCustomerOtp();
+                            if (custOtpSent) resetCustomerOtp();
                           }}
                           placeholder="01012345678"
                           className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-right tabular-nums focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
@@ -660,16 +694,12 @@ export function AuthLoginScreen({
 
                   {/* Always-Visible OTP Field + Send Code Button */}
                   <OtpVerificationSection
-                    generatedOtp={custGeneratedOtp}
+                    otpSent={custOtpSent}
                     targetPhone={custOtpTargetPhone}
                     otpInput={custOtpInput}
                     cooldown={custCooldown}
                     onOtpInputChange={setCustOtpInput}
                     onSendOtp={handleSendCustomerOtp}
-                    onAutoFill={() => {
-                      setCustOtpInput(custGeneratedOtp);
-                      setCustomerError('');
-                    }}
                   />
 
                   {customerError && (
@@ -841,7 +871,7 @@ export function AuthLoginScreen({
                           value={newTechPhone}
                           onChange={(e) => {
                             setNewTechPhone(e.target.value);
-                            if (techGeneratedOtp) resetTechOtp();
+                            if (techOtpSent) resetTechOtp();
                           }}
                           placeholder="رقم الموبايل / الواتساب (11 رقم)"
                           className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-right tabular-nums focus:bg-white dark:focus:bg-slate-900 focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
@@ -951,16 +981,12 @@ export function AuthLoginScreen({
 
                   {/* Always-Visible OTP Field + Send Code Button */}
                   <OtpVerificationSection
-                    generatedOtp={techGeneratedOtp}
+                    otpSent={techOtpSent}
                     targetPhone={techOtpTargetPhone}
                     otpInput={techOtpInput}
                     cooldown={techCooldown}
                     onOtpInputChange={setTechOtpInput}
                     onSendOtp={handleSendTechOtp}
-                    onAutoFill={() => {
-                      setTechOtpInput(techGeneratedOtp);
-                      setTechError('');
-                    }}
                   />
 
                   {techError && (
@@ -988,23 +1014,21 @@ export function AuthLoginScreen({
 }
 
 function OtpVerificationSection({
-  generatedOtp,
-  targetPhone,
+    otpSent,
+    targetPhone,
   otpInput,
   cooldown,
   onOtpInputChange,
   onSendOtp,
-  onAutoFill,
 }: {
-  generatedOtp: string;
-  targetPhone: string;
+  otpSent: boolean;
+    targetPhone: string;
   otpInput: string;
   cooldown: number;
   onOtpInputChange: (val: string) => void;
   onSendOtp: () => void;
-  onAutoFill: () => void;
 }) {
-  const isMatched = Boolean(generatedOtp && otpInput.trim() === generatedOtp);
+  const isMatched = false;
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
@@ -1041,31 +1065,19 @@ function OtpVerificationSection({
         >
           {cooldown > 0
             ? `إعادة الإرسال (${cooldown} ث)`
-            : generatedOtp
+            : otpSent
               ? 'إعادة إرسال الرمز'
               : 'إرسال الرمز'}
         </button>
       </div>
 
-      {generatedOtp ? (
-        <div className="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
-          <div className="text-orange-900 dark:text-orange-200">
-            تم إرسال رمز التحقق إلى <strong className="tabular-nums">{targetPhone}</strong>:{' '}
-            <strong className="text-sm font-bold tracking-widest tabular-nums text-orange-700 dark:text-orange-300 mx-1">
-              {generatedOtp}
-            </strong>
-          </div>
-          <button
-            type="button"
-            onClick={onAutoFill}
-            className="text-[11px] font-bold text-orange-700 dark:text-orange-300 hover:underline whitespace-nowrap cursor-pointer"
-          >
-            تعبئة تلقائية
-          </button>
+      {otpSent ? (
+        <div className="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 rounded-xl px-3.5 py-2.5 text-xs text-orange-900 dark:text-orange-200">
+          تم إرسال رمز التحقق إلى <strong className="tabular-nums">{targetPhone}</strong>. أدخل الرمز (4 أرقام) من رسالة SMS.
         </div>
       ) : (
         <p className="text-[11px] text-slate-500 dark:text-slate-400">
-          اضغط «إرسال الرمز» لإظهار رمز التحقق المكون من 4 أرقام.
+          اضغط «إرسال الرمز» لإرسال رمز التحقق (4 أرقام) عبر SMS.
         </p>
       )}
     </div>
