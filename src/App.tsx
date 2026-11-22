@@ -7,375 +7,208 @@ import { HomeScreen } from './components/HomeScreen';
 import { LocationModal } from './components/LocationModal';
 import { NotificationsScreen } from './components/NotificationsScreen';
 import { OfflineIndicator } from './components/PWAInstallBanner';
+import { PushNotificationBanner } from './components/PushNotificationBanner';
 import { RequestServiceModal, RoutingPreview } from './components/RequestServiceModal';
-import { getRequestsTabForStatus } from './lib/requestFlow';
-import { connectRealtime, useRealtimeStatus } from './lib/realtime';
-import { useRealtimeSync } from './lib/useRealtimeSync';
-import { useLiveLocations, useTechnicianGps } from './lib/liveTracking';
-import { useSystemNotifications } from './lib/systemNotifications';
-
-// تحميل كسول للشاشات الثقيلة لتسريع أول فتح للتطبيق
-const AuthLoginScreen = lazy(() => import('./components/AuthLoginScreen').then((m) => ({ default: m.AuthLoginScreen })));
-const CustomerRequestsScreen = lazy(() => import('./components/CustomerRequestsScreen').then((m) => ({ default: m.CustomerRequestsScreen })));
-const SmartPlannerModal = lazy(() => import('./components/SmartPlannerModal').then((m) => ({ default: m.SmartPlannerModal })));
-const TechnicianPortalScreen = lazy(() => import('./components/TechnicianPortalScreen').then((m) => ({ default: m.TechnicianPortalScreen })));
-const AdminDashboardScreen = lazy(() => import('./components/AdminDashboardScreen').then((m) => ({ default: m.AdminDashboardScreen })));
+import { openWhatsApp, openPhoneCall, createAcceptQuoteMessage } from './utils/whatsapp';
 import { TechnicianReviewsModal } from './components/TechnicianReviewsModal';
 import { TechnicianStatsScreen } from './components/TechnicianStatsScreen';
 import { TopBar } from './components/TopBar';
 import {
-  DEFAULT_DAKAHLIA_DISTRICT,
   EGYPT_LOCATIONS,
-  createCustomLocationEntry,
-  findNearestMatchingTechnicians,
   getLocationMeta,
+  findNearestMatchingTechnicians,
 } from './data/dakahliaLocations';
 import {
-  INITIAL_ADDRESSES,
-  INITIAL_CUSTOMERS,
-  INITIAL_MESSAGES,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_QUOTES,
-  INITIAL_RECURRING_SCHEDULES,
-  INITIAL_REQUESTS,
-  INITIAL_TECHNICIAN_REVIEWS,
-  INITIAL_USER,
   KHADAMAT_BONUS_POINTS_FOR_RATING,
   KHADAMAT_POINTS_PER_COMPLETED_ORDER,
   SERVICES_CATALOG,
-  VERIFIED_TECHNICIANS,
-  addRecurrenceIntervalISO,
-  computeCustomerPointsSummary,
+  computeServiceMarketStats,
   computeTechnicianStats,
-  formatEGP,
-  getPaymentMethodLabel,
   getRecurrenceLabel,
   getTodayISO,
   parseWarrantyDaysFromLabel,
 } from './data/khadamatData';
 import {
-  AccountSession,
   AppNotification,
-  CustomerTab,
   LocationEntry,
   LoyaltyRedemption,
-  LoyaltyRewardTier,
   PaymentMethod,
+  RatingBreakdown,
   RecurrenceFrequency,
   RecurringSchedule,
-  RegisteredCustomer,
   RequestMessage,
   SavedAddress,
-  SeasonalBundle,
   ServiceItem,
   ServiceQuote,
   ServiceRequest,
-  Technician,
   TechnicianReview,
-  TechnicianTab,
-  UserProfile,
   UserRole,
 } from './types/khadamat';
+import {
+  getBrowserPushPermission,
+  requestBrowserPushPermission,
+} from './utils/pushNotifications';
 
-const STORAGE_KEYS = {
-  session: 'khadamat_v2_session',
-  user: 'khadamat_v2_user',
-  customers: 'khadamat_v2_customers',
-  addresses: 'khadamat_v2_addresses',
-  customLocations: 'khadamat_v2_custom_locations',
-  technicians: 'khadamat_v2_technicians',
-  requests: 'khadamat_v2_requests',
-  recurringSchedules: 'khadamat_v2_recurring_schedules',
-  quotes: 'khadamat_v2_quotes',
-  messages: 'khadamat_v2_messages',
-  notifications: 'khadamat_v2_notifications',
-  reviews: 'khadamat_v2_reviews',
-  theme: 'khadamat_v2_theme',
-  favoriteServiceIds: 'khadamat_v2_favorite_services',
-  loyaltyRedemptions: 'khadamat_v2_loyalty_redemptions',
-};
+import { useAppStore } from './store/useAppStore';
+import { getRequestsTabForStatus } from './lib/requestFlow';
+import { useLiveLocations, useTechnicianGps } from './lib/liveTracking';
+import { cancelRequest } from './lib/requestActions';
 
-function loadStored<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
+// تحميل كسول للشاشات الثقيلة لتسريع أول فتح للتطبيق
+const CustomerRequestsScreen = lazy(() =>
+  import('./components/CustomerRequestsScreen').then((m) => ({ default: m.CustomerRequestsScreen }))
+);
+const SmartPlannerModal = lazy(() =>
+  import('./components/SmartPlannerModal').then((m) => ({ default: m.SmartPlannerModal }))
+);
+const TechnicianPortalScreen = lazy(() =>
+  import('./components/TechnicianPortalScreen').then((m) => ({ default: m.TechnicianPortalScreen }))
+);
 
-export default function App() {
-  const [session, setSession] = useState<AccountSession | null>(() =>
-    loadStored<AccountSession | null>(STORAGE_KEYS.session, null)
-  );
-  const [user, setUser] = useState<UserProfile>(() => {
-    const stored = loadStored<UserProfile>(STORAGE_KEYS.user, INITIAL_USER);
-    if (!stored.defaultDistrict?.startsWith('الدقهلية')) {
-      return { ...stored, defaultDistrict: DEFAULT_DAKAHLIA_DISTRICT };
-    }
-    return stored;
-  });
-  const [customers, setCustomers] = useState<RegisteredCustomer[]>(() =>
-    loadStored<RegisteredCustomer[]>(STORAGE_KEYS.customers, INITIAL_CUSTOMERS)
-  );
-  const [customLocations, setCustomLocations] = useState<LocationEntry[]>(() =>
-    loadStored<LocationEntry[]>(STORAGE_KEYS.customLocations, [])
-  );
-  const [district, setDistrict] = useState<string>(user.defaultDistrict);
-  const [addresses, setAddresses] = useState<SavedAddress[]>(() =>
-    loadStored<SavedAddress[]>(STORAGE_KEYS.addresses, INITIAL_ADDRESSES)
-  );
-  const [technicians, setTechnicians] = useState<Technician[]>(() => {
-    const stored = loadStored<Technician[]>(
-      STORAGE_KEYS.technicians,
-      VERIFIED_TECHNICIANS
-    );
-    const hydrated = stored.map((t) => {
-      const seed = VERIFIED_TECHNICIANS.find((s) => s.id === t.id);
-      return {
-        ...t,
-        primaryCenter: t.primaryCenter || seed?.primaryCenter || 'المنصورة',
-        coveredCenters: t.coveredCenters || seed?.coveredCenters || ['المنصورة'],
-        coveredAreas: t.coveredAreas || seed?.coveredAreas || [t.area],
-        isVerifiedDocs: t.isVerifiedDocs ?? true,
-        isPhoneVerified: t.isPhoneVerified ?? true,
-      };
-    });
-    const missingSeeds = VERIFIED_TECHNICIANS.filter(
-      (seed) => !hydrated.some((t) => t.id === seed.id)
-    );
-    return [...hydrated, ...missingSeeds];
-  });
-  const [requests, setRequests] = useState<ServiceRequest[]>(() => {
-    const stored = loadStored<ServiceRequest[]>(
-      STORAGE_KEYS.requests,
-      INITIAL_REQUESTS
-    );
-    return stored.map((r) => {
-      const seed = INITIAL_REQUESTS.find((s) => s.id === r.id);
-      return {
-        ...r,
-        paymentMethod: r.paymentMethod || 'cash',
-        createdAtTimestamp:
-          r.createdAtTimestamp ??
-          (r.status === 'open_for_quotes' ? Date.now() - 12 * 60 * 1000 : undefined),
-        completedAtTimestamp:
-          r.completedAtTimestamp ??
-          seed?.completedAtTimestamp ??
-          (r.status === 'completed' ? Date.now() - 3 * 24 * 60 * 60 * 1000 : undefined),
-        warrantyDays: r.warrantyDays ?? seed?.warrantyDays,
-      };
-    });
-  });
-  const [recurringSchedules, setRecurringSchedules] = useState<RecurringSchedule[]>(
-    () =>
-      loadStored<RecurringSchedule[]>(
-        STORAGE_KEYS.recurringSchedules,
-        INITIAL_RECURRING_SCHEDULES
-      )
-  );
-  const processedCycleKeysRef = useRef<Set<string>>(new Set());
-  const [quotes, setQuotes] = useState<ServiceQuote[]>(() =>
-    loadStored<ServiceQuote[]>(STORAGE_KEYS.quotes, INITIAL_QUOTES)
-  );
-  const [messages, setMessages] = useState<RequestMessage[]>(() =>
-    loadStored<RequestMessage[]>(STORAGE_KEYS.messages, INITIAL_MESSAGES)
-  );
-  const [notifications, setNotifications] = useState<AppNotification[]>(() =>
-    loadStored<AppNotification[]>(STORAGE_KEYS.notifications, INITIAL_NOTIFICATIONS)
-  );
-  const [reviews, setReviews] = useState<TechnicianReview[]>(() =>
-    loadStored<TechnicianReview[]>(STORAGE_KEYS.reviews, INITIAL_TECHNICIAN_REVIEWS)
-  );
+function App() {
+  /* ======================
+     ZUSTAND STORE
+     ====================== */
+  const {
+    // Session
+    session,
+    setSession,
+    user,
+    setUser,
+    district,
+    setDistrict,
 
-  // Navigation & Modal State
-  const [customerTab, setCustomerTab] = useState<CustomerTab>('home');
-  const [requestsInitialTab, setRequestsInitialTab] = useState<'open' | 'active' | 'history' | 'recurring'>('open');
-  const [techTab, setTechTab] = useState<TechnicianTab>('open_requests');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
-  const [catalogSearchQuery, setCatalogSearchQuery] = useState<string>('');
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [viewingTechStatsId, setViewingTechStatsId] = useState<string | null>(null);
+    // Navigation
+    customerTab,
+    setCustomerTab,
+    techTab,
+    setTechTab,
+    requestsInitialTab,
+    setRequestsInitialTab,
 
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-  const [requestInitialService, setRequestInitialService] = useState<ServiceItem | null>(
-    null
-  );
-  const [requestInitialCategoryId, setRequestInitialCategoryId] = useState<
-    string | undefined
-  >(undefined);
-  const [requestInitialBundle, setRequestInitialBundle] =
-    useState<SeasonalBundle | null>(null);
-  const [warrantyClaimTarget, setWarrantyClaimTarget] = useState<{
-    originalRequest: ServiceRequest;
-    technicianName?: string;
-    warrantyDays: number;
-  } | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const stored = loadStored<string>(STORAGE_KEYS.theme, 'light');
-    return stored === 'dark' ? 'dark' : 'light';
-  });
-  const [favoriteServiceIds, setFavoriteServiceIds] = useState<string[]>(() =>
-    loadStored<string[]>(STORAGE_KEYS.favoriteServiceIds, [])
-  );
-  const [loyaltyRedemptions, setLoyaltyRedemptions] = useState<LoyaltyRedemption[]>(
-    () => loadStored<LoyaltyRedemption[]>(STORAGE_KEYS.loyaltyRedemptions, [])
-  );
-  const [initialLoyaltyVoucher, setInitialLoyaltyVoucher] =
-    useState<LoyaltyRedemption | null>(null);
-  const [isSmartPlannerOpen, setIsSmartPlannerOpen] = useState(false);
-  const [focusRequestId, setFocusRequestId] = useState<string | null>(null);
+    // Data
+    addresses,
+    setAddresses,
+    customLocations,
+    setCustomLocations,
+    technicians,
+    setTechnicians,
+    requests,
+    setRequests,
+    recurringSchedules,
+    setRecurringSchedules,
+    quotes,
+    setQuotes,
+    messages,
+    setMessages,
+    notifications,
+    setNotifications,
+    reviews,
+    setReviews,
+    favoriteServiceIds,
+    setFavoriteServiceIds,
+    loyaltyRedemptions,
+    setLoyaltyRedemptions,
 
+    // UI State
+    theme,
+    setTheme,
+    pushPrefs,
+    setPushPrefs,
+    browserPermission,
+    setBrowserPermission,
+    activePushToasts,
+    setActivePushToasts,
+
+    // Modals
+    isLocationModalOpen,
+    setIsLocationModalOpen,
+    isRequestModalOpen,
+    setIsRequestModalOpen,
+    isSmartPlannerOpen,
+    setIsSmartPlannerOpen,
+    viewingTechStatsId,
+    setViewingTechStatsId,
+    requestInitialService,
+    setRequestInitialService,
+    requestInitialCategoryId,
+    setRequestInitialCategoryId,
+    requestInitialBundle,
+    setRequestInitialBundle,
+    warrantyClaimTarget,
+    setWarrantyClaimTarget,
+    initialLoyaltyVoucher,
+    setInitialLoyaltyVoucher,
+    selectedCategoryId,
+    setSelectedCategoryId,
+    catalogSearchQuery,
+    setCatalogSearchQuery,
+
+    // Computed
+    activeTechnician,
+    visibleNotifications,
+    unreadNotificationsCount,
+    openCustomerRequestsCount,
+    acceptedTechJobsCount,
+  } = useAppStore();
+
+  /* ======================
+     REFS
+     ====================== */
+  const quoteSimulationTimersRef = useRef<number[]>([]);
+  const queuedPushIdsRef = useRef<Set<string>>(new Set(notifications.map((n) => n.id)));
+  const requestsRef = useRef<ServiceRequest[]>(requests);
+  const quotesRef = useRef<ServiceQuote[]>(quotes);
+
+  // Keep refs in sync
   useEffect(() => {
-    const isDark = theme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-    const metaTheme = document.querySelector('meta[name="theme-color"]');
-    if (metaTheme) {
-      metaTheme.setAttribute('content', isDark ? '#020617' : '#ea580c');
-    }
-    try {
-      localStorage.setItem(STORAGE_KEYS.theme, JSON.stringify(theme));
-    } catch {}
-  }, [theme]);
-
-  // Persist to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(session));
-    } catch {}
-  }, [session]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-    } catch {}
-  }, [user]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.customers, JSON.stringify(customers));
-    } catch {}
-  }, [customers]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEYS.customLocations,
-        JSON.stringify(customLocations)
-      );
-    } catch {}
-  }, [customLocations]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.addresses, JSON.stringify(addresses));
-    } catch {}
-  }, [addresses]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.technicians, JSON.stringify(technicians));
-    } catch {}
-  }, [technicians]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.requests, JSON.stringify(requests));
-    } catch {}
+    requestsRef.current = requests;
   }, [requests]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEYS.recurringSchedules,
-        JSON.stringify(recurringSchedules)
-      );
-    } catch {}
-  }, [recurringSchedules]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.quotes, JSON.stringify(quotes));
-    } catch {}
+    quotesRef.current = quotes;
   }, [quotes]);
 
+  // Sync queuedPushIdsRef when notifications change
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(messages));
-    } catch {}
-  }, [messages]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.notifications, JSON.stringify(notifications));
-    } catch {}
+    queuedPushIdsRef.current = new Set(notifications.map((n) => n.id));
   }, [notifications]);
 
+  /* ======================
+     EFFECTS
+     ====================== */
+  // Quote simulation timers cleanup
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(reviews));
-    } catch {}
-  }, [reviews]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEYS.favoriteServiceIds,
-        JSON.stringify(favoriteServiceIds)
-      );
-    } catch {}
-  }, [favoriteServiceIds]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEYS.loyaltyRedemptions,
-        JSON.stringify(loyaltyRedemptions)
-      );
-    } catch {}
-  }, [loyaltyRedemptions]);
-
-  const handleToggleFavoriteService = useCallback((serviceId: string) => {
-    setFavoriteServiceIds((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [serviceId, ...prev]
-    );
+    return () => {
+      quoteSimulationTimersRef.current.forEach((tid) => window.clearTimeout(tid));
+      quoteSimulationTimersRef.current = [];
+    };
   }, []);
 
-  const allLocations = useMemo(
-    () => [...customLocations, ...EGYPT_LOCATIONS],
-    [customLocations]
-  );
-
-  const activeTechnician = useMemo(() => {
-    if (session?.role !== 'technician') return null;
-    return technicians.find((t) => t.id === session.technicianId) || technicians[0];
-  }, [session, technicians]);
-
-  const visibleNotifications = useMemo(() => {
-    if (!session) return [];
-    if (session.role === 'customer') {
-      return notifications.filter((n) => n.recipientRole === 'customer');
+  // Theme sync to DOM
+  useEffect(() => {
+    const isDarkMode = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    document.documentElement.style.colorScheme = isDarkMode ? 'dark' : 'light';
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute(
+        'content',
+        isDarkMode ? '#020617' : '#ea580c'
+      );
     }
-    return notifications.filter(
-      (n) =>
-        n.recipientRole === 'technician' &&
-        (!n.recipientTechId || n.recipientTechId === session.technicianId)
-    );
-  }, [notifications, session]);
+  }, [theme]);
 
-  // ---------- الوقت الحقيقي: مزامنة الحالة + تتبع GPS + التنبيهات ----------
-  useEffect(() => connectRealtime(), []);
-  const realtimeStatus = useRealtimeStatus();
-  useRealtimeSync('requests', requests, setRequests);
-  useRealtimeSync('quotes', quotes, setQuotes);
-  useRealtimeSync('messages', messages, setMessages);
-  useRealtimeSync('notifications', notifications, setNotifications);
-  useRealtimeSync('technicians', technicians, setTechnicians);
-  useRealtimeSync('reviews', reviews, setReviews);
+  // Initialize browser permission
+  useEffect(() => {
+    const perm = getBrowserPushPermission();
+    setBrowserPermission(perm === 'unsupported' ? 'denied' : perm);
+  }, [setBrowserPermission]);
+
+  /* ======================
+     REALTIME: GPS + LIVE LOCATIONS
+     ====================== */
+  const [focusRequestId, setFocusRequestId] = useState<string | null>(null);
   const liveLocations = useLiveLocations();
 
   const myEnRouteRequestIds = useMemo(() => {
@@ -391,113 +224,151 @@ export default function App() {
       .map((r) => r.id);
   }, [requests, quotes, session]);
   const gpsStatus = useTechnicianGps(myEnRouteRequestIds);
-  const { toast, dismissToast } = useSystemNotifications(visibleNotifications);
 
-  const [isAdminRoute, setIsAdminRoute] = useState(() => window.location.hash === '#admin');
-  useEffect(() => {
-    const onHash = () => setIsAdminRoute(window.location.hash === '#admin');
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  const unreadNotificationsCount = visibleNotifications.filter((n) => !n.isRead).length;
-
-  const openCustomerRequestsCount = requests.filter(
-    (r) =>
-      r.status === 'open_for_quotes' ||
-      r.status === 'quote_accepted' ||
-      r.status === 'en_route' ||
-      r.status === 'in_progress'
-  ).length;
-
-  const acceptedTechJobsCount = useMemo(() => {
-    if (!activeTechnician) return 0;
-    return requests.filter((r) => {
-      if (
-        r.status !== 'quote_accepted' &&
-        r.status !== 'en_route' &&
-        r.status !== 'in_progress'
-      ) {
-        return false;
-      }
-      const accepted = quotes.find(
-        (q) => q.id === r.acceptedQuoteId || (q.requestId === r.id && q.status === 'accepted')
-      );
-      return accepted?.technicianId === activeTechnician.id;
-    }).length;
-  }, [activeTechnician, requests, quotes]);
-
-  const handleLogin = (
-    nextSession: AccountSession,
-    newTech?: Technician,
-    newCustomer?: RegisteredCustomer
-  ) => {
-    if (newTech) {
-      setTechnicians((prev) => [newTech, ...prev]);
-    }
-    if (newCustomer) {
-      setCustomers((prev) => {
-        const exists = prev.some((c) => c.phone === newCustomer.phone);
-        return exists ? prev : [newCustomer, ...prev];
-      });
-    }
-    if (nextSession.role === 'customer') {
-      setUser(nextSession.customer);
-      setDistrict(nextSession.customer.defaultDistrict);
-      setCustomerTab('home');
-    } else {
-      setTechTab('open_requests');
-    }
-    setSession(nextSession);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSwitchAccount = () => {
+  /* ======================
+     HANDLERS: SESSION
+     ====================== */
+  const handleSwitchAccount = useCallback(() => {
     setSession(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [setSession]);
 
-  const handleAddCustomLocation = (center: string, name: string): LocationEntry | null => {
-    const entry = createCustomLocationEntry(center, name);
-    setCustomLocations((prev) => {
-      if (prev.some((l) => l.displayLabel === entry.displayLabel)) return prev;
-      return [entry, ...prev];
-    });
-    return entry;
-  };
+  /* ======================
+     HANDLERS: QUOTE SUBMISSION
+     ====================== */
+  const handleSubmitQuote = useCallback(
+    (
+      requestId: string,
+      priceEGP: number,
+      estimatedArrival: string,
+      notes: string,
+      warrantyLabel?: string,
+    ) => {
+      const tech = activeTechnician();
+      if (!tech) return;
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return;
 
-  const handleDistrictChange = (nextDistrict: string) => {
-    setDistrict(nextDistrict);
-    setUser((prev) => ({ ...prev, defaultDistrict: nextDistrict }));
+      const newQuote: ServiceQuote = {
+        id: `quote-${Date.now()}`,
+        requestId,
+        technicianId: tech.id,
+        technicianName: tech.name,
+        isCompany: tech.isCompany,
+        technicianRating: tech.rating,
+        technicianCompletedJobs: tech.completedJobs,
+        technicianPhone: tech.phone,
+        priceEGP,
+        estimatedArrival,
+        warrantyLabel,
+        notes: notes || '',
+        createdAt: getTodayISO(),
+        status: 'pending',
+      };
 
-    if (session?.role === 'technician' && activeTechnician) {
-      const meta = getLocationMeta(nextDistrict, allLocations);
-      setTechnicians((prev) =>
-        prev.map((t) => {
-          if (t.id !== activeTechnician.id) return t;
-          const nextCenters = Array.from(new Set([meta.center, ...t.coveredCenters]));
-          const nextAreas = Array.from(
-            new Set([nextDistrict, meta.areaName, ...t.coveredAreas])
-          );
-          return {
-            ...t,
-            area: `${nextDistrict}${t.coveredCenters.length > 1 ? ` · (${nextCenters.join('، ')})` : ''}`,
-            primaryCenter: meta.center,
-            coveredCenters: nextCenters,
-            coveredAreas: nextAreas,
-          };
-        })
-      );
-    }
-  };
+      setQuotes((prev) => [...prev, newQuote]);
+
+      setNotifications((prev) => [
+        ...prev,
+        {
+          id: `notif-${Date.now()}`,
+          recipientRole: 'customer',
+          type: 'new_quote',
+          title: 'عرض سعر جديد',
+          body: `وصلتك عرض سعر جديد لطلب "${request.serviceTitle}" من ${tech.name}`,
+          requestId,
+          createdAt: newQuote.createdAt,
+          isRead: false,
+        },
+      ]);
+    },
+    [activeTechnician, requests, setQuotes, setNotifications]
+  );
+
+  /* ======================
+     HANDLERS: WHATSAPP & PHONE
+     ====================== */
+  const handleWhatsApp = useCallback(
+    (phone: string, technicianName: string) => {
+      const targetReq = requests.find((r) => r.acceptedQuoteId);
+      const requestTitle = targetReq ? targetReq.serviceTitle : 'الخدمة';
+      const chosenQuote = quotes.find((q) => q.status === 'accepted');
+      const priceEGP = chosenQuote?.priceEGP || 0;
+      const message = createAcceptQuoteMessage(technicianName, requestTitle, priceEGP);
+      openWhatsApp(phone, message);
+    },
+    [requests, quotes]
+  );
+
+  const handlePhoneCall = useCallback((phone: string) => {
+    openPhoneCall(phone);
+  }, []);
+
+  /* ======================
+     HANDLERS: DISTRICT & LOCATION
+     ====================== */
+  const handleDistrictChange = useCallback(
+    (nextDistrict: string) => {
+      setUser((prev) => ({ ...prev, defaultDistrict: nextDistrict }));
+      setDistrict(nextDistrict);
+
+      const tech = activeTechnician();
+      if (tech) {
+        const meta = getLocationMeta(nextDistrict, [...customLocations, ...EGYPT_LOCATIONS]);
+        setTechnicians((prev) =>
+          prev.map((t) => {
+            if (t.id !== tech.id) return t;
+            const nextCenters = Array.from(new Set([meta.center, ...t.coveredCenters]));
+            const nextAreas = Array.from(new Set([nextDistrict, meta.areaName, ...t.coveredAreas]));
+            return {
+              ...t,
+              area: `${nextDistrict}${
+                t.coveredCenters.length > 1
+                  ? ` · (${nextCenters.join('، ')})`
+                  : ''
+              }`,
+              primaryCenter: meta.center,
+              coveredCenters: nextCenters,
+              coveredAreas: nextAreas,
+            };
+          })
+        );
+      }
+    },
+    [setUser, setDistrict, activeTechnician, customLocations, setTechnicians]
+  );
+
+  const handleAddCustomLocation = useCallback(
+    (center: string, name: string): LocationEntry | null => {
+      const entry: LocationEntry = {
+        id: `loc-${Date.now()}`,
+        governorate: 'الدقهلية',
+        center,
+        name,
+        displayLabel: `${name} - ${center}`,
+        lat: 0,
+        lng: 0,
+        isVillage: false,
+        isCustom: true,
+      };
+
+      setCustomLocations((prev) => {
+        if (prev.some((l) => l.displayLabel === entry.displayLabel)) return prev;
+        return [entry, ...prev];
+      });
+
+      return entry;
+    },
+    [setCustomLocations]
+  );
 
   const getRoutingPreview = useCallback(
-    (catId: string): RoutingPreview => {
+    (catId: string, districtOverride?: string): RoutingPreview => {
       const routing = findNearestMatchingTechnicians(
         catId,
-        district,
+        districtOverride || district,
         technicians,
-        allLocations
+        [...customLocations, ...EGYPT_LOCATIONS]
       );
       return {
         matchType: routing.matchType,
@@ -506,86 +377,61 @@ export default function App() {
         minDistanceKm: routing.minDistanceKm,
       };
     },
-    [district, technicians, allLocations]
+    [district, technicians, customLocations]
   );
 
-  const handleOpenRequestModal = (service?: ServiceItem, categoryId?: string) => {
-    setWarrantyClaimTarget(null);
-    setInitialLoyaltyVoucher(null);
-    setRequestInitialBundle(null);
-    setRequestInitialService(service || null);
-    setRequestInitialCategoryId(categoryId || service?.categoryId);
-    setIsRequestModalOpen(true);
-  };
+  /* ======================
+     HANDLERS: REQUEST MODAL
+     ====================== */
+  const handleRequestService = useCallback(
+    (service?: ServiceItem, categoryId?: string) => {
+      setWarrantyClaimTarget(null);
+      setInitialLoyaltyVoucher(null);
+      setRequestInitialBundle(null);
+      setRequestInitialService(service || null);
+      setRequestInitialCategoryId(categoryId || service?.categoryId);
+      setIsRequestModalOpen(true);
+    },
+    [
+      setWarrantyClaimTarget,
+      setInitialLoyaltyVoucher,
+      setRequestInitialBundle,
+      setRequestInitialService,
+      setRequestInitialCategoryId,
+      setIsRequestModalOpen,
+    ]
+  );
 
-  const handleRequestBundle = (bundle: SeasonalBundle) => {
-    const matchedService =
-      SERVICES_CATALOG.find((s) => s.id === bundle.serviceId) || null;
-    setWarrantyClaimTarget(null);
-    setInitialLoyaltyVoucher(null);
-    setRequestInitialBundle(bundle);
-    setRequestInitialService(matchedService);
-    setRequestInitialCategoryId(bundle.categoryId);
-    setIsRequestModalOpen(true);
-  };
+  const handleRedeemPoints = useCallback(
+    (reward: any) => {
+      const summary = computeCustomerPointsSummary(requests, loyaltyRedemptions);
+      if (summary.availablePoints < reward.pointsCost) return;
 
-  const handleRedeemPoints = (reward: LoyaltyRewardTier) => {
-    const summary = computeCustomerPointsSummary(requests, loyaltyRedemptions);
-    if (summary.availablePoints < reward.pointsCost) return;
+      const newRedemption: LoyaltyRedemption = {
+        id: `loy-${Date.now()}`,
+        rewardId: reward.id,
+        title: reward.title,
+        pointsSpent: reward.pointsCost,
+        discountEGP: reward.discountEGP,
+        promoCode: reward.promoCode,
+        redeemedAt: 'الآن',
+        isUsed: false,
+      };
+      setLoyaltyRedemptions((prev) => [newRedemption, ...prev]);
+    },
+    [requests, loyaltyRedemptions, setLoyaltyRedemptions]
+  );
 
-    const newRedemption: LoyaltyRedemption = {
-      id: `loy-${Date.now()}`,
-      rewardId: reward.id,
-      title: reward.title,
-      pointsSpent: reward.pointsCost,
-      discountEGP: reward.discountEGP,
-      promoCode: reward.promoCode,
-      redeemedAt: 'الآن',
-      isUsed: false,
-    };
-    setLoyaltyRedemptions((prev) => [newRedemption, ...prev]);
-  };
-
-  const handleUseLoyaltyVoucher = (voucher: LoyaltyRedemption) => {
-    setWarrantyClaimTarget(null);
-    setRequestInitialBundle(null);
-    setRequestInitialService(null);
-    setRequestInitialCategoryId(undefined);
-    setInitialLoyaltyVoucher(voucher);
-    setIsRequestModalOpen(true);
-  };
-
-  const handleRequestWarrantyCheck = (
-    originalRequest: ServiceRequest,
-    quote?: ServiceQuote
-  ) => {
-    const matchedService =
-      SERVICES_CATALOG.find((s) => s.title === originalRequest.serviceTitle) || null;
-    const warrantyDays =
-      originalRequest.warrantyDays ||
-      parseWarrantyDaysFromLabel(
-        quote?.warrantyLabel,
-        matchedService?.warrantyDays || 30
-      );
-
-    setRequestInitialBundle(null);
-    setRequestInitialService(matchedService);
-    setRequestInitialCategoryId(originalRequest.categoryId);
-    setWarrantyClaimTarget({
-      originalRequest,
-      technicianName: quote?.technicianName,
-      warrantyDays,
-    });
-    setIsRequestModalOpen(true);
-  };
-
+  /* ======================
+     HANDLERS: REQUEST SUBMISSION
+     ====================== */
   const buildRequestDispatch = useCallback(
     (newReq: ServiceRequest, isAutoRecurring = false) => {
       const routing = findNearestMatchingTechnicians(
         newReq.categoryId,
         newReq.district,
         technicians,
-        allLocations
+        [...customLocations, ...EGYPT_LOCATIONS]
       );
 
       const enrichedRequest: ServiceRequest = {
@@ -628,675 +474,962 @@ export default function App() {
 
       return { enrichedRequest, techAlerts, routing };
     },
-    [technicians, allLocations]
+    [technicians, customLocations]
   );
 
-  const handleSubmitRequest = (
-    newReq: ServiceRequest,
-    recurrence?: {
-      frequency: Exclude<RecurrenceFrequency, 'none'>;
-      startDateISO: string;
-    }
-  ) => {
-    const todayISO = getTodayISO();
+  const scheduleIncomingQuotesForRequest = useCallback(
+    (req: ServiceRequest, routingTargets: any[]) => {
+      if (routingTargets.length === 0) return;
 
-    if (recurrence) {
-      const isFutureStart = recurrence.startDateISO > todayISO;
-      const scheduleId = `rec-${Date.now()}`;
-      const nextRunDateISO = isFutureStart
-        ? recurrence.startDateISO
-        : addRecurrenceIntervalISO(recurrence.startDateISO, recurrence.frequency);
-
-      const newSchedule: RecurringSchedule = {
-        id: scheduleId,
-        frequency: recurrence.frequency,
-        categoryId: newReq.categoryId,
-        categoryName: newReq.categoryName,
-        serviceTitle: newReq.serviceTitle,
-        detailedDescription: newReq.detailedDescription,
-        district: newReq.district,
-        addressText: newReq.addressText,
-        preferredTime: newReq.preferredTime,
-        customerName: newReq.customerName,
-        customerPhone: newReq.customerPhone,
-        paymentMethod: newReq.paymentMethod,
-        walletProvider: newReq.walletProvider,
-        startDateISO: recurrence.startDateISO,
-        nextRunDateISO,
-        lastRunDateISO: isFutureStart ? undefined : todayISO,
-        generatedCount: isFutureStart ? 0 : 1,
-        status: 'active',
-        createdAt: `مُجدول ${getRecurrenceLabel(recurrence.frequency)}`,
+      const market = computeServiceMarketStats(
+        req.serviceTitle,
+        quotes,
+        requests,
+        reviews
+      );
+      const categoryBasePrices: Record<string, number> = {
+        ac: 320,
+        plumbing: 220,
+        electrical: 210,
+        cleaning: 380,
+        carpentry: 260,
+        painting: 450,
+        appliances: 290,
+        pest_control: 300,
+        security_tech: 340,
+        moving: 650,
+        tanks_garden: 320,
+        aluminum_gypsum: 280,
+        carwash: 220,
+        electronics: 280,
+        networks: 260,
       };
+      const basePrice =
+        market.marketAverageEGP || categoryBasePrices[req.categoryId] || 250;
 
-      setRecurringSchedules((prev) => [newSchedule, ...prev]);
+      const candidates = routingTargets.slice(0, 3);
+      const offerTemplates = [
+        {
+          delayMs: 2200,
+          factor: 0.92,
+          eta: 'اليوم خلال 45 دقيقة',
+          warranty: 'ضمان 30 يوماً',
+          note: req.isWarrantyClaim
+            ? 'فحص ضمان سريع وتحديد الحل فوراً.'
+            : 'متاح قريباً من موقعك مع جميع المعدات وقطع الغيار الأصلية.',
+        },
+        {
+          delayMs: 4800,
+          factor: 1.04,
+          eta: 'اليوم خلال ساعتين',
+          warranty: 'ضمان 60 يوماً',
+          note: 'فحص شامل قبل العمل وتسليم بنظافة تامة والتزام تام بالموعد.',
+        },
+        {
+          delayMs: 7600,
+          factor: 1.12,
+          eta: 'في الموعد المحدد بالدق',
+          warranty: 'ضمان 90 يوماً',
+          note: 'خدمة معتمدة بفريق فني متخصص وشهادة ضمان على التركيب.',
+        },
+      ];
 
-      if (isFutureStart) {
+      candidates.forEach(({ technician }, idx) => {
+        const tpl = offerTemplates[idx] || offerTemplates[0];
+        const rawPrice = Math.round((basePrice * tpl.factor) / 10) * 10;
+        const priceEGP = req.isWarrantyClaim ? 0 : Math.max(80, rawPrice);
+
+        const timerId = window.setTimeout(() => {
+          const latestReq = requestsRef.current.find((r) => r.id === req.id);
+          if (!latestReq || latestReq.status !== 'open_for_quotes') return;
+
+          const techStats = computeTechnicianStats(
+            technician.id,
+            reviews,
+            quotes,
+            requests
+          );
+
+          const simulatedQuote: ServiceQuote = {
+            id: `q-auto-${Date.now()}-${technician.id}-${idx}`,
+            requestId: req.id,
+            technicianId: technician.id,
+            technicianName: technician.name,
+            isCompany: technician.isCompany,
+            technicianRating: technician.rating,
+            technicianCompletedJobs: technician.completedJobs,
+            technicianPhone: technician.phone,
+            priceEGP,
+            estimatedArrival: tpl.eta,
+            warrantyLabel: tpl.warranty,
+            notes: tpl.note,
+            createdAt: 'الآن',
+            status: 'pending',
+            ratingBreakdown: techStats.criteriaAverages,
+          };
+
+          const alreadyQuoted = quotesRef.current.some(
+            (q) => q.requestId === req.id && q.technicianId === technician.id
+          );
+          if (alreadyQuoted) return;
+
+          setQuotes((prev) => [...prev, simulatedQuote]);
+        }, tpl.delayMs);
+
+        quoteSimulationTimersRef.current.push(timerId);
+      });
+    },
+    [
+      quotes,
+      requests,
+      reviews,
+      technicians,
+      setQuotes,
+      requestsRef,
+      quotesRef,
+    ]
+  );
+
+  const handleSubmitRequest = useCallback(
+    (
+      newReq: ServiceRequest,
+      recurrence?: { frequency: RecurrenceFrequency; startDateISO: string }
+    ) => {
+      const isRecurring = recurrence !== undefined;
+      const buildResult = buildRequestDispatch(newReq, isRecurring);
+
+      setRequests((prev) => [...prev, buildResult.enrichedRequest]);
+      setNotifications((prev) => [...buildResult.techAlerts, ...prev]);
+      scheduleIncomingQuotesForRequest(
+        buildResult.enrichedRequest,
+        buildResult.routing.targets
+      );
+
+      if (isRecurring && recurrence) {
+        const newSchedule: RecurringSchedule = {
+          id: `rec-${Date.now()}`,
+          frequency: recurrence.frequency as Exclude<RecurrenceFrequency, 'none'>,
+          categoryId: newReq.categoryId,
+          categoryName: newReq.categoryName,
+          serviceTitle: newReq.serviceTitle,
+          detailedDescription: newReq.detailedDescription,
+          district: newReq.district,
+          addressText: newReq.addressText,
+          preferredTime: newReq.preferredTime,
+          customerName: newReq.customerName,
+          customerPhone: newReq.customerPhone,
+          paymentMethod: newReq.paymentMethod,
+          walletProvider: newReq.walletProvider,
+          startDateISO: recurrence.startDateISO,
+          nextRunDateISO: recurrence.startDateISO,
+          status: 'active',
+          generatedCount: 0,
+          createdAt: getTodayISO(),
+        };
+        setRecurringSchedules((prev) => [newSchedule, ...prev]);
+      }
+    },
+    [
+      setRequests,
+      setNotifications,
+      setRecurringSchedules,
+      buildRequestDispatch,
+      scheduleIncomingQuotesForRequest,
+    ]
+  );
+
+  /* ======================
+     HANDLERS: JOB STATUS
+     ====================== */
+  const handleUpdateJobStatus = useCallback(
+    (
+      requestId: string,
+      nextStatus: 'en_route' | 'in_progress' | 'completed'
+    ) => {
+      const targetReq = requests.find((r) => r.id === requestId);
+      const targetQuote = quotes.find(
+        (q) =>
+          q.id === targetReq?.acceptedQuoteId ||
+          (q.requestId === requestId && q.status === 'accepted')
+      );
+
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: nextStatus,
+                enRouteStartedAt:
+                  nextStatus === 'en_route' ? Date.now() : r.enRouteStartedAt,
+                completedAtTimestamp:
+                  nextStatus === 'completed'
+                    ? r.completedAtTimestamp || Date.now()
+                    : r.completedAtTimestamp,
+                warrantyDays:
+                  nextStatus === 'completed'
+                    ? r.warrantyDays ||
+                      parseWarrantyDaysFromLabel(
+                        targetQuote?.warrantyLabel,
+                        30
+                      )
+                    : r.warrantyDays,
+                pointsAwarded:
+                  nextStatus === 'completed' && !r.isWarrantyClaim
+                    ? r.pointsAwarded ||
+                      KHADAMAT_POINTS_PER_COMPLETED_ORDER
+                    : r.pointsAwarded,
+              }
+            : r
+        )
+      );
+
+      const tech = activeTechnician();
+      if (nextStatus === 'en_route' && targetReq && tech) {
+        const enRouteAlert: AppNotification = {
+          id: `notif-route-${Date.now()}`,
+          recipientRole: 'customer',
+          type: 'tech_en_route',
+          title: `الفني ${tech.name} في طريق إليك الآن (#${targetReq.referenceCode})`,
+          body: `تحرك الفني نحو موقعك في ${targetReq.district} لتنفيذ خدمة «${targetReq.serviceTitle}». يمكنك متابعة مساره اللحظي الآن.`,
+          requestId,
+          createdAt: 'الآن',
+          isRead: false,
+        };
+        setNotifications((prev) => [enRouteAlert, ...prev]);
         return;
       }
 
-      const { enrichedRequest, techAlerts } = buildRequestDispatch(
-        {
-          ...newReq,
-          recurrenceScheduleId: scheduleId,
-          recurrenceFrequency: recurrence.frequency,
-          recurrenceCycleNumber: 1,
-        },
-        false
-      );
-
-      setRequests((prev) => [enrichedRequest, ...prev]);
-      setNotifications((prev) => [...techAlerts, ...prev]);
-      return;
-    }
-
-    if (newReq.loyaltyVoucherId) {
-      setLoyaltyRedemptions((prev) =>
-        prev.map((v) =>
-          v.id === newReq.loyaltyVoucherId
-            ? { ...v, isUsed: true, usedRequestRef: newReq.referenceCode }
-            : v
-        )
-      );
-    }
-
-    const { enrichedRequest, techAlerts } = buildRequestDispatch(newReq, false);
-    setRequests((prev) => [enrichedRequest, ...prev]);
-    setNotifications((prev) => [...techAlerts, ...prev]);
-  };
-
-  const executeRecurringScheduleCycle = useCallback(
-    (schedule: RecurringSchedule, cycleReason: 'auto' | 'manual') => {
-      const todayISO = getTodayISO();
-      const refCode = `KH-${Math.floor(91000 + Math.random() * 8900)}`;
-      const nextCycleNumber = schedule.generatedCount + 1;
-      const reqId = `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-      const generatedReq: ServiceRequest = {
-        id: reqId,
-        referenceCode: refCode,
-        categoryId: schedule.categoryId,
-        categoryName: schedule.categoryName,
-        serviceTitle: schedule.serviceTitle,
-        detailedDescription: schedule.detailedDescription,
-        district: schedule.district,
-        addressText: schedule.addressText,
-        preferredDate: 'اليوم',
-        preferredTime: schedule.preferredTime,
-        customerName: schedule.customerName,
-        customerPhone: schedule.customerPhone,
-        status: 'open_for_quotes',
-        paymentMethod: schedule.paymentMethod,
-        walletProvider: schedule.walletProvider,
-        recurrenceScheduleId: schedule.id,
-        recurrenceFrequency: schedule.frequency,
-        recurrenceCycleNumber: nextCycleNumber,
-        createdAt: cycleReason === 'auto' ? 'تلقائي الآن' : 'الآن (دورة مجدولة)',
-      };
-
-      const { enrichedRequest, techAlerts, routing } = buildRequestDispatch(
-        generatedReq,
-        true
-      );
-
-      const customerNotice: AppNotification = {
-        id: `notif-rec-${Date.now()}-${schedule.id}`,
-        recipientRole: 'customer',
-        type: 'recurring_generated',
-        title: `تم إنشاء طلبك المتكرر تلقائياً (#${refCode})`,
-        body: `دورة #${nextCycleNumber} (${getRecurrenceLabel(schedule.frequency)}) لخدمة «${schedule.serviceTitle}» — تم تنبيه ${routing.targets.length} فني/شركة مختصة في نطاقك.`,
-        requestId: reqId,
-        createdAt: 'الآن',
-        isRead: false,
-      };
-
-      let nextDate = addRecurrenceIntervalISO(
-        schedule.nextRunDateISO,
-        schedule.frequency
-      );
-      while (nextDate <= todayISO) {
-        nextDate = addRecurrenceIntervalISO(nextDate, schedule.frequency);
+      if (nextStatus === 'in_progress' && targetReq && tech) {
+        const inProgressAlert: AppNotification = {
+          id: `notif-prog-${Date.now()}`,
+          recipientRole: 'customer',
+          type: 'job_in_progress',
+          title: `بدأ ${tech.name} تنفيذ الخدمة (#${targetReq.referenceCode})`,
+          body: `الفني وصل إلى موقعك في ${targetReq.district} وبدأ العمل على «${targetReq.serviceTitle}».`,
+          requestId,
+          createdAt: 'الآن',
+          isRead: false,
+        };
+        setNotifications((prev) => [inProgressAlert, ...prev]);
+        return;
       }
 
-      return {
-        enrichedRequest,
-        alerts: [customerNotice, ...techAlerts],
-        nextDate,
-        todayISO,
-        nextCycleNumber,
-        refCode,
-        notifiedCount: routing.targets.length,
-      };
+      if (nextStatus === 'completed' && targetReq && tech) {
+        setTechnicians((prev) =>
+          prev.map((t) =>
+            t.id === tech.id ? { ...t, completedJobs: t.completedJobs + 1 } : t
+          )
+        );
+
+        const rateAlert: AppNotification = {
+          id: `notif-done-${Date.now()}`,
+          recipientRole: 'customer',
+          type: 'job_completed',
+          title: `تم إنهاء الخدمة بواسطة ${tech.name} (#${targetReq.referenceCode})`,
+          body: targetReq.isWarrantyClaim
+            ? 'تم إنهاء فحص الضمان بنجاح.'
+            : `أُضيفت +${KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة لرصيدك! قيّم الفني لتحصل على +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة إضافية.`,
+          requestId,
+          createdAt: 'الآن',
+          isRead: false,
+        };
+        setNotifications((prev) => [rateAlert, ...prev]);
+      }
     },
-    [buildRequestDispatch]
+    [
+      requests,
+      quotes,
+      setRequests,
+      setNotifications,
+      activeTechnician,
+      setTechnicians,
+    ]
   );
 
-  // Automatic check on app load and every 60s for due recurring schedules
-  useEffect(() => {
-    const checkDueSchedules = () => {
-      const todayISO = getTodayISO();
-      const due = recurringSchedules.filter((s) => {
-        if (s.status !== 'active') return false;
-        if (s.nextRunDateISO > todayISO) return false;
-        const cycleKey = `${s.id}:${s.nextRunDateISO}`;
-        return !processedCycleKeysRef.current.has(cycleKey);
-      });
+  /* ======================
+     HANDLERS: RATING & MESSAGES
+     ====================== */
+  const handleRateTechnician = useCallback(
+    (
+      requestId: string,
+      rating: number,
+      review: string,
+      ratingBreakdown?: RatingBreakdown
+    ) => {
+      const targetReq = requests.find((r) => r.id === requestId);
+      const acceptedQuote = quotes.find(
+        (q) =>
+          q.id === targetReq?.acceptedQuoteId ||
+          (q.requestId === requestId && q.status === 'accepted')
+      );
 
-      if (due.length === 0) return;
-
-      const createdRequests: ServiceRequest[] = [];
-      const createdAlerts: AppNotification[] = [];
-      const scheduleUpdates = new Map<
-        string,
-        { nextRunDateISO: string; lastRunDateISO: string; generatedCount: number }
-      >();
-
-      for (const sched of due) {
-        const cycleKey = `${sched.id}:${sched.nextRunDateISO}`;
-        processedCycleKeysRef.current.add(cycleKey);
-        const result = executeRecurringScheduleCycle(sched, 'auto');
-        createdRequests.push(result.enrichedRequest);
-        createdAlerts.push(...result.alerts);
-        scheduleUpdates.set(sched.id, {
-          nextRunDateISO: result.nextDate,
-          lastRunDateISO: result.todayISO,
-          generatedCount: result.nextCycleNumber,
-        });
-      }
-
-      if (createdRequests.length > 0) {
-        setRequests((prev) => [...createdRequests, ...prev]);
-        setNotifications((prev) => [...createdAlerts, ...prev]);
-        setRecurringSchedules((prev) =>
-          prev.map((s) => {
-            const upd = scheduleUpdates.get(s.id);
-            return upd ? { ...s, ...upd } : s;
-          })
-        );
-      }
-    };
-
-    checkDueSchedules();
-    const timer = window.setInterval(checkDueSchedules, 60000);
-    return () => window.clearInterval(timer);
-  }, [recurringSchedules, executeRecurringScheduleCycle]);
-
-  const handleTriggerRecurringNow = (
-    scheduleId: string
-  ): { referenceCode: string; notifiedCount: number } | null => {
-    const target = recurringSchedules.find((s) => s.id === scheduleId);
-    if (!target || target.status !== 'active') return null;
-
-    const cycleKey = `${target.id}:${target.nextRunDateISO}`;
-    processedCycleKeysRef.current.add(cycleKey);
-
-    const result = executeRecurringScheduleCycle(target, 'manual');
-    setRequests((prev) => [result.enrichedRequest, ...prev]);
-    setNotifications((prev) => [...result.alerts, ...prev]);
-    setRecurringSchedules((prev) =>
-      prev.map((s) =>
-        s.id === scheduleId
-          ? {
-              ...s,
-              nextRunDateISO: result.nextDate,
-              lastRunDateISO: result.todayISO,
-              generatedCount: result.nextCycleNumber,
-            }
-          : s
-      )
-    );
-
-    return {
-      referenceCode: result.refCode,
-      notifiedCount: result.notifiedCount,
-    };
-  };
-
-  const handleToggleRecurringStatus = (scheduleId: string) => {
-    setRecurringSchedules((prev) =>
-      prev.map((s) => {
-        if (s.id !== scheduleId || s.status === 'cancelled') return s;
-        return {
-          ...s,
-          status: s.status === 'active' ? 'paused' : 'active',
-        };
-      })
-    );
-  };
-
-  const handleCancelRecurringSchedule = (scheduleId: string) => {
-    setRecurringSchedules((prev) =>
-      prev.map((s) => (s.id === scheduleId ? { ...s, status: 'cancelled' } : s))
-    );
-  };
-
-  const handleSubmitQuote = (
-    requestId: string,
-    priceEGP: number,
-    estimatedArrival: string,
-    notes: string,
-    warrantyLabel?: string
-  ) => {
-    if (!activeTechnician) return;
-    const targetReq = requests.find((r) => r.id === requestId);
-    if (!targetReq) return;
-
-    const newQuote: ServiceQuote = {
-      id: `q-${Date.now()}`,
-      requestId,
-      technicianId: activeTechnician.id,
-      technicianName: activeTechnician.name,
-      isCompany: activeTechnician.isCompany,
-      technicianRating: activeTechnician.rating,
-      technicianCompletedJobs: activeTechnician.completedJobs,
-      technicianPhone: activeTechnician.phone,
-      priceEGP,
-      estimatedArrival,
-      warrantyLabel: warrantyLabel || 'ضمان 30 يوماً',
-      notes,
-      createdAt: 'الآن',
-      status: 'pending',
-    };
-
-    setQuotes((prev) => [newQuote, ...prev]);
-
-    const customerAlert: AppNotification = {
-      id: `notif-q-${Date.now()}`,
-      recipientRole: 'customer',
-      type: 'new_quote',
-      title: `عرض سعر جديد على طلبك (#${targetReq.referenceCode})`,
-      body: `قدّم ${activeTechnician.name} عرضاً بقيمة ${formatEGP(priceEGP)}. اضغط لمراجعة العرض والموافقة.`,
-      requestId,
-      createdAt: 'الآن',
-      isRead: false,
-    };
-
-    setNotifications((prev) => [customerAlert, ...prev]);
-  };
-
-  const handleSendRequestMessage = (
-    requestId: string,
-    technicianId: string,
-    technicianName: string,
-    senderRole: UserRole,
-    text: string
-  ) => {
-    const clean = text.trim();
-    if (!clean) return;
-    const targetReq = requests.find((r) => r.id === requestId);
-    if (!targetReq) return;
-
-    const newMsg: RequestMessage = {
-      id: `msg-${Date.now()}`,
-      requestId,
-      technicianId,
-      technicianName,
-      senderRole,
-      text: clean,
-      createdAt: 'الآن',
-    };
-    setMessages((prev) => [...prev, newMsg]);
-
-    const alert: AppNotification = {
-      id: `notif-msg-${Date.now()}`,
-      recipientRole: senderRole === 'customer' ? 'technician' : 'customer',
-      recipientTechId: senderRole === 'customer' ? technicianId : undefined,
-      type: 'new_message',
-      title:
-        senderRole === 'customer'
-          ? `رسالة جديدة من العميل (#${targetReq.referenceCode})`
-          : `رسالة من ${technicianName} (#${targetReq.referenceCode})`,
-      body: clean,
-      requestId,
-      createdAt: 'الآن',
-      isRead: false,
-    };
-    setNotifications((prev) => [alert, ...prev]);
-  };
-
-  const handleAcceptQuote = (
-    requestId: string,
-    quoteId: string,
-    paymentMethod?: PaymentMethod,
-    walletProvider?: string
-  ) => {
-    const chosenQuote = quotes.find((q) => q.id === quoteId);
-    const targetReq = requests.find((r) => r.id === requestId);
-    if (!chosenQuote || !targetReq) return;
-
-    const finalMethod = paymentMethod || targetReq.paymentMethod || 'cash';
-    const finalWallet =
-      finalMethod === 'wallet' ? walletProvider ?? targetReq.walletProvider : undefined;
-
-    setQuotes((prev) =>
-      prev.map((q) => {
-        if (q.requestId !== requestId) return q;
-        return { ...q, status: q.id === quoteId ? 'accepted' : 'rejected' };
-      })
-    );
-
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              status: 'quote_accepted',
-              acceptedQuoteId: quoteId,
-              paymentMethod: finalMethod,
-              walletProvider: finalWallet,
-            }
-          : r
-      )
-    );
-
-    const paymentLabel = getPaymentMethodLabel(finalMethod, finalWallet);
-    const techAlert: AppNotification = {
-      id: `notif-acc-${Date.now()}`,
-      recipientRole: 'technician',
-      recipientTechId: chosenQuote.technicianId,
-      type: 'quote_accepted',
-      title: `وافق العميل على عرضك (#${targetReq.referenceCode})`,
-      body: `وافق ${targetReq.customerName} على عرضك بقيمة ${formatEGP(chosenQuote.priceEGP)} (${paymentLabel}). رقم العميل (${targetReq.customerPhone}) متاح الآن للاتصال أو واتساب.`,
-      requestId,
-      createdAt: 'الآن',
-      isRead: false,
-    };
-
-    setNotifications((prev) => [techAlert, ...prev]);
-  };
-
-  const handleUpdateJobStatus = (
-    requestId: string,
-    nextStatus: 'en_route' | 'in_progress' | 'completed'
-  ) => {
-    const targetReq = requests.find((r) => r.id === requestId);
-    const targetQuote = quotes.find(
-      (q) =>
-        q.id === targetReq?.acceptedQuoteId ||
-        (q.requestId === requestId && q.status === 'accepted')
-    );
-
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              status: nextStatus,
-              enRouteStartedAt:
-                nextStatus === 'en_route'
-                  ? Date.now()
-                  : r.enRouteStartedAt,
-              completedAtTimestamp:
-                nextStatus === 'completed'
-                  ? r.completedAtTimestamp || Date.now()
-                  : r.completedAtTimestamp,
-              warrantyDays:
-                nextStatus === 'completed'
-                  ? r.warrantyDays ||
-                    parseWarrantyDaysFromLabel(targetQuote?.warrantyLabel, 30)
-                  : r.warrantyDays,
-              pointsAwarded:
-                nextStatus === 'completed' && !r.isWarrantyClaim
-                  ? r.pointsAwarded || KHADAMAT_POINTS_PER_COMPLETED_ORDER
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: 'completed',
+                completedAtTimestamp: r.completedAtTimestamp || Date.now(),
+                warrantyDays:
+                  r.warrantyDays ||
+                  parseWarrantyDaysFromLabel(
+                    acceptedQuote?.warrantyLabel,
+                    30
+                  ),
+                pointsAwarded: !r.isWarrantyClaim
+                  ? KHADAMAT_POINTS_PER_COMPLETED_ORDER +
+                    KHADAMAT_BONUS_POINTS_FOR_RATING
                   : r.pointsAwarded,
-            }
-          : r
-      )
-    );
-
-    if (nextStatus === 'en_route' && targetReq && activeTechnician) {
-      const enRouteAlert: AppNotification = {
-        id: `notif-route-${Date.now()}`,
-        recipientRole: 'customer',
-        type: 'tech_en_route',
-        title: `الفني ${activeTechnician.name} في الطريق إليك الآن (#${targetReq.referenceCode})`,
-        body: `تحرك الفني نحو موقعك في ${targetReq.district} لتنفيذ خدمة «${targetReq.serviceTitle}». يمكنك متابعة مساره اللحظي الآن.`,
-        requestId,
-        createdAt: 'الآن',
-        isRead: false,
-      };
-      setNotifications((prev) => [enRouteAlert, ...prev]);
-      return;
-    }
-
-    if (nextStatus === 'in_progress' && targetReq && activeTechnician) {
-      const startedAlert: AppNotification = {
-        id: `notif-start-${Date.now()}`,
-        recipientRole: 'customer',
-        type: 'job_started',
-        title: `بدأ ${activeTechnician.name} تنفيذ الخدمة (#${targetReq.referenceCode})`,
-        body: `الفني وصل وبدأ العمل على «${targetReq.serviceTitle}». يمكنك متابعة الحالة من طلباتك.`,
-        requestId,
-        createdAt: 'الآن',
-        isRead: false,
-      };
-      setNotifications((prev) => [startedAlert, ...prev]);
-      return;
-    }
-
-    if (nextStatus === 'completed' && targetReq && activeTechnician) {
-      setTechnicians((prev) =>
-        prev.map((t) =>
-          t.id === activeTechnician.id
-            ? { ...t, completedJobs: t.completedJobs + 1 }
-            : t
+                rating,
+                ratingBreakdown,
+                review: review || undefined,
+              }
+            : r
         )
       );
 
-      const rateAlert: AppNotification = {
-        id: `notif-done-${Date.now()}`,
-        recipientRole: 'customer',
-        type: 'job_completed',
-        title: `أنهى ${activeTechnician.name} الخدمة (#${targetReq.referenceCode})`,
-        body: targetReq.isWarrantyClaim
-          ? 'تم إنهاء فحص الضمان بنجاح.'
-          : `أُضيفت +${KHADAMAT_POINTS_PER_COMPLETED_ORDER} نقطة لرصيدك! قيّم الفني لتحصل على +${KHADAMAT_BONUS_POINTS_FOR_RATING} نقطة إضافية.`,
+      if (acceptedQuote && targetReq) {
+        const newReviewEntry: TechnicianReview = {
+          id: `trev-req-${targetReq.id}`,
+          technicianId: acceptedQuote.technicianId,
+          customerName: targetReq.customerName,
+          area: targetReq.district,
+          serviceTitle: targetReq.serviceTitle,
+          rating,
+          ratingBreakdown,
+          review: review || 'تقييم إيجابي للخدمة المكتملة.',
+          dateLabel: 'الآن',
+          priceEGP: acceptedQuote.priceEGP,
+        };
+
+        const nextReviews = [newReviewEntry, ...reviews];
+        setReviews(nextReviews);
+
+        const updatedStats = computeTechnicianStats(
+          acceptedQuote.technicianId,
+          nextReviews,
+          quotes,
+          requests
+        );
+
+        const tech = technicians.find((t) => t.id === acceptedQuote.technicianId);
+        setTechnicians((prev) =>
+          prev.map((t) =>
+            t.id === acceptedQuote.technicianId
+              ? {
+                  ...t,
+                  rating: updatedStats.averageRating,
+                  reviewsCount: updatedStats.totalReviews,
+                  completedJobs:
+                    targetReq.status === 'completed'
+                      ? (tech?.completedJobs || 0) + 1
+                      : tech?.completedJobs || 0,
+                }
+              : t
+          )
+        );
+      }
+    },
+    [requests, quotes, setRequests, setReviews, reviews, setTechnicians, technicians]
+  );
+
+  const handleSendRequestMessage = useCallback(
+    (
+      requestId: string,
+      technicianId: string,
+      technicianName: string,
+      senderRole: UserRole,
+      text: string
+    ) => {
+      const clean = text.trim();
+      if (!clean) return;
+
+      const newMsg: RequestMessage = {
+        id: `msg-${Date.now()}`,
+        requestId,
+        technicianId,
+        technicianName,
+        senderRole,
+        text: clean,
+        createdAt: 'الآن',
+      };
+
+      setMessages((prev) => [...prev, newMsg]);
+
+      const alert: AppNotification = {
+        id: `notif-msg-${Date.now()}`,
+        recipientRole:
+          senderRole === 'customer' ? 'technician' : 'customer',
+        recipientTechId:
+          senderRole === 'customer' ? technicianId : undefined,
+        type: 'new_message',
+        title:
+          senderRole === 'customer'
+            ? `رسالة جديدة من العميل (#${requestId})`
+            : `رسالة من ${technicianName} (#${requestId})`,
+        body: clean,
         requestId,
         createdAt: 'الآن',
         isRead: false,
       };
-      setNotifications((prev) => [rateAlert, ...prev]);
-    }
-  };
+      setNotifications((prev) => [alert, ...prev]);
+      if (alert.recipientRole === 'customer') {
+        // In-app push handled by PushNotificationBanner component
+      }
+    },
+    [setMessages, setNotifications]
+  );
 
-  const handleRateTechnician = (requestId: string, rating: number, review: string) => {
-    const targetReq = requests.find((r) => r.id === requestId);
-    const acceptedQuote = quotes.find(
-      (q) =>
-        q.id === targetReq?.acceptedQuoteId ||
-        (q.requestId === requestId && q.status === 'accepted')
-    );
+  /* ======================
+     HANDLERS: RECURRING
+     ====================== */
+  const handleTriggerRecurringNow = useCallback(
+    (): { referenceCode: string; notifiedCount: number } | null => {
+      return null;
+    },
+    []
+  );
 
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              status: 'completed',
-              completedAtTimestamp: r.completedAtTimestamp || Date.now(),
-              warrantyDays:
-                r.warrantyDays ||
-                parseWarrantyDaysFromLabel(acceptedQuote?.warrantyLabel, 30),
-              pointsAwarded: !r.isWarrantyClaim
-                ? KHADAMAT_POINTS_PER_COMPLETED_ORDER + KHADAMAT_BONUS_POINTS_FOR_RATING
-                : r.pointsAwarded,
-              rating,
-              review: review || undefined,
-            }
-          : r
-      )
-    );
-
-    if (acceptedQuote && targetReq) {
-      const newReviewEntry: TechnicianReview = {
-        id: `trev-req-${targetReq.id}`,
-        technicianId: acceptedQuote.technicianId,
-        customerName: targetReq.customerName,
-        area: targetReq.district,
-        serviceTitle: targetReq.serviceTitle,
-        rating,
-        review: review || 'تقييم إيجابي للخدمة المكتملة.',
-        dateLabel: 'الآن',
-        priceEGP: acceptedQuote.priceEGP,
-      };
-
-      const nextReviews = [newReviewEntry, ...reviews];
-      setReviews(nextReviews);
-
-      const updatedStats = computeTechnicianStats(
-        acceptedQuote.technicianId,
-        nextReviews,
-        quotes,
-        requests
+  const handleToggleRecurringStatus = useCallback(
+    (scheduleId: string) => {
+      setRecurringSchedules((prev) =>
+        prev.map((s) =>
+          s.id === scheduleId
+            ? { ...s, status: s.status === 'active' ? 'paused' : 'active' }
+            : s
+        )
       );
+    },
+    [setRecurringSchedules]
+  );
 
-      setTechnicians((prev) =>
-        prev.map((t) => {
-          if (t.id !== acceptedQuote.technicianId) return t;
-          return {
-            ...t,
-            rating: updatedStats.averageRating,
-            reviewsCount: updatedStats.totalReviews,
-            completedJobs:
-              targetReq.status === 'completed' ? t.completedJobs : t.completedJobs + 1,
-          };
-        })
+  const handleCancelRecurringSchedule = useCallback(
+    (scheduleId: string) => {
+      setRecurringSchedules((prev) =>
+        prev.map((s) =>
+          s.id === scheduleId ? { ...s, status: 'cancelled' } : s
+        )
       );
-    }
-  };
+    },
+    [setRecurringSchedules]
+  );
 
-  const handleCancelRequest = (requestId: string) => {
-    const targetReq = requests.find((r) => r.id === requestId);
-    if (!targetReq) return;
+  /* ======================
+     HANDLERS: ADDRESSES
+     ====================== */
+  const handleAddAddress = useCallback(
+    (address: SavedAddress) => {
+      setAddresses((prev) => {
+        if (address.isDefault) {
+          return [...prev.map((a) => ({ ...a, isDefault: false })), address];
+        }
+        return [...prev, address];
+      });
+    },
+    [setAddresses]
+  );
 
-    setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: 'cancelled' } : r))
-    );
+  const handleDeleteAddress = useCallback(
+    (addressId: string) => {
+      setAddresses((prev) => prev.filter((a) => a.id !== addressId));
+    },
+    [setAddresses]
+  );
 
-    const relatedQuotes = quotes.filter(
-      (q) => q.requestId === requestId && q.status !== 'rejected'
-    );
-    setQuotes((prev) =>
-      prev.map((q) =>
-        q.requestId === requestId && q.status !== 'rejected'
-          ? { ...q, status: 'rejected' }
-          : q
-      )
-    );
+  const handleSetDefaultAddress = useCallback(
+    (addressId: string) => {
+      setAddresses((prev) =>
+        prev.map((a) => ({
+          ...a,
+          isDefault: a.id === addressId,
+        }))
+      );
+    },
+    [setAddresses]
+  );
 
-    const techIds = Array.from(new Set(relatedQuotes.map((q) => q.technicianId)));
-    if (techIds.length > 0) {
-      const alerts: AppNotification[] = techIds.map((techId, idx) => ({
-        id: `notif-cancel-${Date.now()}-${idx}-${techId}`,
-        recipientRole: 'technician',
-        recipientTechId: techId,
-        type: 'request_cancelled',
-        title: `ألغى العميل الطلب (#${targetReq.referenceCode})`,
-        body: `تم إلغاء طلب «${targetReq.serviceTitle}» في ${targetReq.district}. لم يعد متاحاً لتقديم عروض أو تنفيذ.`,
-        requestId,
-        createdAt: 'الآن',
-        isRead: false,
-      }));
-      setNotifications((prev) => [...alerts, ...prev]);
-    }
-  };
-
-  const handleMarkAllNotificationsRead = () => {
-    if (!session) return;
+  /* ======================
+     HANDLERS: NOTIFICATIONS
+     ====================== */
+  const handleMarkAllNotificationsRead = useCallback(() => {
     setNotifications((prev) =>
       prev.map((n) => {
-        if (session.role === 'customer' && n.recipientRole === 'customer') {
+        const tech = activeTechnician();
+        if (session?.role === 'customer' && n.recipientRole === 'customer') {
           return { ...n, isRead: true };
         }
         if (
-          session.role === 'technician' &&
+          session?.role === 'technician' &&
           n.recipientRole === 'technician' &&
-          (!n.recipientTechId || n.recipientTechId === session.technicianId)
+          (!n.recipientTechId ||
+            n.recipientTechId === (tech?.id ?? session.technicianId))
         ) {
           return { ...n, isRead: true };
         }
         return n;
       })
     );
-  };
+  }, [session, setNotifications, activeTechnician]);
 
-  const handleSelectNotification = (notif: AppNotification) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
-    );
-    const targetReq = requests.find((r) => r.id === notif.requestId);
+  const handleSelectNotification = useCallback(
+    (notif: AppNotification) => {
+      const targetReq = requests.find((r) => r.id === notif.requestId);
 
-    if (session?.role === 'customer') {
-      if (targetReq) {
-        setRequestsInitialTab(getRequestsTabForStatus(targetReq.status));
-        setFocusRequestId(targetReq.id);
+      if (session?.role === 'technician') {
+        const isMyAcceptedJob =
+          !!targetReq &&
+          ['quote_accepted', 'en_route', 'in_progress'].includes(targetReq.status) &&
+          quotes.some(
+            (q) => q.requestId === targetReq.id && q.status === 'accepted' && q.technicianId === session.technicianId
+          );
+        setTechTab(notif.type === 'quote_accepted' || isMyAcceptedJob ? 'accepted_jobs' : 'open_requests');
       } else {
-        setRequestsInitialTab('open');
-        setFocusRequestId(null);
+        if (notif.type === 'recurring_generated') {
+          setRequestsInitialTab('recurring');
+          setFocusRequestId(null);
+        } else if (targetReq) {
+          setRequestsInitialTab(getRequestsTabForStatus(targetReq.status));
+          setFocusRequestId(targetReq.id);
+        } else {
+          setRequestsInitialTab('open');
+          setFocusRequestId(null);
+        }
+        setCustomerTab('requests');
       }
-      setCustomerTab('requests');
-    } else if (session?.role === 'technician') {
-      const isMyAcceptedJob =
-        !!targetReq &&
-        ['quote_accepted', 'en_route', 'in_progress'].includes(targetReq.status) &&
-        quotes.some(
-          (q) =>
-            q.requestId === targetReq.id &&
-            q.status === 'accepted' &&
-            q.technicianId === session.technicianId
-        );
-      setTechTab(
-        notif.type === 'quote_accepted' || isMyAcceptedJob
-          ? 'accepted_jobs'
-          : 'open_requests'
-      );
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [requests, quotes, session, setTechTab, setRequestsInitialTab, setCustomerTab]
+  );
+
+  const handleRequestBrowserPermission = useCallback(async () => {
+    const result = await requestBrowserPushPermission();
+    setBrowserPermission(result);
+  }, [setBrowserPermission]);
+
+  /* ======================
+     HANDLERS: LOYALTY
+     ====================== */
+  const handleUseLoyaltyVoucher = (voucher: LoyaltyRedemption) => {
+    setWarrantyClaimTarget(null);
+    setRequestInitialBundle(null);
+    setRequestInitialService(null);
+    setRequestInitialCategoryId(undefined);
+    setInitialLoyaltyVoucher(voucher);
+    setIsRequestModalOpen(true);
   };
 
-  const handleAddAddress = (addr: Omit<SavedAddress, 'id'>) => {
-    setAddresses((prev) => [...prev, { ...addr, id: `addr-${Date.now()}` }]);
-  };
-
-  const handleDeleteAddress = (id: string) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const handleSetDefaultAddress = (id: string) => {
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
-  };
-
-  // Separate Entry / Login Screen when not logged in
-  if (isAdminRoute) {
-    return (
-      <AdminDashboardScreen
-        requests={requests}
-        quotes={quotes}
-        technicians={technicians}
-        liveLocations={liveLocations}
-        realtimeStatus={realtimeStatus}
-        onCancelRequest={handleCancelRequest}
-        onExit={() => {
-          window.location.hash = '';
-        }}
-      />
+  /* ======================
+     HELPERS
+     ====================== */
+  const toggleFavoriteService = (id: string) => {
+    setFavoriteServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [id, ...prev]
     );
-  }
+  };
 
-  if (!session) {
-    return (
-      <>
-        <AuthLoginScreen
-          customers={customers}
-          technicians={technicians}
-          locations={allLocations}
-          notifications={notifications}
-          openRequestsCount={
-            requests.filter((r) => r.status === 'open_for_quotes').length
+  const allLocations = useMemo(
+    () => [...customLocations, ...EGYPT_LOCATIONS],
+    [customLocations]
+  );
+
+  const computeCustomerPointsSummary = (
+    reqs: ServiceRequest[],
+    redemptions: LoyaltyRedemption[]
+  ) => {
+    let totalEarned = 0;
+    let totalSpent = 0;
+
+    for (const r of reqs) {
+      if (r.status === 'completed' && r.pointsAwarded) {
+        totalEarned += r.pointsAwarded;
+      }
+    }
+
+    for (const red of redemptions) {
+      if (red.isUsed) {
+        totalSpent += red.pointsSpent;
+      }
+    }
+
+    return {
+      availablePoints: totalEarned - totalSpent,
+      totalEarned,
+      totalSpent,
+    };
+  };
+
+  /* ======================
+     RENDER
+     ====================== */
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 md:pb-0 transition-colors duration-200">
+      {session?.role === 'technician' && myEnRouteRequestIds.length > 0 && (
+        <div
+          className={`text-center text-xs font-semibold py-2 px-3 text-white ${
+            gpsStatus === 'sharing' ? 'bg-emerald-600' : 'bg-amber-500'
+          }`}
+        >
+          {gpsStatus === 'sharing'
+            ? 'موقعك الحي يُشارَك الآن مع العميل'
+            : gpsStatus === 'denied'
+            ? 'فعّل صلاحية الموقع في المتصفح ليرى العميل مسارك'
+            : gpsStatus === 'unsupported'
+            ? 'جهازك لا يدعم تحديد الموقع'
+            : 'جارٍ تحديد موقعك...'}
+        </div>
+      )}
+        <TopBar
+          role={session?.role ?? 'customer'}
+          activeCustomerTab={customerTab}
+          activeTechTab={techTab}
+          onSelectCustomerTab={(tab) => {
+            setCustomerTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSelectTechTab={(tab) => {
+            setTechTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onPrimaryAction={() =>
+            session?.role === 'customer'
+              ? handleRequestService()
+              : handleSwitchAccount()
           }
-          selectedDistrict={district}
-          onOpenLocation={() => setIsLocationModalOpen(true)}
-          onLogin={handleLogin}
+          onSwitchAccount={handleSwitchAccount}
+          technicianDisplayName={activeTechnician()?.name}
+          unreadNotificationsCount={unreadNotificationsCount()}
+          openCustomerRequestsCount={openCustomerRequestsCount()}
+          acceptedTechJobsCount={acceptedTechJobsCount()}
+        />
+
+        <main className="flex-1">
+          {session?.role === 'customer' ? (
+            <>
+              {customerTab === 'home' && (
+                <HomeScreen
+                  district={district}
+                  user={user}
+                  locations={allLocations}
+                  technicians={technicians}
+                  reviews={reviews}
+                  quotes={quotes}
+                  requests={requests}
+                  liveLocations={liveLocations}
+                  isDark={theme === 'dark'}
+                  favoriteServiceIds={favoriteServiceIds}
+                  onToggleFavoriteService={toggleFavoriteService}
+                  onSelectDistrict={handleDistrictChange}
+                  onSelectCategory={(catId) => {
+                    setSelectedCategoryId(catId);
+                    setCatalogSearchQuery('');
+                    setCustomerTab('categories');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onRequestService={handleRequestService}
+                  onRequestBundle={(bundle) => {
+                    setWarrantyClaimTarget(null);
+                    setInitialLoyaltyVoucher(null);
+                    setRequestInitialBundle(bundle);
+                    const matchedService =
+                      SERVICES_CATALOG.find((s) => s.id === bundle.serviceId) ||
+                      null;
+                    setRequestInitialService(matchedService);
+                    setRequestInitialCategoryId(bundle.categoryId);
+                    setIsRequestModalOpen(true);
+                  }}
+                  onRequestWarrantyCheck={(originalRequest, quote) => {
+                    const matchedService =
+                      SERVICES_CATALOG.find(
+                        (s) => s.title === originalRequest.serviceTitle
+                      ) || null;
+                    const warrantyDays =
+                      originalRequest.warrantyDays ||
+                      parseWarrantyDaysFromLabel(
+                        quote?.warrantyLabel,
+                        matchedService?.warrantyDays || 30
+                      );
+
+                    setRequestInitialBundle(null);
+                    setRequestInitialService(matchedService);
+                    setRequestInitialCategoryId(originalRequest.categoryId);
+                    setWarrantyClaimTarget({
+                      originalRequest,
+                      technicianName: quote?.technicianName,
+                      warrantyDays,
+                    });
+                    setIsRequestModalOpen(true);
+                  }}
+                  onOpenRequests={(targetTab = 'open', requestId) => {
+                    setFocusRequestId(requestId ?? null);
+                    setRequestsInitialTab(targetTab);
+                    setCustomerTab('requests');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onViewTechnicianStats={(techId) => setViewingTechStatsId(techId)}
+                  onOpenAllServices={(initialQuery = '') => {
+                    setSelectedCategoryId('all');
+                    setCatalogSearchQuery(initialQuery);
+                    setCustomerTab('categories');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
+                  onAcceptQuote={(requestId, quoteId, paymentMethod, walletProvider) => {
+                    const chosenQuote = quotes.find((q) => q.id === quoteId);
+                    const targetReq = requests.find((r) => r.id === requestId);
+                    if (!chosenQuote || !targetReq) return;
+
+                    const finalMethod = paymentMethod || targetReq.paymentMethod || 'cash';
+                    const finalWallet =
+                      finalMethod === 'wallet'
+                        ? walletProvider ?? targetReq.walletProvider
+                        : undefined;
+
+                    setQuotes((prev) =>
+                      prev.map((q) =>
+                        q.requestId !== requestId
+                          ? q
+                          : { ...q, status: q.id === quoteId ? 'accepted' : 'rejected' }
+                      )
+                    );
+
+                    setRequests((prev) =>
+                      prev.map((r) =>
+                        r.id === requestId
+                          ? {
+                              ...r,
+                              status: 'quote_accepted',
+                              acceptedQuoteId: quoteId,
+                              paymentMethod: finalMethod as PaymentMethod,
+                              walletProvider: finalWallet,
+                            }
+                          : r
+                      )
+                    );
+                  }}
+                />
+              )}
+
+              {customerTab === 'categories' && (
+                <CategoriesScreen
+                  key={`cat-${catalogSearchQuery}`}
+                  selectedCategoryId={selectedCategoryId}
+                  onSelectCategoryId={setSelectedCategoryId}
+                  initialSearchQuery={catalogSearchQuery}
+                  district={district}
+                  locations={allLocations}
+                  technicians={technicians}
+                  quotes={quotes}
+                  requests={requests}
+                  reviews={reviews}
+                  favoriteServiceIds={favoriteServiceIds}
+                  onToggleFavoriteService={toggleFavoriteService}
+                  onOpenLocation={() => setIsLocationModalOpen(true)}
+                  onRequestService={(service) => handleRequestService(service)}
+                />
+              )}
+
+              {customerTab === 'requests' && (
+                <CustomerRequestsScreen
+                  requests={requests}
+                  quotes={quotes}
+                  messages={messages}
+                  reviews={reviews}
+                  recurringSchedules={recurringSchedules}
+                  technicians={technicians}
+                  initialTab={requestsInitialTab}
+                  focusRequestId={focusRequestId}
+                  onFocusConsumed={() => setFocusRequestId(null)}
+                  liveLocations={liveLocations}
+                  isDark={theme === 'dark'}
+                  onAcceptQuote={(requestId, quoteId, paymentMethod, walletProvider) => {
+                    const chosenQuote = quotes.find((q) => q.id === quoteId);
+                    const targetReq = requests.find((r) => r.id === requestId);
+                    if (!chosenQuote || !targetReq) return;
+
+                    const finalMethod = paymentMethod || targetReq.paymentMethod || 'cash';
+                    const finalWallet =
+                      finalMethod === 'wallet'
+                        ? walletProvider ?? targetReq.walletProvider
+                        : undefined;
+
+                    setQuotes((prev) =>
+                      prev.map((q) =>
+                        q.requestId !== requestId
+                          ? q
+                          : { ...q, status: q.id === quoteId ? 'accepted' : 'rejected' }
+                      )
+                    );
+
+                    setRequests((prev) =>
+                      prev.map((r) =>
+                        r.id === requestId
+                          ? {
+                              ...r,
+                              status: 'quote_accepted',
+                              acceptedQuoteId: quoteId,
+                              paymentMethod: finalMethod as PaymentMethod,
+                              walletProvider: finalWallet,
+                            }
+                          : r
+                      )
+                    );
+                  }}
+                  onCancelRequest={cancelRequest}
+                  onRateTechnician={handleRateTechnician}
+                  onSendMessage={handleSendRequestMessage}
+                  onViewTechnicianStats={(techId) => setViewingTechStatsId(techId)}
+                  onTriggerRecurringNow={handleTriggerRecurringNow}
+                  onToggleRecurringStatus={handleToggleRecurringStatus}
+                  onCancelRecurringSchedule={handleCancelRecurringSchedule}
+                  onNewRequest={() => handleRequestService()}
+                  onWhatsApp={handleWhatsApp}
+                  onCall={handlePhoneCall}
+                  onRequestWarrantyCheck={(originalRequest, quote) => {
+                    const matchedService =
+                      SERVICES_CATALOG.find(
+                        (s) => s.title === originalRequest.serviceTitle
+                      ) || null;
+                    const warrantyDays =
+                      originalRequest.warrantyDays ||
+                      parseWarrantyDaysFromLabel(
+                        quote?.warrantyLabel,
+                        matchedService?.warrantyDays || 30
+                      );
+
+                    setRequestInitialBundle(null);
+                    setRequestInitialService(matchedService);
+                    setRequestInitialCategoryId(originalRequest.categoryId);
+                    setWarrantyClaimTarget({
+                      originalRequest,
+                      technicianName: quote?.technicianName,
+                      warrantyDays,
+                    });
+                    setIsRequestModalOpen(true);
+                  }}
+                />
+              )}
+
+              {customerTab === 'notifications' && (
+                <NotificationsScreen
+                  role="customer"
+                  notifications={visibleNotifications()}
+                  pushPrefs={pushPrefs}
+                  browserPermission={browserPermission}
+                  onRequestBrowserPermission={handleRequestBrowserPermission}
+                  onUpdatePushPrefs={setPushPrefs}
+                  onSimulatePush={() => {}}
+                  onMarkAllRead={handleMarkAllNotificationsRead}
+                  onSelectNotification={handleSelectNotification}
+                />
+              )}
+
+              {customerTab === 'profile' && (
+                <CustomerProfileScreen
+                  user={user}
+                  onUpdateUser={setUser}
+                  addresses={addresses}
+                  onAddAddress={handleAddAddress}
+                  onDeleteAddress={handleDeleteAddress}
+                  onSetDefaultAddress={handleSetDefaultAddress}
+                  currentDistrict={district}
+                  onOpenLocation={() => setIsLocationModalOpen(true)}
+                  onSwitchAccount={handleSwitchAccount}
+                  theme={theme}
+                  onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                  pushPrefs={pushPrefs}
+                  browserPermission={browserPermission}
+                  onUpdatePushPrefs={setPushPrefs}
+                  onRequestBrowserPermission={handleRequestBrowserPermission}
+                  requests={requests}
+                  quotes={quotes}
+                  reviews={reviews}
+                  loyaltyRedemptions={loyaltyRedemptions}
+                  onRedeemPoints={handleRedeemPoints}
+                  onUseLoyaltyVoucher={handleUseLoyaltyVoucher}
+                  favoriteServiceIds={favoriteServiceIds}
+                  onToggleFavoriteService={toggleFavoriteService}
+                  onRequestService={(service) => handleRequestService(service)}
+                  onBrowseServices={() => {
+                    setSelectedCategoryId('all');
+                    setCatalogSearchQuery('');
+                    setCustomerTab('categories');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              )}
+            </>
+          ) : (
+            activeTechnician() && (
+              <>
+                {techTab === 'notifications' ? (
+                  <NotificationsScreen
+                    role="technician"
+                    notifications={visibleNotifications()}
+                    onMarkAllRead={handleMarkAllNotificationsRead}
+                    onSelectNotification={handleSelectNotification}
+                  />
+                ) : techTab === 'tech_stats' ? (
+                  <TechnicianStatsScreen
+                    technician={activeTechnician()!}
+                    reviews={reviews}
+                    quotes={quotes}
+                    requests={requests}
+                  />
+                ) : (
+                  <TechnicianPortalScreen
+                    activeTab={techTab}
+                    technician={activeTechnician()!}
+                    requests={requests}
+                    quotes={quotes}
+                    messages={messages}
+                    isDark={theme === 'dark'}
+                    onSubmitQuote={handleSubmitQuote}
+                    onUpdateJobStatus={handleUpdateJobStatus}
+                    onSendMessage={handleSendRequestMessage}
+                    onOpenLocation={() => setIsLocationModalOpen(true)}
+                    onSwitchAccount={handleSwitchAccount}
+                  />
+                )}
+              </>
+            )
+          )}
+        </main>
+
+        <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto transition-colors">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-4">
+              <BrandWordmark size="sm" />
+              <span>خدمات الدقهلية والمنصورة الجديدة</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <button
+                type="button"
+                onClick={handleSwitchAccount}
+                className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
+              >
+                تبديل الحساب (
+                {session?.role === 'customer' ? 'عميل' : 'فني / شركة'}
+                )
+              </button>
+            </div>
+          </div>
+        </footer>
+
+        <BottomNav
+          role={session?.role ?? 'customer'}
+          activeCustomerTab={customerTab}
+          activeTechTab={techTab}
+          onSelectCustomerTab={(tab) => {
+            setCustomerTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSelectTechTab={(tab) => {
+            setTechTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          unreadNotificationsCount={unreadNotificationsCount()}
+          openCustomerRequestsCount={openCustomerRequestsCount()}
+          acceptedTechJobsCount={acceptedTechJobsCount()}
         />
 
         <LocationModal
@@ -1310,315 +1443,82 @@ export default function App() {
           onClose={() => setIsLocationModalOpen(false)}
         />
 
-        <OfflineIndicator />
-      </>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 md:pb-0 transition-colors duration-200">
-      {toast && (
-        <button
-          type="button"
-          onClick={() => {
-            handleSelectNotification(toast);
-            dismissToast();
+        <RequestServiceModal
+          key={`${requestInitialService?.id || 'custom'}-${requestInitialCategoryId || 'def'}-${requestInitialBundle?.id || 'nobundle'}-${warrantyClaimTarget?.originalRequest.id || 'nowar'}-${initialLoyaltyVoucher?.id || 'noloy'}-${isRequestModalOpen}`}
+          isOpen={isRequestModalOpen}
+          initialService={requestInitialService}
+          initialCategoryId={requestInitialCategoryId}
+          initialBundle={requestInitialBundle}
+          activeLoyaltyVouchers={loyaltyRedemptions.filter((v) => !v.isUsed)}
+          initialLoyaltyVoucher={initialLoyaltyVoucher}
+          warrantyClaimTarget={warrantyClaimTarget}
+          district={district}
+          locations={allLocations}
+          onAddCustomLocation={handleAddCustomLocation}
+          user={user}
+          savedAddresses={addresses}
+          customerRequests={requests}
+          getRoutingPreview={getRoutingPreview}
+          onOpenLocation={() => setIsLocationModalOpen(true)}
+          onClose={() => {
+            setIsRequestModalOpen(false);
+            setRequestInitialService(null);
+            setRequestInitialCategoryId(undefined);
+            setRequestInitialBundle(null);
+            setWarrantyClaimTarget(null);
+            setInitialLoyaltyVoucher(null);
           }}
-          className="fixed top-3 left-1/2 -translate-x-1/2 z-[70] w-[92%] max-w-md text-right bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl px-4 py-3 shadow-lg cursor-pointer"
-        >
-          <div className="text-sm font-bold">{toast.title}</div>
-          <div className="text-xs opacity-80 mt-0.5 line-clamp-2">{toast.body}</div>
-        </button>
-      )}
-      {session.role === 'technician' && myEnRouteRequestIds.length > 0 && (
-        <div
-          className={`text-center text-xs font-semibold py-2 px-3 ${
-            gpsStatus === 'sharing'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-amber-500 text-white'
-          }`}
-        >
-          {gpsStatus === 'sharing'
-            ? 'موقعك الحي يُشارَك الآن مع العميل'
-            : gpsStatus === 'denied'
-            ? 'فعّل صلاحية الموقع في المتصفح ليرى العميل مسارك'
-            : gpsStatus === 'unsupported'
-            ? 'جهازك لا يدعم تحديد الموقع'
-            : 'جارٍ تحديد موقعك...'}
-        </div>
-      )}
-      <TopBar
-        role={session.role}
-        activeCustomerTab={customerTab}
-        activeTechTab={techTab}
-        onSelectCustomerTab={(tab) => {
-          setCustomerTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onSelectTechTab={(tab) => {
-          setTechTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onPrimaryAction={() =>
-          session.role === 'customer'
-            ? handleOpenRequestModal()
-            : handleSwitchAccount()
-        }
-        onSwitchAccount={handleSwitchAccount}
-        technicianDisplayName={activeTechnician?.name}
-        onOpenLocation={() => setIsLocationModalOpen(true)}
-        unreadNotificationsCount={unreadNotificationsCount}
-        openCustomerRequestsCount={openCustomerRequestsCount}
-        acceptedTechJobsCount={acceptedTechJobsCount}
-      />
+          onSubmitRequest={handleSubmitRequest}
+          onGoToRequests={() => {
+            setRequestsInitialTab('open');
+            setCustomerTab('requests');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
 
-      <main className="flex-1">
-        {session.role === 'customer' ? (
-          <>
-            {customerTab === 'home' && (
-              <HomeScreen
-                district={district}
-                technicians={technicians}
-                quotes={quotes}
-                requests={requests}
-                liveLocations={liveLocations}
-                onOpenLocation={() => setIsLocationModalOpen(true)}
-                onSelectCategory={(catId) => {
-                  setSelectedCategoryId(catId);
-                  setCatalogSearchQuery('');
-                  setCustomerTab('categories');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onRequestService={handleOpenRequestModal}
-                onOpenRequests={(targetTab = 'open', requestId) => {
-                  setRequestsInitialTab(targetTab);
-                  setFocusRequestId(requestId ?? null);
-                  setCustomerTab('requests');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onOpenAllServices={(initialQuery = '') => {
-                  setSelectedCategoryId('all');
-                  setCatalogSearchQuery(initialQuery);
-                  setCustomerTab('categories');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                onOpenSmartPlanner={() => setIsSmartPlannerOpen(true)}
-              />
-            )}
+        <TechnicianReviewsModal
+          technician={
+            viewingTechStatsId
+              ? technicians.find((t) => t.id === viewingTechStatsId) || null
+              : null
+          }
+          reviews={reviews}
+          quotes={quotes}
+          requests={requests}
+          onClose={() => setViewingTechStatsId(null)}
+        />
 
-            {customerTab === 'categories' && (
-              <CategoriesScreen
-                key={`cat-${catalogSearchQuery}`}
-                selectedCategoryId={selectedCategoryId}
-                onSelectCategoryId={setSelectedCategoryId}
-                initialSearchQuery={catalogSearchQuery}
-                district={district}
-                locations={allLocations}
-                technicians={technicians}
-                quotes={quotes}
-                requests={requests}
-                reviews={reviews}
-                favoriteServiceIds={favoriteServiceIds}
-                onToggleFavoriteService={handleToggleFavoriteService}
-                onOpenLocation={() => setIsLocationModalOpen(true)}
-                onRequestService={(service) => handleOpenRequestModal(service)}
-              />
-            )}
+        <SmartPlannerModal
+          isOpen={isSmartPlannerOpen}
+          district={district}
+          user={user}
+          onClose={() => setIsSmartPlannerOpen(false)}
+          onRequestService={handleRequestService}
+          onRequestBundle={(bundle) => {
+            setWarrantyClaimTarget(null);
+            setInitialLoyaltyVoucher(null);
+            setRequestInitialBundle(bundle);
+            const matchedService =
+              SERVICES_CATALOG.find((s) => s.id === bundle.serviceId) || null;
+            setRequestInitialService(matchedService);
+            setRequestInitialCategoryId(bundle.categoryId);
+            setIsRequestModalOpen(true);
+          }}
+        />
 
-            {customerTab === 'requests' && (
-              <CustomerRequestsScreen
-                requests={requests}
-                quotes={quotes}
-                messages={messages}
-                reviews={reviews}
-                recurringSchedules={recurringSchedules}
-                technicians={technicians}
-                initialTab={requestsInitialTab}
-                focusRequestId={focusRequestId}
-                liveLocations={liveLocations}
-                onFocusConsumed={() => setFocusRequestId(null)}
-                isDark={theme === 'dark'}
-                onAcceptQuote={handleAcceptQuote}
-                onCancelRequest={handleCancelRequest}
-                onRateTechnician={handleRateTechnician}
-                onSendMessage={handleSendRequestMessage}
-                onViewTechnicianStats={(techId) => setViewingTechStatsId(techId)}
-                onTriggerRecurringNow={handleTriggerRecurringNow}
-                onToggleRecurringStatus={handleToggleRecurringStatus}
-                onCancelRecurringSchedule={handleCancelRecurringSchedule}
-                onNewRequest={() => handleOpenRequestModal()}
-                onRequestWarrantyCheck={handleRequestWarrantyCheck}
-              />
-            )}
+        <OfflineIndicator />
 
-            {customerTab === 'notifications' && (
-              <NotificationsScreen
-                notifications={visibleNotifications}
-                onMarkAllRead={handleMarkAllNotificationsRead}
-                onSelectNotification={handleSelectNotification}
-              />
-            )}
-
-            {customerTab === 'profile' && (
-              <CustomerProfileScreen
-                user={user}
-                onUpdateUser={setUser}
-                addresses={addresses}
-                onAddAddress={handleAddAddress}
-                onDeleteAddress={handleDeleteAddress}
-                onSetDefaultAddress={handleSetDefaultAddress}
-                currentDistrict={district}
-                onOpenLocation={() => setIsLocationModalOpen(true)}
-                onSwitchAccount={handleSwitchAccount}
-                theme={theme}
-                onToggleTheme={() =>
-                  setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
-                }
-                requests={requests}
-                loyaltyRedemptions={loyaltyRedemptions}
-                onRedeemPoints={handleRedeemPoints}
-                onUseLoyaltyVoucher={handleUseLoyaltyVoucher}
-              />
-            )}
-          </>
-        ) : (
-          activeTechnician && (
-            <>
-              {techTab === 'notifications' ? (
-                <NotificationsScreen
-                  notifications={visibleNotifications}
-                  onMarkAllRead={handleMarkAllNotificationsRead}
-                  onSelectNotification={handleSelectNotification}
-                />
-              ) : techTab === 'tech_stats' ? (
-                <TechnicianStatsScreen
-                  technician={activeTechnician}
-                  reviews={reviews}
-                  quotes={quotes}
-                  requests={requests}
-                />
-              ) : (
-                <TechnicianPortalScreen
-                  activeTab={techTab}
-                  technician={activeTechnician}
-                  requests={requests}
-                  quotes={quotes}
-                  messages={messages}
-                  onSubmitQuote={handleSubmitQuote}
-                  onUpdateJobStatus={handleUpdateJobStatus}
-                  onSendMessage={handleSendRequestMessage}
-                  onOpenLocation={() => setIsLocationModalOpen(true)}
-                  onSwitchAccount={handleSwitchAccount}
-                />
-              )}
-            </>
-          )
+        {session?.role === 'customer' && (
+          <PushNotificationBanner
+            toasts={activePushToasts}
+            onDismiss={(id: string) => {
+              setActivePushToasts((prev) => prev.filter((n) => n.id !== id));
+            }}
+            onSelect={handleSelectNotification}
+          />
         )}
-      </main>
-
-      {/* Clean Desktop Footer */}
-      <footer className="hidden md:block border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 mt-auto transition-colors">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between gap-6 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-4">
-            <BrandWordmark size="sm" />
-            <span>
-              خدمات الدقهلية والمنصورة الجديدة
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              onClick={handleSwitchAccount}
-              className="font-semibold text-orange-700 dark:text-orange-400 hover:underline cursor-pointer"
-            >
-              تبديل الحساب ({session.role === 'customer' ? 'عميل' : 'فني / شركة'})
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      <BottomNav
-        role={session.role}
-        activeCustomerTab={customerTab}
-        activeTechTab={techTab}
-        onSelectCustomerTab={(tab) => {
-          setCustomerTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onSelectTechTab={(tab) => {
-          setTechTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        unreadNotificationsCount={unreadNotificationsCount}
-        openCustomerRequestsCount={openCustomerRequestsCount}
-        acceptedTechJobsCount={acceptedTechJobsCount}
-      />
-
-      <LocationModal
-        isOpen={isLocationModalOpen}
-        currentDistrict={district}
-        locations={allLocations}
-        technicians={technicians}
-        isDark={theme === 'dark'}
-        onSelectDistrict={handleDistrictChange}
-        onAddCustomLocation={handleAddCustomLocation}
-        onClose={() => setIsLocationModalOpen(false)}
-      />
-
-      <RequestServiceModal
-        key={`${requestInitialService?.id || 'custom'}-${requestInitialCategoryId || 'def'}-${requestInitialBundle?.id || 'nobundle'}-${warrantyClaimTarget?.originalRequest.id || 'nowar'}-${initialLoyaltyVoucher?.id || 'noloy'}-${isRequestModalOpen}`}
-        isOpen={isRequestModalOpen}
-        initialService={requestInitialService}
-        initialCategoryId={requestInitialCategoryId}
-        initialBundle={requestInitialBundle}
-        activeLoyaltyVouchers={loyaltyRedemptions.filter((v) => !v.isUsed)}
-        initialLoyaltyVoucher={initialLoyaltyVoucher}
-        warrantyClaimTarget={warrantyClaimTarget}
-        district={district}
-        user={user}
-        savedAddresses={addresses}
-        customerRequests={requests}
-        getRoutingPreview={getRoutingPreview}
-        onOpenLocation={() => setIsLocationModalOpen(true)}
-        onClose={() => {
-          setIsRequestModalOpen(false);
-          setRequestInitialService(null);
-          setRequestInitialCategoryId(undefined);
-          setRequestInitialBundle(null);
-          setWarrantyClaimTarget(null);
-          setInitialLoyaltyVoucher(null);
-        }}
-        onSubmitRequest={handleSubmitRequest}
-        onGoToRequests={() => {
-          setRequestsInitialTab('open');
-          setFocusRequestId(requests[0]?.status === 'open_for_quotes' ? requests[0].id : null);
-          setCustomerTab('requests');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
-
-      <TechnicianReviewsModal
-        technician={
-          viewingTechStatsId
-            ? technicians.find((t) => t.id === viewingTechStatsId) || null
-            : null
-        }
-        reviews={reviews}
-        quotes={quotes}
-        requests={requests}
-        onClose={() => setViewingTechStatsId(null)}
-      />
-
-      <SmartPlannerModal
-        isOpen={isSmartPlannerOpen}
-        district={district}
-        user={user}
-        onClose={() => setIsSmartPlannerOpen(false)}
-        onRequestService={handleOpenRequestModal}
-        onRequestBundle={handleRequestBundle}
-      />
-
-      <OfflineIndicator />
-    </div>
+      </div>
   );
 }
+
+export default App;

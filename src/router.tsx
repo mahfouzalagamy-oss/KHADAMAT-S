@@ -1,5 +1,8 @@
+import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
+
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 /**
  * Application routes configuration using React Router v6.
@@ -17,6 +20,10 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+  },
+  {
+    path: '/admin',
+    element: <AdminPage />,
   },
   {
     path: '/login',

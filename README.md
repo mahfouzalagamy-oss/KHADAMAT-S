@@ -1,27 +1,27 @@
-# خدمات — منصة حجز الخدمات المنزلية (الدقهلية)
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-React 19 + TypeScript + Vite + Tailwind 4، مع خادم Express لخدمات Gemini (تحليل العطل والخطة الذكية).
+# Run and deploy your AI Studio app
 
-## التشغيل
-```bash
-npm install
-cp .env.example .env.local      # ثم ضع GEMINI_API_KEY (اختياري — لميزات الذكاء الاصطناعي فقط)
-npm run dev                     # http://localhost:3000
-npm run build && npm start      # نسخة الإنتاج
-```
+This contains everything you need to run your app locally.
 
-## تدفق الطلب (عميل ⇄ فني)
-1. العميل ينشئ طلباً ← يصل تنبيه للفنيين المناسبين حسب التخصص والمنطقة.
-2. الفني يرسل عرض سعر ← تنبيه للعميل ← العميل يقبل ويدفع ← تنبيه للفني.
-3. الفني يضغط «في الطريق» ثم «بدأ التنفيذ» ثم «تم الإنجاز» ← تنبيه للعميل في كل مرحلة + خريطة مسار لحظي.
-4. إلغاء العميل للطلب يرفض العروض ويُبلّغ كل فني قدّم عرضاً.
-5. الضغط على أي تنبيه، أو على بطاقة التتبع في الرئيسية، يفتح الطلب نفسه في التبويب الصحيح ويُبرزه.
+View your app in AI Studio: https://ai.studio/apps/4b4a6bcf-cb3d-4860-984f-229d74a7973c
 
-## الوقت الحقيقي (WebSocket)
-- الخادم يزامن الطلبات والعروض والرسائل والتنبيهات والفنيين بين كل الأجهزة، ويحفظها في `data/state.json`.
-- الفني يشارك موقعه الحقيقي (GPS) تلقائياً أثناء حالة «في الطريق»، والعميل يرى المسافة والوقت المتوقع الفعليين.
-- لوحة الإدارة: افتح `/#admin` وضع `ADMIN_PASSWORD` في `.env.local`.
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
+
+## الوقت الحقيقي (WebSocket) ولوحة الإدارة
+- الخادم يزامن الطلبات والعروض والرسائل والتنبيهات والفنيين والتقييمات بين كل الأجهزة، ويحفظها في `data/state.json`.
+- الفني يشارك موقعه الحقيقي (GPS) أثناء حالة «في الطريق»، والعميل يرى المسافة والوقت المتوقع الفعليين (يعود للتقدير تلقائياً إن انقطع الإرسال).
+- لوحة الإدارة: افتح `/admin` وضع `ADMIN_PASSWORD` في `.env.local`.
 - على GitHub Pages (موقع ثابت) لا يوجد خادم، فيعمل التطبيق محلياً بدون مزامنة. للتشغيل الكامل انشره على خدمة تشغّل Node (Render / Railway / VPS).
-
-## الأوامر
-`npm test` (اختبارات) · `npm run optimize-images` (ضغط الصور) · `npm run build && npm start` (إنتاج)
+- `npm run optimize-images` يضغط صور `src/assets/images` إلى WebP.

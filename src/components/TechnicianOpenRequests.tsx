@@ -145,13 +145,6 @@ export function TechnicianOpenRequests({
                   {request.customerPhone}
                 </p>
               </div>
-              <div className="text-right">
-                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                  request.urgency === 'urgent' ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200'
-                }`}>
-                  {request.urgency === 'urgent' ? 'عاجل' : 'عادي'}
-                </span>
-              </div>
             </div>
           </div>
         );

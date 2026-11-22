@@ -7,7 +7,7 @@
  */
 export function openWhatsApp(phoneNumber: string, message: string): void {
   // إزالة أي مسافات أو رموز من الرقم وإضافة رمز الدولة مصر إذا لم يكن موجوداً
-  let cleanPhone = phoneNumber.replace(/\s/g, '').replace(/[+()\-]/g, '');
+  let cleanPhone = phoneNumber.replace(/\s/g, '').replace(/[+()-]/g, '');
 
   // إذا بدأ الرقم بـ 0 (محلي مصري)، حوله إلى +2
   if (cleanPhone.startsWith('0')) {
@@ -30,7 +30,7 @@ export function openWhatsApp(phoneNumber: string, message: string): void {
  * فتح تطبيق الهاتف للاتصال برقم
  */
 export function openPhoneCall(phoneNumber: string): void {
-  let cleanPhone = phoneNumber.replace(/\s/g, '').replace(/[+()\-]/g, '');
+  let cleanPhone = phoneNumber.replace(/\s/g, '').replace(/[+()-]/g, '');
   window.location.href = `tel:${cleanPhone}`;
 }
 

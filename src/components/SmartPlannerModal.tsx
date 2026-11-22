@@ -60,7 +60,7 @@ export function SmartPlannerModal({
           district,
         }),
       });
-      const data = await res.json().catch(() => ({ success: false, error: 'خدمة الخطة الذكية غير متاحة حالياً. تأكد من تشغيل الخادم وضبط GEMINI_API_KEY.' }));
+      const data = await res.json();
       if (data.success && data.planText) {
         setAiPlanText(data.planText);
       } else {

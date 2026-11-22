@@ -13,12 +13,14 @@ import {
   MessageSquare,
   Navigation,
   Phone,
+  Play,
   Repeat,
   Send,
   ShieldCheck,
   Star,
   Tag,
   Timer,
+  Video,
   Wallet,
   Wrench,
   X,
@@ -34,6 +36,7 @@ import {
   getRecurrenceLabel,
 } from '../data/khadamatData';
 import {
+  FaultVideoAttachment,
   RequestMessage,
   ServiceQuote,
   ServiceRequest,
@@ -41,6 +44,7 @@ import {
   TechnicianTab,
   UserRole,
 } from '../types/khadamat';
+import { LiveTechnicianRouteMap } from './LiveTechnicianRouteMap';
 import { AndroidApkGuideCard } from './PWAInstallBanner';
 
 interface TechnicianPortalScreenProps {
@@ -49,6 +53,7 @@ interface TechnicianPortalScreenProps {
   requests: ServiceRequest[];
   quotes: ServiceQuote[];
   messages: RequestMessage[];
+  isDark?: boolean;
   onSubmitQuote: (
     requestId: string,
     priceEGP: number,
@@ -71,12 +76,7 @@ interface TechnicianPortalScreenProps {
   onSwitchAccount: () => void;
 }
 
-const WARRANTY_PRESETS = [
-  'ضمان 30 يوماً',
-  'ضمان 14 يوماً',
-  'ضمان 7 أيام',
-  'حسب الفحص',
-];
+const WARRANTY_PRESETS = ['ضمان 30 يوماً', 'ضمان 14 يوماً', 'ضمان 7 أيام', 'حسب الفحص'];
 
 export function TechnicianPortalScreen({
   activeTab,
@@ -84,6 +84,7 @@ export function TechnicianPortalScreen({
   requests,
   quotes,
   messages,
+  isDark = false,
   onSubmitQuote,
   onUpdateJobStatus,
   onSendMessage,
@@ -100,7 +101,12 @@ export function TechnicianPortalScreen({
   const [notesInput, setNotesInput] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
   const [previewGallery, setPreviewGallery] = useState<{
-    photos: string[];
+    items: Array<{
+      kind: 'image' | 'video';
+      url: string;
+      durationSec?: number;
+      sizeLabel?: string;
+    }>;
     index: number;
     serviceTitle: string;
   } | null>(null);
@@ -171,42 +177,109 @@ export function TechnicianPortalScreen({
     setNotesInput('');
   };
 
-  const renderFaultPhotos = (photos?: string[], serviceTitle = 'طلب خدمة') => {
-    if (!photos || photos.length === 0) return null;
+  const buildFaultMediaItems = (photos?: string[], videos?: FaultVideoAttachment[]) => {
+    const items: Array<{
+      kind: 'image' | 'video';
+      url: string;
+      durationSec?: number;
+      sizeLabel?: string;
+    }> = [];
+    if (videos && videos.length > 0) {
+      videos.forEach((v) =>
+        items.push({
+          kind: 'video',
+          url: v.url,
+          durationSec: v.durationSec,
+          sizeLabel: v.sizeLabel,
+        })
+      );
+    }
+    if (photos && photos.length > 0) {
+      photos.forEach((p) => items.push({ kind: 'image', url: p }));
+    }
+    return items;
+  };
+
+  const renderFaultMedia = (
+    photos?: string[],
+    videos?: FaultVideoAttachment[],
+    serviceTitle = 'طلب خدمة'
+  ) => {
+    const items = buildFaultMediaItems(photos, videos);
+    if (items.length === 0) return null;
+    const videoCount = videos?.length || 0;
+    const photoCount = photos?.length || 0;
+
     return (
       <div className="bg-orange-50/55 dark:bg-slate-800/75 border border-orange-200/80 dark:border-slate-700 rounded-xl p-3.5 space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
-            <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+            {videoCount > 0 ? (
+              <Video className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+            ) : (
+              <Camera className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+            )}
             <span className="tabular-nums">
-              صور العطل المرفقة للتقييم الدقيق ({photos.length})
+              معاينة العطل من العميل ({videoCount > 0 ? `${videoCount} فيديو` : ''}
+              {videoCount > 0 && photoCount > 0 ? ' · ' : ''}
+              {photoCount > 0 ? `${photoCount} صور` : ''})
             </span>
           </div>
           <span className="text-[11px] font-medium text-orange-800 dark:text-orange-300">
-            اضغط على الصورة للتكبير وفحص التفاصيل
+            اضغط للمشاهدة قبل التسعير
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {photos.map((photo, idx) => (
+          {items.map((item, idx) => (
             <button
-              key={`tech-photo-${idx}`}
+              key={`tech-media-${idx}`}
               type="button"
-              onClick={() => setPreviewGallery({ photos, index: idx, serviceTitle })}
-              aria-label={`تكبير صورة العطل ${idx + 1} من ${photos.length}`}
+              onClick={() => setPreviewGallery({ items, index: idx, serviceTitle })}
+              aria-label={
+                item.kind === 'video'
+                  ? `تشغيل فيديو العطل لطلب ${serviceTitle}`
+                  : `تكبير صورة العطل ${idx + 1}`
+              }
               className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 hover:border-[#FF5A00] dark:hover:border-orange-500 transition-colors cursor-pointer"
             >
-              <img
-                src={photo}
-                alt={`صورة العطل ${idx + 1} لطلب ${serviceTitle}`}
-                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-200"
-              />
-              <div className="absolute inset-x-0 bottom-0 px-2.5 py-1.5 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
-                <span className="tabular-nums">صورة {idx + 1}</span>
-                <span className="inline-flex items-center gap-1">
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  <span>تكبير</span>
-                </span>
-              </div>
+              {item.kind === 'video' ? (
+                <>
+                  <video
+                    src={item.url}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover opacity-85 group-hover:scale-[1.03] transition-transform duration-200"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full bg-slate-950/75 text-white flex items-center justify-center border border-white/25">
+                      <Play className="w-4 h-4 fill-white" />
+                    </span>
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 px-2.5 py-1.5 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
+                    <span className="inline-flex items-center gap-1">
+                      <Video className="w-3 h-3" />
+                      <span>فيديو العطل</span>
+                    </span>
+                    {item.durationSec && <span className="tabular-nums">{item.durationSec} ث</span>}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={item.url}
+                    alt={`صورة العطل ${idx + 1} لطلب ${serviceTitle}`}
+                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-200"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 px-2.5 py-1.5 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent flex items-center justify-between text-[11px] font-semibold text-white">
+                    <span className="tabular-nums">صورة</span>
+                    <span className="inline-flex items-center gap-1">
+                      <ZoomIn className="w-3.5 h-3.5" />
+                      <span>تكبير</span>
+                    </span>
+                  </div>
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -214,13 +287,13 @@ export function TechnicianPortalScreen({
     );
   };
 
-  const activePreviewPhoto =
-    previewGallery && previewGallery.photos[previewGallery.index]
-      ? previewGallery.photos[previewGallery.index]
+  const activePreviewItem =
+    previewGallery && previewGallery.items[previewGallery.index]
+      ? previewGallery.items[previewGallery.index]
       : null;
 
   const photoModal =
-    previewGallery && activePreviewPhoto ? (
+    previewGallery && activePreviewItem ? (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4"
         role="dialog"
@@ -237,7 +310,8 @@ export function TechnicianPortalScreen({
                 معاينة العطل — {previewGallery.serviceTitle}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
-                صورة {previewGallery.index + 1} من {previewGallery.photos.length} لتحديد التكلفة وقطع الغيار بدقة
+                {activePreviewItem.kind === 'video' ? 'فيديو العطل' : 'صورة العطل'} (
+                {previewGallery.index + 1} من {previewGallery.items.length}) لتحديد التكلفة بدقة
               </div>
             </div>
             <button
@@ -250,13 +324,24 @@ export function TechnicianPortalScreen({
             </button>
           </div>
           <div className="relative bg-slate-950 flex items-center justify-center max-h-[72vh] min-h-[240px]">
-            <img
-              src={activePreviewPhoto}
-              alt={`صورة العطل ${previewGallery.index + 1} بالحجم الكامل`}
-              className="max-h-[72vh] w-auto object-contain"
-            />
+            {activePreviewItem.kind === 'video' ? (
+              <video
+                key={activePreviewItem.url}
+                src={activePreviewItem.url}
+                controls
+                autoPlay
+                playsInline
+                className="max-h-[72vh] w-full object-contain"
+              />
+            ) : (
+              <img
+                src={activePreviewItem.url}
+                alt={`صورة العطل ${previewGallery.index + 1} بالحجم الكامل`}
+                className="max-h-[72vh] w-auto object-contain"
+              />
+            )}
           </div>
-          {previewGallery.photos.length > 1 && (
+          {previewGallery.items.length > 1 && (
             <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
               <button
                 type="button"
@@ -265,8 +350,7 @@ export function TechnicianPortalScreen({
                     prev
                       ? {
                           ...prev,
-                          index:
-                            (prev.index - 1 + prev.photos.length) % prev.photos.length,
+                          index: (prev.index - 1 + prev.items.length) % prev.items.length,
                         }
                       : null
                   )
@@ -274,10 +358,10 @@ export function TechnicianPortalScreen({
                 className="min-h-[44px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 hover:border-[#FF5A00] inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
-                <span>الصورة السابقة</span>
+                <span>السابق</span>
               </button>
               <span className="text-xs font-bold text-slate-600 dark:text-slate-300 tabular-nums">
-                {previewGallery.index + 1} / {previewGallery.photos.length}
+                {previewGallery.index + 1} / {previewGallery.items.length}
               </span>
               <button
                 type="button"
@@ -286,14 +370,14 @@ export function TechnicianPortalScreen({
                     prev
                       ? {
                           ...prev,
-                          index: (prev.index + 1) % prev.photos.length,
+                          index: (prev.index + 1) % prev.items.length,
                         }
                       : null
                   )
                 }
                 className="min-h-[44px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 hover:border-[#FF5A00] inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>الصورة التالية</span>
+                <span>التالي</span>
                 <ChevronLeft className="w-4 h-4" />
               </button>
             </div>
@@ -313,12 +397,16 @@ export function TechnicianPortalScreen({
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{technician.name}</h1>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                    {technician.name}
+                  </h1>
                   {technician.isVerifiedDocs && (
                     <ShieldCheck className="w-4 h-4 text-[#FF5A00] dark:text-orange-400 shrink-0" />
                   )}
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">{technician.specialty}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                  {technician.specialty}
+                </p>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1.5 tabular-nums">
                   <span className="inline-flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
@@ -358,7 +446,8 @@ export function TechnicianPortalScreen({
                   المستندات الرسمية والتوثيق
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  رقم الموبايل ({technician.phone}) موثق برمز OTP · مركز العمل الأساسي: {technician.primaryCenter}
+                  رقم الموبايل ({technician.phone}) موثق برمز OTP · مركز العمل الأساسي:{' '}
+                  {technician.primaryCenter}
                 </p>
               </div>
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-700 dark:text-orange-400">
@@ -386,7 +475,9 @@ export function TechnicianPortalScreen({
                       </div>
                     )}
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{doc.label}</div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                        {doc.label}
+                      </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {doc.fileName} · {doc.fileSizeLabel}
                       </div>
@@ -395,7 +486,9 @@ export function TechnicianPortalScreen({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 dark:text-slate-400">تم التحقق من بيانات الحساب الأساسية.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                تم التحقق من بيانات الحساب الأساسية.
+              </p>
             )}
           </section>
 
@@ -422,7 +515,9 @@ export function TechnicianPortalScreen({
                           <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                             #{job.referenceCode} · {job.district}
                           </span>
-                          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{job.serviceTitle}</h3>
+                          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                            {job.serviceTitle}
+                          </h3>
                         </div>
                         {acceptedQuote && (
                           <span className="text-base font-bold text-orange-700 dark:text-orange-400 tabular-nums">
@@ -441,10 +536,14 @@ export function TechnicianPortalScreen({
                               ))}
                             </span>
                           </div>
-                          {job.review && <p className="text-slate-600 dark:text-slate-400">«{job.review}»</p>}
+                          {job.review && (
+                            <p className="text-slate-600 dark:text-slate-400">«{job.review}»</p>
+                          )}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-400 dark:text-slate-500">بانتظار تقييم العميل للخدمة</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          بانتظار تقييم العميل للخدمة
+                        </p>
                       )}
                     </div>
                   );
@@ -486,7 +585,9 @@ export function TechnicianPortalScreen({
             <div className="space-y-4">
               {acceptedJobs.map((job) => {
                 const myQuote = quotes.find(
-                  (q) => q.id === job.acceptedQuoteId || (q.requestId === job.id && q.status === 'accepted')
+                  (q) =>
+                    q.id === job.acceptedQuoteId ||
+                    (q.requestId === job.id && q.status === 'accepted')
                 );
                 const promoCalc = myQuote
                   ? computeDiscountedPrice(
@@ -513,15 +614,17 @@ export function TechnicianPortalScreen({
                             {job.status === 'en_route'
                               ? 'في الطريق للعميل حالياً'
                               : job.status === 'in_progress'
-                              ? 'جاري تنفيذ الخدمة في الموقع'
-                              : 'تمت موافقة العميل على عرضك'}
+                                ? 'جاري تنفيذ الخدمة في الموقع'
+                                : 'تمت موافقة العميل على عرضك'}
                           </span>
                           <span>·</span>
                           <span className="tabular-nums">#{job.referenceCode}</span>
                           {job.bundleTitle && (
                             <>
                               <span>·</span>
-                              <span className="text-slate-700 dark:text-slate-300">{job.bundleTitle}</span>
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {job.bundleTitle}
+                              </span>
                             </>
                           )}
                         </div>
@@ -531,16 +634,16 @@ export function TechnicianPortalScreen({
                         {job.isWarrantyClaim && job.warrantyClaimForRef && (
                           <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                             <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>
-                              إعادة فحص ضمان مجاني لطلب #{job.warrantyClaimForRef}
-                            </span>
+                            <span>إعادة فحص ضمان مجاني لطلب #{job.warrantyClaimForRef}</span>
                           </div>
                         )}
                       </div>
 
                       {myQuote && promoCalc && (
                         <div className="text-right sm:text-left shrink-0">
-                          <span className="text-xs text-slate-500 dark:text-slate-400 block">قيمة العرض المقبول</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                            قيمة العرض المقبول
+                          </span>
                           <span className="text-xl font-bold text-orange-700 dark:text-orange-400 tabular-nums block">
                             {formatEGP(myQuote.priceEGP)}
                           </span>
@@ -557,7 +660,7 @@ export function TechnicianPortalScreen({
                       {job.detailedDescription}
                     </p>
 
-                    {renderFaultPhotos(job.faultPhotos, job.serviceTitle)}
+                    {renderFaultMedia(job.faultPhotos, job.faultVideos, job.serviceTitle)}
 
                     {/* Customer Contact & Address Box */}
                     <div className="bg-orange-50/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/80 rounded-xl p-4 space-y-3">
@@ -623,14 +726,25 @@ export function TechnicianPortalScreen({
                       </div>
                     </div>
 
+                    {/* Interactive Route Map when Technician is en_route or in_progress */}
+                    {(job.status === 'en_route' || job.status === 'in_progress') && myQuote && (
+                      <LiveTechnicianRouteMap
+                        request={job}
+                        quote={myQuote}
+                        technicians={[technician]}
+                        isDark={isDark}
+                        viewerRole="technician"
+                      />
+                    )}
+
                     {/* Live Technician Tracking & Job Progress Actions */}
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                       <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                         {job.status === 'quote_accepted'
                           ? 'أبلغ العميل عند تحركك للزيارة لتفعيل التتبع اللحظي'
                           : job.status === 'en_route'
-                          ? 'تم إشعار العميل أنك في الطريق إليه الآن'
-                          : 'العمل قيد التنفيذ — اضغط «تم إنهاء الخدمة» فور الانتهاء'}
+                            ? 'تم إشعار العميل أنك في الطريق إليه الآن'
+                            : 'العمل قيد التنفيذ — اضغط «تم إنهاء الخدمة» فور الانتهاء'}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2.5">
@@ -767,9 +881,7 @@ export function TechnicianPortalScreen({
                             <span>·</span>
                             <span className="inline-flex items-center gap-1 font-semibold text-orange-700 dark:text-orange-400">
                               <Repeat className="w-3 h-3" />
-                              <span>
-                                طلب دوري ({getRecurrenceLabel(req.recurrenceFrequency)})
-                              </span>
+                              <span>طلب دوري ({getRecurrenceLabel(req.recurrenceFrequency)})</span>
                             </span>
                           </>
                         )}
@@ -790,7 +902,9 @@ export function TechnicianPortalScreen({
                           <Tag className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {req.bundleTitle ? `${req.bundleTitle}` : 'طلب بكود خصم'}
-                            {req.promoCode ? ` (${req.promoCode} - خصم ${req.discountPercent || 0}%)` : ''}
+                            {req.promoCode
+                              ? ` (${req.promoCode} - خصم ${req.discountPercent || 0}%)`
+                              : ''}
                           </span>
                         </div>
                       )}
@@ -812,7 +926,7 @@ export function TechnicianPortalScreen({
                     {req.detailedDescription}
                   </p>
 
-                  {renderFaultPhotos(req.faultPhotos, req.serviceTitle)}
+                  {renderFaultMedia(req.faultPhotos, req.faultVideos, req.serviceTitle)}
 
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                     <span className="inline-flex items-center gap-1.5">
@@ -844,7 +958,9 @@ export function TechnicianPortalScreen({
                             ? ` · ${mySubmittedQuote.warrantyLabel}`
                             : ''}
                         </div>
-                        <p className="text-xs text-slate-700 dark:text-slate-300">{mySubmittedQuote.notes}</p>
+                        <p className="text-xs text-slate-700 dark:text-slate-300">
+                          {mySubmittedQuote.notes}
+                        </p>
                       </div>
                       <span className="text-lg font-bold text-orange-800 dark:text-orange-300 tabular-nums shrink-0">
                         {formatEGP(mySubmittedQuote.priceEGP)}
@@ -855,37 +971,60 @@ export function TechnicianPortalScreen({
                       onSubmit={(e) => handleQuoteSubmit(e, req.id)}
                       className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3"
                     >
-                      {req.faultPhotos && req.faultPhotos.length > 0 && (
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2.5">
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">
-                            <Camera className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
-                            <span>مرجع صور العطل أثناء التسعير:</span>
-                          </span>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {req.faultPhotos.map((photo, idx) => (
-                              <button
-                                key={`quote-ref-${req.id}-${idx}`}
-                                type="button"
-                                onClick={() =>
-                                  setPreviewGallery({
-                                    photos: req.faultPhotos!,
-                                    index: idx,
-                                    serviceTitle: req.serviceTitle,
-                                  })
-                                }
-                                aria-label={`فتح صورة العطل ${idx + 1} للمعاينة`}
-                                className="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-[#FF5A00] dark:hover:border-orange-500 transition-colors cursor-pointer"
-                              >
-                                <img
-                                  src={photo}
-                                  alt={`مرجع العطل ${idx + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </button>
-                            ))}
+                      {(() => {
+                        const inlineMedia = buildFaultMediaItems(req.faultPhotos, req.faultVideos);
+                        if (inlineMedia.length === 0) return null;
+                        return (
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2.5">
+                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5 text-[#FF5A00] dark:text-orange-400 shrink-0" />
+                              <span>مرجع العطل أثناء التسعير:</span>
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {inlineMedia.map((item, idx) => (
+                                <button
+                                  key={`quote-ref-${req.id}-${idx}`}
+                                  type="button"
+                                  onClick={() =>
+                                    setPreviewGallery({
+                                      items: inlineMedia,
+                                      index: idx,
+                                      serviceTitle: req.serviceTitle,
+                                    })
+                                  }
+                                  aria-label={
+                                    item.kind === 'video'
+                                      ? 'تشغيل فيديو العطل للمعاينة'
+                                      : `فتح صورة العطل ${idx + 1} للمعاينة`
+                                  }
+                                  className="relative w-16 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 hover:border-[#FF5A00] dark:hover:border-orange-500 transition-colors cursor-pointer"
+                                >
+                                  {item.kind === 'video' ? (
+                                    <>
+                                      <video
+                                        src={item.url}
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        className="w-full h-full object-cover opacity-80"
+                                      />
+                                      <span className="absolute inset-0 flex items-center justify-center text-white">
+                                        <Play className="w-4 h-4 fill-white" />
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <img
+                                      src={item.url}
+                                      alt={`مرجع العطل ${idx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -946,7 +1085,9 @@ export function TechnicianPortalScreen({
                       </div>
 
                       {formError && (
-                        <p className="text-xs text-red-700 dark:text-red-400 font-medium">{formError}</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 font-medium">
+                          {formError}
+                        </p>
                       )}
 
                       <div className="flex items-center justify-end gap-2">
@@ -1028,9 +1169,7 @@ export function TechnicianPortalScreen({
                                   <div
                                     key={msg.id}
                                     className={`flex flex-col ${
-                                      msg.senderRole === 'technician'
-                                        ? 'items-start'
-                                        : 'items-end'
+                                      msg.senderRole === 'technician' ? 'items-start' : 'items-end'
                                     }`}
                                   >
                                     <div

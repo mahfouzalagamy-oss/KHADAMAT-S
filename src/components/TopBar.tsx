@@ -14,7 +14,6 @@ interface TopBarProps {
   unreadNotificationsCount: number;
   openCustomerRequestsCount: number;
   acceptedTechJobsCount: number;
-  onOpenLocation?: () => void;
 }
 
 export function TopBar({
@@ -29,7 +28,6 @@ export function TopBar({
   unreadNotificationsCount,
   openCustomerRequestsCount,
   acceptedTechJobsCount,
-  onOpenLocation,
 }: TopBarProps) {
   const customerNav: { id: CustomerTab; label: string }[] = [
     { id: 'home', label: 'الرئيسية' },

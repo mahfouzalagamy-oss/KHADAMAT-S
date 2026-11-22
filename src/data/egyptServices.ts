@@ -8,7 +8,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'غسيل، فريون، صيانة وتركيب',
     iconKey: 'ac',
     servicesCount: 3,
-    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.jpg',
+    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.webp',
   },
   {
     id: 'plumbing',
@@ -16,7 +16,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'خلاطات، تسريب وسخانات',
     iconKey: 'plumbing',
     servicesCount: 3,
-    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg',
+    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.webp',
   },
   {
     id: 'electrical',
@@ -24,7 +24,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'لوحات، إنارة ومفاتيح',
     iconKey: 'electrical',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.jpg',
+    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.webp',
   },
   {
     id: 'cleaning',
@@ -32,7 +32,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'شقق، سجاد وأنتريهات',
     iconKey: 'cleaning',
     servicesCount: 3,
-    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg',
+    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.webp',
   },
   {
     id: 'carpentry',
@@ -40,7 +40,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'تركيب غرف، أبواب وكوالين',
     iconKey: 'carpentry',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.jpg',
+    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.webp',
   },
   {
     id: 'painting',
@@ -48,7 +48,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'دهان شقق ومعالجة رطوبة',
     iconKey: 'painting',
     servicesCount: 1,
-    imageUrl: '/src/assets/images/cartoon_paint_wood_1795096232344.jpg',
+    imageUrl: '/src/assets/images/cartoon_paint_wood_1794956232344.webp',
   },
   {
     id: 'appliances',
@@ -56,7 +56,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'غسالات، ثلاجات وبوتاجازات',
     iconKey: 'appliances',
     servicesCount: 1,
-    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.jpg',
+    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.webp',
   },
   {
     id: 'pest_control',
@@ -64,7 +64,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'رش آمن بدون رائحة',
     iconKey: 'pest_control',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.jpg',
+    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.webp',
   },
   {
     id: 'security_tech',
@@ -72,7 +72,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'كاميرات مراقبة وإنتركم',
     iconKey: 'security_tech',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.jpg',
+    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.webp',
   },
   {
     id: 'moving',
@@ -80,7 +80,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'تغليف، نقل وونش رفع',
     iconKey: 'moving',
     servicesCount: 1,
-    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.jpg',
+    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.webp',
   },
   {
     id: 'tanks_garden',
@@ -88,7 +88,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'تعقيم خزانات وقص حدائق',
     iconKey: 'tanks_garden',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.jpg',
+    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.webp',
   },
   {
     id: 'aluminum_gypsum',
@@ -96,7 +96,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'شبابيك، سلك وجبس بورد',
     iconKey: 'aluminum_gypsum',
     servicesCount: 1,
-    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.jpg',
+    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.webp',
   },
   {
     id: 'carwash',
@@ -104,7 +104,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'غسيل بالبخار أمام بيتك',
     iconKey: 'carwash',
     servicesCount: 1,
-    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.jpg',
+    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.webp',
   },
   {
     id: 'electronics',
@@ -112,7 +112,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'لابتوب، شاشات وبلايستيشن',
     iconKey: 'electronics',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.jpg',
+    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.webp',
   },
   {
     id: 'networks',
@@ -120,7 +120,7 @@ export const EGYPT_SERVICE_CATEGORIES: ServiceCategory[] = [
     shortDesc: 'Mesh، راوتر وكابلات CAT6',
     iconKey: 'networks',
     servicesCount: 2,
-    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.jpg',
+    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.webp',
   },
 ];
 
@@ -137,7 +137,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 412,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.jpg',
+    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.webp',
     isPopular: true,
     included: [
       'تنظيف الفلاتر والمبخر بالمياه المضغوطة',
@@ -155,7 +155,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 189,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.jpg',
+    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.webp',
     included: [
       'فحص مواسير النحاس والصمامات',
       'تفريغ الهواء قبل الشحن',
@@ -172,7 +172,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 143,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.jpg',
+    imageUrl: '/src/assets/images/cartoon_ac_service_1794956210988.webp',
     included: [
       'حبس الفريون داخل الوحدة قبل الفك',
       'تثبيت القاعدة الداخلية والحامل الخارجي',
@@ -191,7 +191,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 325,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg',
+    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.webp',
     isPopular: true,
     included: [
       'فك الخلاط القديم وتنظيف سنون التغذية',
@@ -209,7 +209,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 214,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg',
+    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.webp',
     included: [
       'فصل وصلات الحمام والمطبخ والغسالة',
       'إعادة عزل بالسيليكون الصحي أو التفلون',
@@ -226,7 +226,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 162,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.jpg',
+    imageUrl: '/src/assets/images/cartoon_plumbing_service_1794956210605.webp',
     included: [
       'التثبيت الآمن على الحائط',
       'تركيب شيك بلف الأمان ووصلات المياه',
@@ -245,7 +245,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 278,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.jpg',
+    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.webp',
     isPopular: true,
     included: [
       'قياس الجهد والأحمال بالملتيميتر الرقمي',
@@ -263,7 +263,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 301,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.jpg',
+    imageUrl: '/src/assets/images/cartoon_electrical_service_1794956211565.webp',
     included: [
       'تركيب وتوصيل وحدات الإضاءة والنجف',
       'عزل التوصيلات بأغطية حماية قياسية',
@@ -282,7 +282,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 518,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg',
+    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.webp',
     isPopular: true,
     included: [
       'تنظيف وتلميع الأرضيات والسيراميك والباركيه',
@@ -300,7 +300,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 247,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg',
+    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.webp',
     included: [
       'شفط الأتربة العميقة قبل الغسيل',
       'معالجة البقع الصعبة بمزيل آمن',
@@ -317,7 +317,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 94,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.jpg',
+    imageUrl: '/src/assets/images/cartoon_cleaning_service_1794956212778.webp',
     included: [
       'إزالة آثار الدهانات واللاصق من الشبابيك',
     ],
@@ -334,7 +334,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 189,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.jpg',
+    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.webp',
     included: [
       'فك وتجميع الأثاث الخشبي',
       'تركيب الأبواب والكوالين',
@@ -351,7 +351,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.6,
     reviewsCount: 123,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.jpg',
+    imageUrl: '/src/assets/images/cartoon_carpentry_service_1795096235821.webp',
     included: [
       'إصلاح التمزقات والخدوش',
       'تثبيت الأجزاء المفكوكة',
@@ -406,7 +406,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.9,
     reviewsCount: 271,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.jpg',
+    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.webp',
     included: [
       'فحص الأعطال والتشخيص',
       'استبدال القطع التالفة',
@@ -423,7 +423,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 215,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.jpg',
+    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.webp',
     included: [
       'فحص نظام التبريد',
       'تنظيف المكثف والفلاتر',
@@ -440,7 +440,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 198,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.jpg',
+    imageUrl: '/src/assets/images/cartoon_appliances_repair_1795096236305.webp',
     included: [
       'تنظيف الشعلات والحوامل',
       'فحص الأمان وإصلاح التسريبات',
@@ -459,7 +459,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 234,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.jpg',
+    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.webp',
     included: [
       'رش الآفات في جميع أنحاء المنزل',
       'تركيب طوارد الحشرات',
@@ -476,7 +476,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.6,
     reviewsCount: 178,
     warrantyDays: 60,
-    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.jpg',
+    imageUrl: '/src/assets/images/cartoon_pest_control_1795096236101.webp',
     included: [
       'علاج جميع أنحاء الغرفة',
       'تغيير المفارش إن لزم الأمر',
@@ -495,7 +495,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 311,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.jpg',
+    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.webp',
     included: [
       'تركيب الكاميرات في الأماكن الاستراتيجية',
       'توصيل التسجيلات على DVR/NVR',
@@ -512,7 +512,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 245,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.jpg',
+    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.webp',
     included: [
       'تركيب الطبق والشواذ',
       'ضبط الاتجاه للحصول على أفضل إشارة',
@@ -529,7 +529,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.6,
     reviewsCount: 189,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.jpg',
+    imageUrl: '/src/assets/images/cartoon_smart_home_1794956211324.webp',
     included: [
       'فحص جميع مستشعرات الأمان',
       'اختبار جرس الإنذار',
@@ -548,7 +548,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.5,
     reviewsCount: 142,
     warrantyDays: 14,
-    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.jpg',
+    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.webp',
     included: [
       'تغليف الأثاث بمواد حماية',
       'تحميل وتنزيل بواسطة equipe',
@@ -565,7 +565,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.4,
     reviewsCount: 98,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.jpg',
+    imageUrl: '/src/assets/images/cartoon_furniture_moving_1795096236066.webp',
     included: [
       'نقل قطعة الأثاث',
       'تغليف وتعبئة',
@@ -584,7 +584,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 219,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.jpg',
+    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.webp',
     included: [
       'تفريغ الخزان وتنظيفه',
       'تعقيم بمبيدات آمنة',
@@ -601,7 +601,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.5,
     reviewsCount: 167,
     warrantyDays: 14,
-    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.jpg',
+    imageUrl: '/src/assets/images/cartoon_water_tank_1795096236051.webp',
     included: [
       'قص الفروع الزائدة',
       'علاج الأشجار من الأمراض',
@@ -620,7 +620,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 254,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.jpg',
+    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.webp',
     included: [
       'قياس المقاسات بدقة',
       'تركيبProfiles الألومنيوم',
@@ -637,7 +637,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 312,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.jpg',
+    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.webp',
     included: [
       'تصميم وتنفيذ دعات الجبس',
       'التشطيبات النهائية',
@@ -654,7 +654,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.6,
     reviewsCount: 178,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.jpg',
+    imageUrl: '/src/assets/images/cartoon_aluminum_gypsum_1795096235961.webp',
     included: [
       'قياس المقاسات',
       'تركيب الأبواب',
@@ -673,7 +673,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.6,
     reviewsCount: 302,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.jpg',
+    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.webp',
     included: [
       'غسيل exterior بالبخار',
       'تنظيف intérieur المقاعد',
@@ -690,7 +690,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.5,
     reviewsCount: 211,
     warrantyDays: 7,
-    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.jpg',
+    imageUrl: '/src/assets/images/cartoon_carwash_steam_1795096236983.webp',
     included: [
       'غسيل الإطار والعجلات',
       'تلميع الطلاء',
@@ -708,7 +708,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 289,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.jpg',
+    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.webp',
     included: [
       'مسح الفيروسات وبرامج التجسس',
       'استبدال القطع التالفة',
@@ -725,7 +725,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 412,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.jpg',
+    imageUrl: '/src/assets/images/cartoon_electronics_laptop_1795096236834.webp',
     included: [
       'إزالة الشاشة التالفة',
       'تركيب الشاشة الجديدة',
@@ -744,7 +744,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.8,
     reviewsCount: 267,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.jpg',
+    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.webp',
     included: [
       'تركيب الراوتر',
       'ضبط الإعدادات الأمنية',
@@ -761,7 +761,7 @@ export const EGYPT_SERVICE_CATALOG: ServiceItem[] = [
     rating: 4.7,
     reviewsCount: 189,
     warrantyDays: 30,
-    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.jpg',
+    imageUrl: '/src/assets/images/cartoon_networks_wifi_1795096235883.webp',
     included: [
       'تركيب nodes Mesh',
       'ضبط التغطية',

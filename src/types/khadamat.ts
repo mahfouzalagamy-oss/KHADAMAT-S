@@ -196,7 +196,6 @@ export interface ServiceRequest {
   customerLat?: number;
   customerLng?: number;
   completedAtTimestamp?: number;
-  urgency?: 'urgent' | 'normal';
   warrantyDays?: number;
   warrantyClaimForRef?: string;
   isWarrantyClaim?: boolean;
@@ -252,7 +251,6 @@ export interface AppNotification {
     | 'job_completed'
     | 'recurring_generated'
     | 'new_message'
-    | 'job_started'
     | 'request_cancelled';
   title: string;
   body: string;
