@@ -16,8 +16,10 @@ function setStatus(next: RealtimeStatus) {
 }
 
 function resolveUrl(): string | null {
-  const custom = (import.meta as any).env?.VITE_REALTIME_URL as string | undefined;
-  if (custom) return custom;
+  // Full-array sync is not an authorization mechanism. Production stays offline
+  // until per-user request/message subscriptions replace this demo transport.
+  if (!import.meta.env.DEV || import.meta.env.VITE_ENABLE_LOCAL_DEMO_SYNC !== 'true') return null;
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return null;
   // GitHub Pages / ملفات محلية: لا يوجد خادم WebSocket
   if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) return null;
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
