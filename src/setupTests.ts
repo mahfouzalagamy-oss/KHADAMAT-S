@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+if (typeof window !== 'undefined') {
 // Mock IntersectionObserver
 global.IntersectionObserver = vi.fn(() => ({
   observe: vi.fn(),
@@ -42,3 +43,4 @@ const localStorageMock = (() => {
 })();
 
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+}

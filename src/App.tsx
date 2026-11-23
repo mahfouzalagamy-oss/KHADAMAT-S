@@ -1,3 +1,4 @@
+import { supabase } from './lib/supabase';
 import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { BrandWordmark } from './components/BrandWordmark';
@@ -229,6 +230,7 @@ function App() {
      HANDLERS: SESSION
      ====================== */
   const handleSwitchAccount = useCallback(() => {
+    void supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [setSession]);
