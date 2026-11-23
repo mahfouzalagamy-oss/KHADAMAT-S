@@ -11,6 +11,9 @@ import type { Response as ExpressResponse } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { getSupabaseAdmin } from './server/lib/supabase';
+import { requireIdentity } from './server/lib/auth';
+import { customerRequestsRouter } from './server/lib/customerRequests';
+import { allowLegacyUpgrade, localDemoEnabled, rejectLegacyUpgrade } from './server/lib/legacyRealtimeGuard';
 
 /**
  * Sanitize user-provided input before embedding into AI prompts.
@@ -144,6 +147,10 @@ function attachRealtime(server: ReturnType<typeof createHttpServer>) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 25 * 1024 * 1024 });
   server.on('upgrade', (req, socket, head) => {
     if (req.url?.split('?')[0] !== '/ws') return;
+    if (!allowLegacyUpgrade(req, process.env)) {
+      rejectLegacyUpgrade(socket);
+      return;
+    }
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
   });
 
@@ -213,11 +220,16 @@ function attachRealtime(server: ReturnType<typeof createHttpServer>) {
 
 async function startServer() {
   // Load state from Supabase on startup
-  await loadStateFromSupabase();
+  if (localDemoEnabled(process.env)) await loadStateFromSupabase();
 
   const app = express();
   const httpServer = createHttpServer(app);
   app.use(express.json({ limit: '2mb' }));
+
+  app.get('/api/auth/me', requireIdentity(), (_req, res) => {
+    res.json({ userId: res.locals.identity.id });
+  });
+  app.use('/api/customer/requests', customerRequestsRouter());
 
   // بوابة لوحة الإدارة: كلمة المرور من متغير البيئة ADMIN_PASSWORD
   app.post('/api/admin/login', (req, res) => {
@@ -229,78 +241,10 @@ async function startServer() {
     res.status(401).json({ success: false, error: 'كلمة المرور غير صحيحة' });
   });
 
-  // ---------- OTP (مصادقة حقيقية) ----------
-  // تخزين مؤقت في الذاكرة (للإنتاج استخدم Redis/DB)
-  const otpStore = new Map<string, { code: string; expiresAt: number; attempts: number }>();
-
-  const sendSms = async (phone: string, code: string): Promise<boolean> => {
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const token = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_PHONE_NUMBER;
-    if (!sid || !token || !from) {
-      // وضع التطوير: طباعة الرمز في console
-      console.log(`[DEV OTP] ${phone} -> ${code}`);
-      return true;
-    }
-    try {
-      const auth = Buffer.from(`${sid}:${token}`).toString('base64');
-      const body = new URLSearchParams({
-        To: phone,
-        From: from,
-        Body: `رمز التحقق الخاص بك لمنصة خدمات: ${code}. صالح لمدة 5 دقائق.`,
-      });
-      const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-        method: 'POST',
-        headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
-      });
-      return resp.ok;
-    } catch (err) {
-      console.error('SMS send error:', err);
-      return false;
-    }
-  };
-
-  app.post('/api/auth/send-otp', async (req, res) => {
-    const phone = sanitizeInput(req.body?.phone, 20);
-    if (!phone || phone.length < 10) {
-      return res.status(400).json({ success: false, error: 'رقم الموبايل غير صحيح.' });
-    }
-    const existing = otpStore.get(phone);
-    if (existing && existing.expiresAt > Date.now() && existing.attempts >= 3) {
-      return res.status(429).json({ success: false, error: 'تم تجاوز عدد المحاولات. حاول لاحقاً.' });
-    }
-    const code = String(Math.floor(1000 + Math.random() * 9000));
-    otpStore.set(phone, { code, expiresAt: Date.now() + 5 * 60 * 1000, attempts: 0 });
-    const sent = await sendSms(phone, code);
-    if (!sent) {
-      otpStore.delete(phone);
-      return res.status(500).json({ success: false, error: 'تعذّر إرسال الرمز. حاول لاحقاً.' });
-    }
-    res.json({ success: true, message: 'تم إرسال رمز التحقق.' });
-  });
-
-  app.post('/api/auth/verify-otp', (req, res) => {
-    const phone = sanitizeInput(req.body?.phone, 20);
-    const otp = sanitizeInput(req.body?.otp, 10);
-    if (!phone || !otp) {
-      return res.status(400).json({ success: false, error: 'بيانات ناقصة.' });
-    }
-    const entry = otpStore.get(phone);
-    if (!entry || entry.expiresAt < Date.now()) {
-      otpStore.delete(phone);
-      return res.status(400).json({ success: false, error: 'الرمز منتهي الصلاحية. أرسل رمزاً جديداً.' });
-    }
-    entry.attempts += 1;
-    if (entry.attempts > 5) {
-      otpStore.delete(phone);
-      return res.status(429).json({ success: false, error: 'تم تجاوز عدد المحاولات. أرسل رمزاً جديداً.' });
-    }
-    if (entry.code !== otp) {
-      return res.status(400).json({ success: false, error: 'رمز التحقق غير صحيح.' });
-    }
-    otpStore.delete(phone);
-    res.json({ success: true, verified: true });
+  // Phone verification is now handled by Supabase Auth in the client.
+  // Retire legacy endpoints: no generated codes, console SMS fallback or fake sessions.
+  app.post(['/api/auth/send-otp', '/api/auth/verify-otp'], (_req, res) => {
+    res.status(410).json({ success: false, error: 'يرجى تحديث التطبيق لاستخدام تسجيل الدخول الآمن.' });
   });
 
   // Validate Gemini API key
@@ -320,7 +264,7 @@ async function startServer() {
     },
   });
 
-  app.post('/api/ai/smart-plan', async (req, res) => {
+  app.post('/api/ai/smart-plan', requireIdentity(), async (req, res) => {
     try {
       if (!requireApiKey(res, process.env.GEMINI_API_KEY)) return;
 
@@ -355,7 +299,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/ai/analyze-fault', async (req, res) => {
+  app.post('/api/ai/analyze-fault', requireIdentity(), async (req, res) => {
     try {
       if (!requireApiKey(res, process.env.GEMINI_API_KEY)) return;
 
@@ -422,7 +366,7 @@ async function startServer() {
   attachRealtime(httpServer);
 
   const port = Number(process.env.PORT) || 3000;
-  httpServer.listen(port, '0.0.0.0', () => {
+  httpServer.listen(port, localDemoEnabled(process.env) ? '127.0.0.1' : '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
   });
 }
