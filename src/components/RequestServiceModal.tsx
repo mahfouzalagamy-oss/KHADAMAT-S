@@ -330,7 +330,7 @@ export function RequestServiceModal({
     setAiAnalysisError(null);
 
     try {
-      const res = await fetch('/api/ai/analyze-fault', {
+      const res = await authenticatedApi('/api/ai/analyze-fault', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: detailedDescription.trim() }),
@@ -2586,3 +2586,4 @@ export function RequestServiceModal({
     </div>
   );
 }
+import { authenticatedApi } from '../lib/authenticatedApi';

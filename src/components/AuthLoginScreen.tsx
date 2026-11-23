@@ -1,3 +1,4 @@
+import { normalizeEgyptianMobile, sendPhoneOtp, verifyPhoneOtp } from '../lib/phoneAuth';
 import {
   Bell,
   Building2,
@@ -208,22 +209,13 @@ export function AuthLoginScreen({
 
     setCustomerError('');
     try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: targetPhone }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setCustomerError(data.error || 'تعذّر إرسال الرمز.');
-        return;
-      }
+      await sendPhoneOtp(targetPhone);
       setCustOtpSent(true);
       setCustOtpTargetPhone(targetPhone);
       setCustOtpInput('');
       setCustCooldown(30);
-    } catch {
-      setCustomerError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+    } catch (error) {
+      setCustomerError(error instanceof Error ? error.message : 'تعذّر التحقق. حاول لاحقًا.');
     }
   };
 
@@ -249,18 +241,13 @@ export function AuthLoginScreen({
 
     setCustomerError('');
     try {
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: custOtpTargetPhone, otp: custOtpInput.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setCustomerError(data.error || 'رمز التأكيد (OTP) غير صحيح.');
-        return;
+      const currentPhone = custMode === 'register' ? customerPhone : customers.find((c) => c.id === selectedExistingCustId)?.phone;
+      if (!currentPhone || normalizeEgyptianMobile(currentPhone) !== normalizeEgyptianMobile(custOtpTargetPhone)) {
+        throw new Error('تغيّر رقم الهاتف. أرسل رمزًا جديدًا لهذا الرقم.');
       }
-    } catch {
-      setCustomerError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+      await verifyPhoneOtp(custOtpTargetPhone, custOtpInput.trim());
+    } catch (error) {
+      setCustomerError(error instanceof Error ? error.message : 'تعذّر التحقق. حاول لاحقًا.');
       return;
     }
 
@@ -330,22 +317,13 @@ export function AuthLoginScreen({
 
     setTechError('');
     try {
-      const res = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: targetPhone }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setTechError(data.error || 'تعذّر إرسال الرمز.');
-        return;
-      }
+      await sendPhoneOtp(targetPhone);
       setTechOtpSent(true);
       setTechOtpTargetPhone(targetPhone);
       setTechOtpInput('');
       setTechCooldown(30);
-    } catch {
-      setTechError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+    } catch (error) {
+      setTechError(error instanceof Error ? error.message : 'تعذّر التحقق. حاول لاحقًا.');
     }
   };
 
@@ -375,18 +353,13 @@ export function AuthLoginScreen({
 
     setTechError('');
     try {
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: techOtpTargetPhone, otp: techOtpInput.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setTechError(data.error || 'رمز التأكيد (OTP) غير صحيح.');
-        return;
+      const currentPhone = techMode === 'register' ? newTechPhone : technicians.find((t) => t.id === selectedTechId)?.phone;
+      if (!currentPhone || normalizeEgyptianMobile(currentPhone) !== normalizeEgyptianMobile(techOtpTargetPhone)) {
+        throw new Error('تغيّر رقم الهاتف. أرسل رمزًا جديدًا لهذا الرقم.');
       }
-    } catch {
-      setTechError('تعذّر الاتصال بالخادم. تأكد من تشغيل الخادم.');
+      await verifyPhoneOtp(techOtpTargetPhone, techOtpInput.trim());
+    } catch (error) {
+      setTechError(error instanceof Error ? error.message : 'تعذّر التحقق. حاول لاحقًا.');
       return;
     }
 
@@ -406,14 +379,14 @@ export function AuthLoginScreen({
       id: `tech-${Date.now()}`,
       name: newTechName.trim(),
       isCompany: newTechIsCompany,
-      specialty: `${newTechIsCompany ? 'شركة معتمدة' : 'فني معتمد'} في ${cat?.name || 'الصيانة'}`,
+      specialty: `${newTechIsCompany ? 'شركة قيد المراجعة' : 'فني قيد المراجعة'} في ${cat?.name || 'الصيانة'}`,
       categoryIds: [newTechCategoryId],
       area: selectedDistrict,
       primaryCenter: locMeta.center,
       coveredCenters: [locMeta.center],
       coveredAreas: [selectedDistrict, locMeta.areaName],
       documents: uploadedDocs,
-      isVerifiedDocs: true,
+      isVerifiedDocs: false,
       isPhoneVerified: true,
       rating: 5.0,
       reviewsCount: 0,
@@ -524,7 +497,7 @@ export function AuthLoginScreen({
                   تسجيل الدخول والتحقق (OTP)
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  اضغط «إرسال الرمز» لاستلام رمز التأكيد (4 أرقام)
+                  اضغط «إرسال الرمز» لاستلام رمز التأكيد (6 أرقام)
                 </p>
               </div>
 
@@ -1049,11 +1022,11 @@ function OtpVerificationSection({
         <input
           type="text"
           inputMode="numeric"
-          maxLength={4}
+          maxLength={6}
           value={otpInput}
-          onChange={(e) => onOtpInputChange(e.target.value.replace(/\D/g, '').slice(0, 4))}
-          placeholder="أدخل رمز OTP (4 أرقام)"
-          aria-label="رمز التحقق OTP المكون من 4 أرقام"
+          onChange={(e) => onOtpInputChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          placeholder="أدخل رمز OTP (6 أرقام)"
+          aria-label="رمز التحقق OTP المكون من 6 أرقام"
           className="flex-1 h-11 px-3.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-center font-bold tracking-[0.35em] tabular-nums focus:border-[#FF5A00] dark:focus:border-orange-500 focus:outline-none"
         />
 
@@ -1073,11 +1046,11 @@ function OtpVerificationSection({
 
       {otpSent ? (
         <div className="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 rounded-xl px-3.5 py-2.5 text-xs text-orange-900 dark:text-orange-200">
-          تم إرسال رمز التحقق إلى <strong className="tabular-nums">{targetPhone}</strong>. أدخل الرمز (4 أرقام) من رسالة SMS.
+          تم إرسال رمز التحقق إلى <strong className="tabular-nums">{targetPhone}</strong>. أدخل الرمز (6 أرقام) من رسالة SMS.
         </div>
       ) : (
         <p className="text-[11px] text-slate-500 dark:text-slate-400">
-          اضغط «إرسال الرمز» لإرسال رمز التحقق (4 أرقام) عبر SMS.
+          اضغط «إرسال الرمز» لإرسال رمز التحقق (6 أرقام) عبر SMS.
         </p>
       )}
     </div>

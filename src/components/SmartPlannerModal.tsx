@@ -40,7 +40,7 @@ export function SmartPlannerModal({
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/ai/smart-plan', {
+      const res = await authenticatedApi('/api/ai/smart-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -253,3 +253,4 @@ export function SmartPlannerModal({
     </div>
   );
 }
+import { authenticatedApi } from '../lib/authenticatedApi';
